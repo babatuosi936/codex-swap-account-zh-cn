@@ -83,6 +83,8 @@ public sealed class SettingsService
         settings.LowWarningThresholdPercent = Math.Clamp(settings.LowWarningThresholdPercent, 1, 99);
         settings.ActiveProfileRefreshIntervalMinutes = Math.Clamp(settings.ActiveProfileRefreshIntervalMinutes, 10, 1440);
         settings.InactiveProfileRefreshIntervalMinutes = Math.Clamp(settings.InactiveProfileRefreshIntervalMinutes, 10, 1440);
+        settings.ActiveProfileRefreshIntervalSeconds = Math.Clamp(settings.ActiveProfileRefreshIntervalSeconds, 15, 3600);
+        settings.InactiveProfileRefreshIntervalSeconds = Math.Clamp(settings.InactiveProfileRefreshIntervalSeconds, 30, 86400);
         return settings;
     }
 

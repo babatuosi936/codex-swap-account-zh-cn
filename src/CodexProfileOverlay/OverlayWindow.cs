@@ -33,6 +33,7 @@ internal sealed class OverlayWindow : Window
     private ProfileStatusDocument? statusDocument;
     private IntPtr ownerHwnd;
     private bool isDragging;
+    private bool quotaRebuildPending;
     private bool dragPending;
     private bool isSwitching;
     private Point dragOffset;
@@ -239,7 +240,14 @@ internal sealed class OverlayWindow : Window
         if (!string.Equals(indicatorSignature, newSignature, StringComparison.Ordinal))
         {
             indicatorSignature = newSignature;
-            RebuildContent();
+            if (isDragging || dragPending)
+            {
+                quotaRebuildPending = true;
+            }
+            else
+            {
+                RebuildContent();
+            }
         }
     }
 
@@ -316,12 +324,18 @@ internal sealed class OverlayWindow : Window
             Margin = new Thickness(9, 0, 8, 0),
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        Grid.SetColumn(name, 1);
-        grid.Children.Add(name);
+        var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        nameAndQuota.Children.Add(name);
+        if (active is not null && ShowQuota)
+        {
+            nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 3, 8, 0)));
+        }
+        Grid.SetColumn(nameAndQuota, 1);
+        grid.Children.Add(nameAndQuota);
 
         var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         string activeIndicator = active is null ? string.Empty : GetProfileIndicator(active.Name);
-        if (!string.IsNullOrEmpty(activeIndicator))
+        if (!ShowQuota && !string.IsNullOrEmpty(activeIndicator))
         {
             right.Children.Add(CreateIndicator(active!.Name, activeIndicator, new Thickness(0, 0, 8, 0)));
         }
@@ -379,7 +393,7 @@ internal sealed class OverlayWindow : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             CanContentScroll = true,
             Content = panel,
-            Height = 32,
+            Height = ShowQuota ? 52 : 32,
         };
         Grid.SetColumn(scrollViewer, 0);
 
@@ -394,7 +408,7 @@ internal sealed class OverlayWindow : Window
     {
         var border = new Border
         {
-            Width = 292,
+            Width = 370,
             Background = FindBrush("OverlayBackgroundBrush"),
             BorderBrush = FindBrush("OverlayBorderBrush"),
             BorderThickness = new Thickness(1),
@@ -424,7 +438,7 @@ internal sealed class OverlayWindow : Window
 
         panel.Children.Add(new Separator { Margin = new Thickness(2, 5, 2, 5) });
         panel.Children.Add(CreatePopupCommand(Localizer?["AddProfile"] ?? "Add profile", OnAddProfile));
-        panel.Children.Add(CreatePopupCommand(Localizer?["Refresh"] ?? "Refresh", OnRefreshProfiles));
+        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles));
         panel.Children.Add(CreatePopupCommand(Localizer?["ManageProfiles"] ?? "Manage profiles", OnManageProfiles));
         panel.Children.Add(CreatePopupCommand(Localizer?["Settings"] ?? "Settings", OnOpenSettings));
         panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
@@ -440,7 +454,8 @@ internal sealed class OverlayWindow : Window
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         row.Children.Add(avatar);
-        row.Children.Add(new TextBlock
+        var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        nameAndQuota.Children.Add(new TextBlock
         {
             Text = profile.DisplayName,
             FontSize = 13.5,
@@ -451,9 +466,14 @@ internal sealed class OverlayWindow : Window
             Margin = new Thickness(8, 0, 0, 0),
             MaxWidth = 112,
         });
+        if (ShowQuota)
+        {
+            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 2, 0, 0)));
+        }
+        row.Children.Add(nameAndQuota);
 
         string indicator = GetProfileIndicator(profile.Name);
-        if (!string.IsNullOrEmpty(indicator))
+        if (!ShowQuota && !string.IsNullOrEmpty(indicator))
         {
             row.Children.Add(CreateIndicator(profile.Name, indicator, new Thickness(4, 0, 0, 0)));
         }
@@ -481,8 +501,8 @@ internal sealed class OverlayWindow : Window
         {
             Content = content,
             MinWidth = 108,
-            MaxWidth = 176,
-            Height = 32,
+            MaxWidth = ShowQuota ? 240 : 176,
+            Height = ShowQuota ? 52 : 32,
             MinHeight = 0,
             Margin = new Thickness(0, 0, 6, 0),
             Padding = isActive ? new Thickness(7, 0, 10, 0) : new Thickness(9, 0, 9, 0),
@@ -511,24 +531,14 @@ internal sealed class OverlayWindow : Window
     {
         if (statusDocument is null)
         {
-            return string.Empty;
+            return ShowQuota ? Localizer?["QuotaUnknown"] ?? "Quota unavailable" : string.Empty;
         }
 
         if (settings.ShowAutomaticLimitIndicators && settings.ShowIndicatorsInOverlay)
         {
             UsageSnapshot? snapshot = statusDocument.Snapshots.TryGetValue(profileId, out UsageSnapshot? snap) ? snap : null;
-            string automatic = ProfileIndicatorFormatter.FormatAutomatic(
-                snapshot,
-                enabled: true,
-                settings.GreenThresholdPercent,
-                settings.YellowThresholdPercent,
-                DateTimeOffset.UtcNow,
-                TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes),
-                profileId.Equals(recommendedProfile, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrEmpty(automatic))
-            {
-                return automatic;
-            }
+            return UsageQuotaFormatter.Summary(snapshot, Localizer?.Language ?? LanguagePreference.English,
+                DateTimeOffset.UtcNow, TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes));
         }
 
         if (!settings.ShowManualProfileEmojiInOverlay)
@@ -560,11 +570,10 @@ internal sealed class OverlayWindow : Window
         var lines = new List<string>();
         foreach (UsageLimitWindow window in UsageIntelligence.GetKnownWindows(snapshot))
         {
-            string name = string.IsNullOrWhiteSpace(window.Name) ? Localizer?["UsageWindow"] ?? "Limit" : window.Name;
             string reset = window.ResetAt is null
                 ? string.Empty
                 : $", {Localizer?["ResetsAt"] ?? "resets"} {UsageDisplayFormatter.FormatLocal(window.ResetAt.Value)}";
-            lines.Add($"{name}: {window.RemainingPercent}%{reset}");
+            lines.Add($"{UsageQuotaFormatter.WindowName(window, Localizer?.Language ?? LanguagePreference.English)}: {window.RemainingPercent}%{reset}");
         }
 
         lines.Add($"{Localizer?["LastUpdated"] ?? "Last updated"}: {UsageDisplayFormatter.FormatLocal(snapshot.CapturedAt)}");
@@ -595,7 +604,19 @@ internal sealed class OverlayWindow : Window
     }
 
     private string BuildIndicatorSignature()
-        => string.Join('|', profiles.Select(profile => profile.Name + ":" + GetProfileIndicator(profile.Name)));
+        => string.Join('|', profiles.Select(profile => profile.Name + ":" + GetProfileIndicator(profile.Name)
+            + ":" + (statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.CapturedAt.ToString("O") ?? string.Empty)));
+
+    private bool ShowQuota => settings.ShowAutomaticLimitIndicators && settings.ShowIndicatorsInOverlay;
+
+    private TextBlock CreateQuotaText(string profileId, Thickness margin) => new()
+    {
+        Text = GetProfileIndicator(profileId),
+        Foreground = FindBrush("MutedTextBrush"),
+        FontSize = 11.5,
+        Margin = margin,
+        ToolTip = BuildUsageToolTip(profileId),
+    };
 
     private static string FirstTextElement(string? value)
     {
@@ -655,7 +676,7 @@ internal sealed class OverlayWindow : Window
             UseLayoutRounding = true,
         };
         menu.Items.Add(CreateMenuItem(Localizer?["AddProfile"] ?? "Add profile", () => OnAddProfile?.Invoke()));
-        menu.Items.Add(CreateMenuItem(Localizer?["Refresh"] ?? "Refresh", () => OnRefreshProfiles?.Invoke()));
+        menu.Items.Add(CreateMenuItem(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", () => OnRefreshProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["ManageProfiles"] ?? "Manage profiles", () => OnManageProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["Settings"] ?? "Settings", () => OnOpenSettings?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["HideSwitcher"] ?? "Hide switcher", () => OnHideOverlay?.Invoke()));
@@ -700,10 +721,16 @@ internal sealed class OverlayWindow : Window
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        Grid.SetColumn(label, 1);
-        grid.Children.Add(label);
+        var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        nameAndQuota.Children.Add(label);
+        if (ShowQuota)
+        {
+            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(0, 3, 0, 0)));
+        }
+        Grid.SetColumn(nameAndQuota, 1);
+        grid.Children.Add(nameAndQuota);
 
-        if (!string.IsNullOrEmpty(indicator))
+        if (!ShowQuota && !string.IsNullOrEmpty(indicator))
         {
             FrameworkElement icon = CreateIndicatorVisual(indicator, 13);
             icon.Margin = new Thickness(10, 0, 0, 0);
@@ -714,7 +741,7 @@ internal sealed class OverlayWindow : Window
         return new Button
         {
             Content = grid,
-            Height = 38,
+            Height = ShowQuota ? 58 : 38,
             MinHeight = 0,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Background = FindBrush("Surface2Brush"),
@@ -954,6 +981,11 @@ internal sealed class OverlayWindow : Window
         {
             TrySaveSettings();
         }
+        if (quotaRebuildPending)
+        {
+            quotaRebuildPending = false;
+            RebuildContent();
+        }
     }
 
     private void TrySaveSettings()
@@ -1008,7 +1040,7 @@ internal sealed class OverlayWindow : Window
 
     private double SanitizedScale => double.IsFinite(settings.Scale) ? Math.Clamp(settings.Scale, 0.8, 1.4) : 1;
 
-    private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? 286 : 560;
+    private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : (ShowQuota ? 620 : 560);
 
     private void ApplyScale()
     {

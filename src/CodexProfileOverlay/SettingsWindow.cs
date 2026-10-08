@@ -41,9 +41,10 @@ internal sealed class SettingsWindow : Window
     private string hotkeyConflictMessage = string.Empty;
     private TextBlock? hotkeyConflictText;
     private IReadOnlyList<ProfileInfo> profiles;
-    private SettingsPage page = SettingsPage.General;
+    private SettingsPage page = SettingsPage.Status;
     private bool isRebuilding;
     private string? selectedStatusProfile;
+    private readonly Dictionary<string, StackPanel> quotaCards = new(StringComparer.OrdinalIgnoreCase);
 
     public SettingsWindow(
         OverlaySettings settings,
@@ -443,6 +444,43 @@ internal sealed class SettingsWindow : Window
     {
         var stack = PageStack();
         bool providerSupported = statusService.ProviderCapability == UsageProviderCapability.Supported;
+        quotaCards.Clear();
+        var refresh = new Button { Content = localizer["RefreshAllQuota"], HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 0, 12), IsEnabled = providerSupported };
+        refresh.Click += async (_, _) =>
+        {
+            refresh.IsEnabled = false;
+            refresh.Content = localizer["QuotaRefreshing"];
+            try
+            {
+                foreach (ProfileInfo profile in profiles)
+                {
+                    await refreshUsage(profile.Name);
+                }
+                RefreshQuotaCards(statusService.Load());
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                refresh.Content = localizer["RefreshAllQuota"];
+                refresh.IsEnabled = providerSupported;
+            }
+        };
+        stack.Children.Add(new TextBlock { Text = localizer["RemainingQuota"], FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = Brush("StrongTextBrush") });
+        stack.Children.Add(new TextBlock
+        {
+            Text = localizer.Format("QuotaPollingHelp", settings.ActiveProfileRefreshIntervalSeconds, settings.InactiveProfileRefreshIntervalSeconds),
+            TextWrapping = TextWrapping.Wrap, Foreground = Brush("MutedTextBrush"), Margin = new Thickness(0, 8, 0, 10),
+        });
+        stack.Children.Add(refresh);
+        foreach (ProfileInfo profile in profiles)
+        {
+            var card = new StackPanel();
+            quotaCards[profile.Name] = card;
+            stack.Children.Add(Card(card));
+        }
+        RefreshQuotaCards(statusService.Load());
         var rows = new List<UIElement>
         {
             SettingCheck(
@@ -453,17 +491,19 @@ internal sealed class SettingsWindow : Window
                 providerSupported),
             SettingCheck(localizer["ShowIndicatorsInOverlay"], localizer["ShowIndicatorsInOverlayHelp"], settings.ShowIndicatorsInOverlay, value => settings.ShowIndicatorsInOverlay = value),
             SettingCheck(localizer["ShowManualEmoji"], localizer["ShowManualEmojiHelp"], settings.ShowManualProfileEmojiInOverlay, value => settings.ShowManualProfileEmojiInOverlay = value),
-            NumberInput(localizer["GreenThreshold"], localizer["GreenThresholdHelp"], settings.GreenThresholdPercent, value => settings.GreenThresholdPercent = (int)value, 1, 26, 100),
-            NumberInput(localizer["YellowThreshold"], localizer["YellowThresholdHelp"], settings.YellowThresholdPercent, value => settings.YellowThresholdPercent = (int)value, 1, 1, 99),
-            NumberInput(localizer["StaleDataThreshold"], localizer["StaleDataThresholdHelp"], settings.StaleDataThresholdMinutes, value => settings.StaleDataThresholdMinutes = (int)value, 1, 10, 1440),
-            NumberInput(localizer["LowWarningThreshold"], localizer["LowWarningThresholdHelp"], settings.LowWarningThresholdPercent, value => settings.LowWarningThresholdPercent = (int)value, 1, 5, 50),
             SettingCheck(localizer["WarnNearlyExhausted"], localizer["WarnNearlyExhaustedHelp"], settings.WarnWhenNearlyExhausted, value => settings.WarnWhenNearlyExhausted = value),
-            NumberInput(localizer["ActiveProfileRefreshInterval"], localizer["ActiveProfileRefreshIntervalHelp"], settings.ActiveProfileRefreshIntervalMinutes, value => settings.ActiveProfileRefreshIntervalMinutes = (int)value, 1, 10, 120),
-            NumberInput(localizer["InactiveProfileRefreshInterval"], localizer["InactiveProfileRefreshIntervalHelp"], settings.InactiveProfileRefreshIntervalMinutes, value => settings.InactiveProfileRefreshIntervalMinutes = (int)value, 1, 10, 1440),
+            NumberInput(localizer["ActiveProfileRefreshInterval"], localizer["ActiveProfileRefreshIntervalHelp"], settings.ActiveProfileRefreshIntervalSeconds, value => settings.ActiveProfileRefreshIntervalSeconds = (int)value, 1, 15, 3600),
+            NumberInput(localizer["InactiveProfileRefreshInterval"], localizer["InactiveProfileRefreshIntervalHelp"], settings.InactiveProfileRefreshIntervalSeconds, value => settings.InactiveProfileRefreshIntervalSeconds = (int)value, 1, 30, 86400),
         };
 
         stack.Children.Add(Card(rows.ToArray()));
-        stack.Children.Add(BuildManualStatusEditor(providerSupported));
+        var advanced = new StackPanel();
+        advanced.Children.Add(Card(
+            NumberInput(localizer["GreenThreshold"], localizer["GreenThresholdHelp"], settings.GreenThresholdPercent, value => settings.GreenThresholdPercent = (int)value, 1, 26, 100),
+            NumberInput(localizer["YellowThreshold"], localizer["YellowThresholdHelp"], settings.YellowThresholdPercent, value => settings.YellowThresholdPercent = (int)value, 1, 1, 99),
+            NumberInput(localizer["StaleDataThreshold"], localizer["StaleDataThresholdHelp"], settings.StaleDataThresholdMinutes, value => settings.StaleDataThresholdMinutes = (int)value, 1, 10, 1440),
+            NumberInput(localizer["LowWarningThreshold"], localizer["LowWarningThresholdHelp"], settings.LowWarningThresholdPercent, value => settings.LowWarningThresholdPercent = (int)value, 1, 5, 50)));
+        advanced.Children.Add(BuildManualStatusEditor(providerSupported));
 
         var legend = new StackPanel();
         legend.Children.Add(new TextBlock
@@ -486,7 +526,7 @@ internal sealed class SettingsWindow : Window
             Foreground = Brush("MutedTextBrush"),
             TextWrapping = TextWrapping.Wrap,
         });
-        stack.Children.Add(new Border
+        advanced.Children.Add(new Border
         {
             Child = legend,
             Background = Brush("Surface2Brush"),
@@ -496,7 +536,52 @@ internal sealed class SettingsWindow : Window
             Padding = new Thickness(16),
             Margin = new Thickness(0, 18, 0, 0),
         });
+        stack.Children.Add(new Expander { Header = localizer["QuotaAdvanced"], Content = advanced, Margin = new Thickness(0, 18, 0, 0), Foreground = Brush("StrongTextBrush") });
         return stack;
+    }
+
+    public void RefreshQuotaCards(ProfileStatusDocument document)
+    {
+        if (page != SettingsPage.Status)
+        {
+            return;
+        }
+        foreach (ProfileInfo profile in profiles)
+        {
+            if (!quotaCards.TryGetValue(profile.Name, out StackPanel? card))
+            {
+                continue;
+            }
+            card.Children.Clear();
+            card.Children.Add(new TextBlock { Text = profile.DisplayName, FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brush("StrongTextBrush"), Margin = new Thickness(0, 0, 0, 10) });
+            document.Snapshots.TryGetValue(profile.Name, out UsageSnapshot? snapshot);
+            if (snapshot is null || UsageIntelligence.GetKnownWindows(snapshot).Count == 0)
+            {
+                card.Children.Add(new TextBlock { Text = localizer["QuotaUnknown"], Foreground = Brush("MutedTextBrush") });
+            }
+            else
+            {
+                foreach (UsageLimitWindow window in UsageIntelligence.GetKnownWindows(snapshot))
+                {
+                    card.Children.Add(new TextBlock { Text = localizer.Format("QuotaRemaining", UsageQuotaFormatter.WindowName(window, localizer.Language), window.RemainingPercent!), FontSize = 16, Foreground = Brush("StrongTextBrush"), Margin = new Thickness(0, 5, 0, 6) });
+                    card.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = window.RemainingPercent!.Value, Height = 7, Foreground = Brush("AccentBrush"), Background = Brush("BorderBrush") });
+                    if (window.ResetAt is not null)
+                    {
+                        card.Children.Add(new TextBlock { Text = localizer["ResetsAt"] + " " + UsageDisplayFormatter.FormatLocal(window.ResetAt.Value), FontSize = 12, Foreground = Brush("MutedTextBrush"), Margin = new Thickness(0, 4, 0, 7) });
+                    }
+                }
+                card.Children.Add(new TextBlock { Text = localizer.Format("QuotaUpdated", snapshot.CapturedAt.ToLocalTime().ToString("MM-dd HH:mm:ss")), FontSize = 12, Foreground = Brush("MutedTextBrush"), Margin = new Thickness(0, 8, 0, 0) });
+                if (statusService.IsDataStale(snapshot))
+                {
+                    card.Children.Add(new TextBlock { Text = localizer["QuotaCached"], Foreground = Brush("ErrorBrush"), FontSize = 12 });
+                }
+            }
+            var metadata = document.Profiles.FirstOrDefault(status => profile.Name.Equals(status.ProfileId, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(metadata?.LastRefreshError))
+            {
+                card.Children.Add(new TextBlock { Text = localizer["RefreshError"] + ": " + metadata.LastRefreshError, Foreground = Brush("ErrorBrush"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+            }
+        }
     }
 
     private UIElement LegendRow(string emoji, string title, string description)

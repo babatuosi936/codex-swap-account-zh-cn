@@ -61,4 +61,8 @@ public sealed class OverlaySettings
     public int ActiveProfileRefreshIntervalMinutes { get; set; } = 15;
 
     public int InactiveProfileRefreshIntervalMinutes { get; set; } = 60;
+
+    public int ActiveProfileRefreshIntervalSeconds { get; set; } = 30;
+
+    public int InactiveProfileRefreshIntervalSeconds { get; set; } = 60;
 }

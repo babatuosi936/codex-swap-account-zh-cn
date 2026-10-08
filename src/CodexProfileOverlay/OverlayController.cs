@@ -25,6 +25,7 @@ internal sealed class OverlayController : IDisposable
     private readonly CancellationTokenSource disposalTokenSource = new();
     private readonly Dictionary<string, ProfileLoginAttempt> activeProfileLogins = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTimeOffset> lastUsageRefreshAttempts = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim usageRequestGate = new(1, 1);
     private readonly ProfileStatusStore statusStore;
     private readonly ProfileStatusService statusService;
     private readonly SharedCodexStateMigrationService stateMigrationService;
@@ -126,7 +127,7 @@ internal sealed class OverlayController : IDisposable
         overlayWindow = new OverlayWindow(settings, logger)
         {
             OnSwitchProfile = profile => _ = SwitchProfileAsync(profile),
-            OnRefreshProfiles = RefreshProfiles,
+            OnRefreshProfiles = () => { RefreshProfiles(); _ = RefreshAllUsageAsync(); },
             OnOpenProfilesFolder = () => OpenFolder(paths.ProfilesDirectory),
             OnOpenApplicationDataFolder = () => OpenFolder(paths.ApplicationDataDirectory),
             OnOpenSettings = ShowSettingsWindow,
@@ -769,11 +770,12 @@ internal sealed class OverlayController : IDisposable
             ? statusService.FindRecommendedProfile(profiles.Select(profile => profile.Name).ToArray(), statusDocument)
             : null;
         overlayWindow?.SetStatusDocument(statusDocument, recommendedProfile);
+        settingsWindow?.RefreshQuotaCards(statusDocument);
     }
 
     private async Task RefreshUsageForProfileAsync(string profileName)
     {
-        if (switching || !UsageRefreshPolicy.AllowsAutomaticRefresh(settings, statusService.ProviderCapability))
+        if (switching || statusService.ProviderCapability != UsageProviderCapability.Supported)
         {
             return;
         }
@@ -784,10 +786,40 @@ internal sealed class OverlayController : IDisposable
             return;
         }
 
-        ProfileStatusDocument document = statusService.Load();
-        await statusService.RefreshUsageAsync(profile.Name, profile.DirectoryPath, document, disposalTokenSource.Token).ConfigureAwait(true);
-        lastUsageRefreshAttempts[profile.Name] = DateTimeOffset.UtcNow;
-        RefreshStatusIndicators();
+        await RefreshProfileUsageAsync(profile).ConfigureAwait(true);
+    }
+
+    private async Task RefreshProfileUsageAsync(ProfileInfo profile)
+    {
+        await usageRequestGate.WaitAsync(disposalTokenSource.Token).ConfigureAwait(true);
+        try
+        {
+            if (switching || disposalTokenSource.IsCancellationRequested)
+            {
+                return;
+            }
+            // Load after acquiring the gate so manual and automatic refreshes cannot overwrite another account's result.
+            ProfileStatusDocument document = statusService.Load();
+            string directory = UsageRefreshPolicy.QueryDirectory(profile.Name, activeProfileStore.Read(), profile.DirectoryPath, paths.SharedCodexDirectory);
+            await statusService.RefreshUsageAsync(profile.Name, directory, document, disposalTokenSource.Token).ConfigureAwait(true);
+            lastUsageRefreshAttempts[profile.Name] = DateTimeOffset.UtcNow;
+            RefreshStatusIndicators();
+        }
+        finally
+        {
+            usageRequestGate.Release();
+        }
+    }
+
+    private Task RefreshAllUsageAsync()
+    {
+        if (switching || automaticUsageRefreshRunning || !UsageRefreshPolicy.AllowsAutomaticRefresh(settings, statusService.ProviderCapability))
+        {
+            return Task.CompletedTask;
+        }
+        automaticUsageRefreshRunning = true;
+        return RefreshDueProfilesAsync(profiles.OrderByDescending(profile =>
+            profile.Name.Equals(activeProfileStore.Read(), StringComparison.OrdinalIgnoreCase)).ToArray());
     }
 
     private void BeginAutomaticUsageRefreshIfDue()
@@ -812,19 +844,16 @@ internal sealed class OverlayController : IDisposable
                     return false;
                 }
 
-                TimeSpan interval = profile.Name.Equals(activeProfile, StringComparison.OrdinalIgnoreCase)
-                    ? TimeSpan.FromMinutes(settings.ActiveProfileRefreshIntervalMinutes)
-                    : TimeSpan.FromMinutes(settings.InactiveProfileRefreshIntervalMinutes);
-                if (!string.IsNullOrWhiteSpace(metadata.LastRefreshError))
-                {
-                    interval = TimeSpan.FromMinutes(1);
-                }
+                TimeSpan interval = UsageRefreshPolicy.Interval(settings,
+                    profile.Name.Equals(activeProfile, StringComparison.OrdinalIgnoreCase),
+                    !string.IsNullOrWhiteSpace(metadata.LastRefreshError));
 
                 DateTimeOffset lastAttempt = lastUsageRefreshAttempts.TryGetValue(profile.Name, out DateTimeOffset inMemoryAttempt)
                     ? inMemoryAttempt
                     : metadata.LastRefreshAttemptAt ?? DateTimeOffset.MinValue;
                 return now - lastAttempt >= interval;
             })
+            .OrderByDescending(profile => profile.Name.Equals(activeProfile, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
         if (dueProfiles.Length == 0)
@@ -849,10 +878,7 @@ internal sealed class OverlayController : IDisposable
                     return;
                 }
 
-                ProfileStatusDocument document = statusService.Load();
-                await statusService.RefreshUsageAsync(profile.Name, profile.DirectoryPath, document, disposalTokenSource.Token).ConfigureAwait(true);
-                lastUsageRefreshAttempts[profile.Name] = DateTimeOffset.UtcNow;
-                RefreshStatusIndicators();
+                await RefreshProfileUsageAsync(profile).ConfigureAwait(true);
             }
         }
         catch (OperationCanceledException)
