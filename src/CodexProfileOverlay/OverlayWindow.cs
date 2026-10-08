@@ -392,6 +392,15 @@ internal sealed class OverlayWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.RequestBringIntoView += (_, e) =>
+        {
+            // Pressing a profile focuses its button before the drag threshold.
+            // Do not let that focus scroll the row while moving the overlay.
+            if (dragPending || isDragging)
+            {
+                e.Handled = true;
+            }
+        };
         if (profiles.Count == 0)
         {
             panel.Children.Add(new TextBlock

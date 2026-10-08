@@ -2,6 +2,7 @@
 
 ## Local UI fix - 2026-10-08
 
+- Prevent profile-button focus from horizontally scrolling the expanded account row during a pending or active drag, keeping the main account visible when pressing the third account.
 - Show color and manual status settings as a permanent section on the quota settings page, without an expander or collapse arrow.
 - Keep the compact menu open when clicking Refresh all quotas, and update quota results in place. Commands that open another window retain their closing behavior.
 - Keep the compact account menu anchored to the persistent overlay shell when manual or automatic quota refresh replaces account buttons.

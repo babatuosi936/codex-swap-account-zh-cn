@@ -38,8 +38,10 @@ internal static class Program
             foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
                 foreach (bool staysOpen in new[] { false, true })
                     RunScenario(scenario.Scale, scenario.Edge, staysOpen);
+            RunExpandedDragScenario(1.0);
+            RunExpandedDragScenario(1.4);
             System.IO.File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "popup-regression.json"), JsonSerializer.Serialize(Evidence, new JsonSerializerOptions { WriteIndented = true }));
-            System.Console.WriteLine($"PASS: {Evidence.Count} popup geometry checks across normal, scaled and screen-edge placement.");
+            System.Console.WriteLine($"PASS: {Evidence.Count} UI checks across popup placement and expanded account dragging.");
             app.Shutdown();
             return 0;
         }
@@ -127,6 +129,56 @@ internal static class Program
             managerButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Pump();
             Require(managerOpened && !popup.IsOpen, "Profile manager command did not close the menu.");
+        }
+        finally { overlay.Close(); host.Close(); Pump(); }
+    }
+
+    private static void RunExpandedDragScenario(double scale)
+    {
+        var host = new Window { Title = "Expanded Drag Regression Fixture", Width = 1100, Height = 700, Left = 60, Top = 60, ShowInTaskbar = false };
+        host.Show();
+        Pump();
+        var settings = new OverlaySettings { DisplayMode = OverlayDisplayMode.Expanded, Scale = scale, ShowAutomaticLimitIndicators = true, Language = LanguagePreference.ChineseSimplified };
+        var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
+        try
+        {
+            var localizerType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.Localizer")!;
+            OverlayType.GetProperty("Localizer")!.SetValue(overlay, Activator.CreateInstance(localizerType, LanguagePreference.ChineseSimplified));
+            ProfileInfo[] profiles = [new("drag-main", "unused", "unused") { DisplayName = "主账号" }, new("drag-two", "unused", "unused") { DisplayName = "475账号" }, new("drag-three", "unused", "unused") { DisplayName = "199账号" }];
+            Call(overlay, "SetProfiles", profiles, profiles[0].Name);
+            Call(overlay, "SetStatusDocument", Document(profiles, 0), null);
+            overlay.Left = 200;
+            overlay.Top = 100;
+            overlay.Show();
+            Pump();
+            var scroller = Descendants((DependencyObject)overlay.Content).OfType<ScrollViewer>().Single();
+            var buttons = Descendants(scroller).OfType<Button>().Where(button => button.Tag is string).ToArray();
+            scroller.ScrollToHorizontalOffset(0);
+            Pump();
+            double before = scroller.HorizontalOffset;
+            Require(buttons.Length == 3 && scroller.ScrollableWidth > 0, "Fixture must have three accounts and an overflowing horizontal viewport.");
+            var pending = OverlayType.GetField("dragPending", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var dragging = OverlayType.GetField("isDragging", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            foreach (bool dragStarted in new[] { false, true })
+            {
+                pending.SetValue(overlay, !dragStarted);
+                dragging.SetValue(overlay, dragStarted);
+                // Button focus requests BringIntoView on press, before the drag threshold.
+                buttons[2].Focus();
+                buttons[2].BringIntoView();
+                Pump();
+                double after = scroller.HorizontalOffset;
+                Rect activeBounds = buttons[0].TransformToAncestor(scroller).TransformBounds(new Rect(buttons[0].RenderSize));
+                bool activeVisible = activeBounds.Left >= -0.5 && activeBounds.Right <= scroller.ActualWidth + 0.5;
+                Evidence.Add(new { kind = "expanded-drag", scale, dragStarted, before, after, activeVisible });
+                Require(Math.Abs(after - before) < 0.01 && activeVisible, $"Pressing account three scrolled away the main account: scale={scale}, dragging={dragStarted}, offset={before}->{after}.");
+            }
+            pending.SetValue(overlay, false);
+            dragging.SetValue(overlay, false);
+            // Normal requests outside a pointer gesture should retain their accessibility behavior.
+            buttons[2].BringIntoView();
+            Pump();
+            Require(scroller.HorizontalOffset > before, "Normal keyboard/programmatic navigation must still be able to scroll.");
         }
         finally { overlay.Close(); host.Close(); Pump(); }
     }
