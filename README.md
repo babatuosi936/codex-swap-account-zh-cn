@@ -1,479 +1,136 @@
 <div align="center">
 
-# Codex Swap Account
+# Codex Swap Account · 中文增强版
 
-**A safe, local Windows account switcher for the Codex desktop app.**
+Windows 上的 Codex 桌面账号浮层工具：切换账号、查看剩余额度、调整位置，快捷键可以不设置。
 
-Switch between multiple Codex accounts from an overlay attached directly to the Codex window — with tray controls, global hotkeys, shared chat history, multi-monitor support, and automatic rollback if a switch fails.
-
-[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows&logoColor=white)](https://github.com/ZOONGG/codex-swap-account)
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![Build](https://github.com/ZOONGG/codex-swap-account/actions/workflows/windows-ci.yml/badge.svg)](https://github.com/ZOONGG/codex-swap-account/actions/workflows/windows-ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/ZOONGG/codex-swap-account?display_name=tag&sort=semver)](https://github.com/ZOONGG/codex-swap-account/releases/latest)
-[![License](https://img.shields.io/github/license/ZOONGG/codex-swap-account)](LICENSE)
-[![No telemetry](https://img.shields.io/badge/telemetry-none-2DD4A3)](#privacy-and-security)
-
-[Download latest release](https://github.com/ZOONGG/codex-swap-account/releases/latest) ·
-[Report a bug](https://github.com/ZOONGG/codex-swap-account/issues/new?template=bug_report.md) ·
-[Request a feature](https://github.com/ZOONGG/codex-swap-account/issues/new?template=feature_request.md)
-
-<p align="center">
-  <strong>English</strong> ·   <a href="README_RU.md">Русский</a>
-</p>
+[下载中文增强版](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) · [升级记录](CHANGELOG_ZH.md) · [原项目](https://github.com/ZOONGG/codex-swap-account) · [MIT 许可证](LICENSE)
 
 </div>
 
-<p align="center">
-  <img src="docs/images/en/hero.jpg" alt="Codex Swap Account overlay inside the Codex desktop app" width="100%">
-</p>
+![中文展开浮层与剩余额度](docs/images/zh-CN/expanded-mode.png)
 
-> [!IMPORTANT]
-> Codex Swap Account is an **unofficial community tool**. It is not affiliated with, endorsed by, or sponsored by OpenAI.  
-> Never publish, upload, or commit your `auth.json` files.
+## 来源与致谢
 
----
+**本项目基于 [ZOONGG/codex-swap-account](https://github.com/ZOONGG/codex-swap-account) 二次开发。** 原项目的账号管理、切换事务、回滚、托盘、浮层和快捷键等基础能力来自 ZOONGG 与上游贡献者；本仓库在这些能力上增加简体中文适配、Windows 桌面兼容修复和交互优化。
 
-## Why this exists
+这是独立维护的中文增强版本。保留上游 [MIT 许可证及版权声明](LICENSE)，原版英文说明保存在 [README_UPSTREAM.md](README_UPSTREAM.md)，俄文说明保存在 [README_RU.md](README_RU.md)。上游可参考 [v1.0.0](https://github.com/ZOONGG/codex-swap-account/tree/v1.0.0)；本仓库首个提交保存的是引入时的源码快照，后续提交记录本次升级过程。
 
-Using several Codex accounts normally means repeatedly signing out, opening a browser, completing authentication, and restarting your workflow.
+本工具是社区项目，与 OpenAI 没有隶属或官方合作关系。此仓库为私有仓库，查看代码、图片和下载发布附件需要对应的 GitHub 访问权限。
 
-Codex Swap Account turns that into a one-click action:
+## 这次升级了什么
 
-1. choose a profile in the overlay, tray menu, or with a hotkey;
-2. the app safely saves the current authorization;
-3. Codex restarts with the selected account;
-4. your real workspace folders and chat history remain shared across every account.
+| 方向 | 中文增强版的变化 |
+| --- | --- |
+| 简体中文 | 设置、账号管理、菜单、额度和提示支持简体中文，保留英文与俄文。 |
+| 剩余额度 | 浮层直接显示服务器返回的 5 小时、每周剩余百分比。启用自动查询时，默认当前账号每 30 秒、其他账号每 60 秒刷新，可在设置中调整。 |
+| 浮层布局 | 默认高度为 44 个逻辑像素；支持拖动、位置记忆和 Windows DPI 缩放。 |
+| 位置预设 | 菜单右侧、底部左侧、底部居中、底部右侧及自定义位置；底部位置保留边距，并限制在窗口范围内。 |
+| 快捷键 | 可以显示为“未设置”；支持单项“清除”、右键清空、Backspace 清除；**只有点击“保存”才生效**。 |
+| 切换兼容 | 兼容本地验证过的 Windows Codex 桌面进程与启动入口，限制关闭范围，并让助手独立于 Codex 的重启运行。 |
+| 交互修复 | 修复紧凑菜单刷新后的错位、刷新时收起、按住第三个账号拖动时主账号被滚走等问题。 |
+| 窗口与外观 | 确认框按窗口与屏幕范围定位；最小化设置窗口时隐藏，重新打开时复用；操作菜单与高亮项增加圆角。 |
 
-The app runs quietly in the system tray and only shows the overlay when a verified Codex window is available.
+原项目已经提供多账号切换、共享本地工作区与聊天数据、授权备份及失败回滚等基础功能。这些功能不作为本仓库新增功能宣传。
 
-## Highlights
+## 界面预览
 
-| | Feature |
-|---|---|
-| **Fast switching** | Switch accounts from the overlay, tray menu, or `Ctrl + Alt + 1…9`. |
-| **Shared Codex history** | Keep chats, projects, session history, and local Codex databases available from every account; only authorization changes. |
-| **Compact and expanded modes** | Use a minimal dropdown or a one-click segmented profile bar. |
-| **Safe transaction** | Back up the active authorization and automatically roll back if switching fails. |
-| **Multi-monitor ready** | The overlay follows Codex across monitors, window moves, resizes, and DPI changes. |
-| **Local only** | No telemetry, no cloud sync, no reverse proxy, and no credential upload. |
-| **Tray companion** | Launch Codex, show/hide the overlay, manage profiles, and change settings from the tray. |
-| **Bilingual UI** | English and Russian interface support. |
-| **No admin rights** | Runs per-user and does not require a Windows service. |
-| **Open source** | Built with C#, .NET 8, WPF, and a security-focused repository workflow. |
+以下图片由程序的真实 WPF 控件渲染。**账号名称和额度均为演示数据**，没有使用真实邮箱、账号凭据或聊天内容。
 
-## Screenshots
+### 展开与紧凑模式
 
-### Expanded mode
+展开模式直接展示多个账号与额度；紧凑模式适合较窄的窗口。
 
-Switch profiles instantly with one click.
+![展开模式](docs/images/zh-CN/expanded-mode.png)
 
-<p align="center">
-  <img src="docs/images/en/expanded-mode.jpg" alt="Expanded account switcher" width="820">
-</p>
+![紧凑模式](docs/images/zh-CN/compact-mode.png)
 
-### Compact mode
+紧凑菜单中的“刷新全部额度”会保留菜单，刷新结果更新后可以继续查看账号。
 
-A smaller control with a dropdown for profiles and common actions.
+<img src="docs/images/zh-CN/profile-menu.png" alt="中文账号菜单与演示额度" width="560">
 
-<p align="center">
-  <img src="docs/images/en/compact-mode.jpg" alt="Compact account switcher" width="760">
-</p>
+### 圆角操作菜单
 
-### Profile menu
+添加账号、刷新额度、账号管理、设置及隐藏浮层集中在这里。
 
-Add profiles, open profile management, change settings, or hide the switcher.
+<img src="docs/images/zh-CN/action-menu.png" alt="带圆角的操作菜单" width="280">
 
-<p align="center">
-  <img src="docs/images/en/profile-menu.jpg" alt="Profile actions menu" width="900">
-</p>
+### 位置、显示模式与缩放
 
-### Appearance settings
+拖动可以调整浮层位置，也可以在设置中选择位置预设。界面缩放只影响账号浮层。
 
-Choose the display mode, position, scale, and animation behavior.
+![中文外观设置](docs/images/zh-CN/appearance.png)
 
-<p align="center">
-  <img src="docs/images/en/settings-appearance.jpg" alt="Appearance settings" width="900">
-</p>
+### 快捷键可以不设置
 
-### Profile management
+点“清除”或右键清空后会显示“未设置”。录入时，框内直接提示 **Backspace 清除 · Esc 取消**。修改、清除、重置都先暂存，点击“保存”才会应用；没有保存就关闭窗口，会保留原来的快捷键。
 
-Create, organize, and manage local Codex profiles.
+![快捷键单项清除与保存](docs/images/zh-CN/hotkeys.png)
 
-<p align="center">
-  <img src="docs/images/en/settings-profiles.jpg" alt="Profile management settings" width="900">
-</p>
+![录入框内的 Backspace 提示](docs/images/zh-CN/hotkey-recording.png)
 
----
+### 额度与自动刷新
 
-## Download
+显示可查询到的剩余比例。未知或暂不可查询的额度显示为不可用，不能当作 0%。
 
-Go to the [latest GitHub release](https://github.com/ZOONGG/codex-swap-account/releases/latest).
+![中文额度设置](docs/images/zh-CN/quota-settings.png)
 
-Current stable release: **v1.0.0** (September 20, 2026).
+额度通过定时查询更新，可能有延迟；它不是服务器主动推送的实时读数，也不代表还能发送多少条固定长度的消息。
 
-Recommended download:
+## 下载与使用
 
-```text
-CodexProfileOverlay-win-x64-portable.zip
-```
+1. 打开 [本仓库 Releases](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest)，下载 `CodexProfileOverlay-win-x64-portable.zip`。
+2. 解压到固定文件夹，运行 `CodexProfileOverlay.exe`。便携包包含运行时，无需额外安装 .NET。
+3. 打开 Codex，工具会在识别到 Codex 窗口后显示浮层；也可以通过托盘菜单显示或隐藏。
+4. 在设置的“语言”页选择简体中文；中文系统默认语言也可自动使用中文。
+5. 使用“添加账号”完成本人账号的登录，再通过浮层或托盘切换。
+6. 如不需要快捷键，在“快捷键”页逐项清除，再点击“保存”。
 
-Standalone executable:
+运行环境：Windows 10/11、x64、Codex 桌面版。添加账号与自动额度查询需要可用的 Codex CLI。单独下载的 EXE 同样包含运行时；发布页提供 `SHA256SUMS.txt` 供校验。
 
-```text
-CodexProfileOverlay.exe
-```
+切换账号会关闭并重新启动 Codex。建议在当前工作结束后切换；切换过程中会备份授权，失败时尝试恢复。Windows 可能对未签名程序显示 SmartScreen 提示，可根据来源与发布页校验值自行判断是否运行。
 
-Integrity hashes:
+## 数据与配置
 
-```text
-SHA256SUMS.txt
-```
+- 账号授权与切换备份保存在本机，不应提交或上传 `auth.json`、账号目录、日志或备份。
+- 常规设置目录为 `%LOCALAPPDATA%\CodexProfileOverlay`；检测到已有 Codex 打包环境的数据目录时，会继续复用它。
+- 切换流程针对授权数据，不复制整个用户目录或工作区；共享会话等行为沿用上游设计。
+- 额度查询会与服务端通信。网络、登录状态、服务端响应以及 Codex CLI 兼容性会影响可用性。
+- 本仓库仅包含源码、说明和演示配图，运行时生成的数据与凭据被排除。
 
-### Requirements
+## 构建与验证
 
-- Windows 10 or Windows 11
-- x64 system
-- Codex desktop app
-- Codex CLI available in `PATH` when adding a new profile
-
-> [!NOTE]
-> Windows SmartScreen may warn about an unsigned executable. This is expected for an independently distributed open-source build. Verify the SHA-256 hash from the release and review/build the source if you prefer.
-
-## Quick start
-
-1. Download `CodexProfileOverlay-win-x64-portable.zip`.
-2. Extract the archive to a normal folder.
-3. Run `CodexProfileOverlay.exe`.
-4. Open Codex.
-5. Use **Add profile** to authorize your accounts.
-6. Select a profile from the overlay, tray menu, or a hotkey.
-
-The application remains in the system tray. Closing the settings window does not exit the background process.
-
-## Default hotkeys
-
-| Action | Default shortcut |
-|---|---|
-| Show or hide the overlay | `Ctrl + Alt + C` |
-| Switch to profile 1 | `Ctrl + Alt + 1` |
-| Switch to profile 2 | `Ctrl + Alt + 2` |
-| Switch to profile 3 | `Ctrl + Alt + 3` |
-| Switch to profiles 4–9 | `Ctrl + Alt + 4…9` |
-
-Hotkeys can be changed or cleared in **Settings → Hotkeys**. The app reports a conflict when Windows cannot register a shortcut.
-
-## How switching works
-
-On Windows, the desktop app is identified by its installation and product metadata, including Store versions whose executable and Start-menu display name are ChatGPT. Closing is limited to that desktop app and its Codex workers; VS Code, browsers, project servers, terminals, and the overlay are excluded. Restart uses the OpenAI.Codex AppUserModelID rather than the display name. If process identity cannot be verified, switching stops before changing authorization.
-
-Codex normally stores local state under:
-
-```text
-%USERPROFILE%\.codex
-```
-
-Codex Swap Account keeps both the directory and local state stable for every profile:
-
-```text
-%USERPROFILE%\.codex
-├── chats / sessions  ← shared by every profile
-├── projects          ← shared by every profile
-├── settings
-├── history           ← shared by every profile
-├── caches
-├── databases
-└── auth.json         ← the only switched file
-```
-
-Saved account profiles are stored separately:
-
-```text
-%USERPROFILE%\.codex-profiles
-├── Work
-│   └── auth.json
-├── Personal
-│   └── auth.json
-└── Backup
-    └── auth.json
-```
-
-During a switch, the app:
-
-1. prevents concurrent switch operations;
-2. closes Codex gracefully;
-3. on the first switch after upgrading, merges legacy per-profile sessions into shared history;
-4. saves the freshly updated `auth.json` back to the active profile;
-5. creates a backup of the current authorization;
-6. atomically replaces `auth.json` with the selected profile;
-7. records the active profile only after replacement succeeds;
-8. launches Codex normally;
-9. restores the previous authorization if any critical step fails.
-
-The application does **not** switch or copy the `.codex` directory on every account change. This makes restarts faster, avoids locked SQLite conflicts, and keeps every local chat available from every profile.
-
-### Rollback backup policy
-
-Each new rollback backup contains only `previous-auth.json`, previous active-profile metadata, and a small hash/timestamp manifest. Sessions, rollout files, attachments, settings, databases, logs, caches, and project data are never copied. An authorization file above 10 MB or a switch backup above 25 MB is rejected before account state changes.
-
-At startup and after a switch, the app keeps at most five completed backups, removes completed backups older than seven days, caps their total storage at 100 MB, and removes only clearly recognized abandoned temporary transactions older than 24 hours. Active transactions are never deleted. **Settings → Advanced** shows backup usage and provides actions to open the folder, clean completed backups, or inspect and explicitly clean legacy `state-*` backups while retaining the two newest.
-
-## Adding a profile
-
-The **Add profile** flow:
-
-1. creates a directory under `%USERPROFILE%\.codex-profiles`;
-2. creates a profile-local `config.toml` when required;
-3. runs `codex login` with `CODEX_HOME` set only for that login process;
-4. waits for browser authentication;
-5. checks that the profile authorization file exists;
-6. adds the profile to the switcher.
-
-The app never displays or logs the credential contents.
-
-## Display modes
-
-### Auto
-
-Uses Expanded mode when enough space is available and Compact mode for narrow Codex windows. Hysteresis prevents mode flickering during resizing.
-
-### Expanded
-
-Shows all profiles as segmented buttons for immediate one-click switching.
-
-### Compact
-
-Shows the active profile in a smaller dropdown with access to profiles and common actions.
-
-The overlay can be positioned after the Codex menu, centered, aligned right, or dragged to a custom location with the left mouse button. Drag anywhere on the panel, including an account button; a normal click still opens the menu or selects an account. The custom position is saved when you release the mouse and restored after restarting the overlay.
-
-## Profile status and limit indicators
-
-Settings → **Status and limits** provides optional local metadata for every profile: an emoji, a short label (24 characters), a note (120 characters), and an optional reset time. This data is saved in `%LOCALAPPDATA%\CodexProfileOverlay\profile-status.json`; it is never written to a profile directory or credential file. Manual labels and notes stay in Settings. A manual emoji can be enabled separately for the overlay and is off by default.
-
-The automatic provider starts an isolated `codex app-server` with `CODEX_HOME` pointed at the selected profile and reads the structured `account/rateLimits/read` response. It no longer starts an interactive terminal or parses the rendered `/status` menu. **Test provider support** verifies this same data path immediately.
-
-Only these automatic fields are cached: limit window label, remaining percentage, reset timestamp, capture timestamp, Codex CLI version, and the sanitized source `codex-cli-status`. The raw response, account email, session ID, model, permissions, directory, project path, and auth contents are not persisted.
-
-When a supported provider becomes available, the overlay remains emoji-only:
-
-- ⭐ recommended profile;
-- 🟢 at or above the configurable high threshold (60% by default);
-- 🟡 at or above the medium threshold (25% by default);
-- 🔴 below the medium threshold or exhausted;
-- no emoji for unknown, disabled, unavailable, failed, or stale data.
-
-The effective capacity is the lowest remaining percentage across all reported windows. For example, 99% remaining in the 5-hour window plus 0% remaining in the weekly window is 🔴. A recommendation requires at least two fresh comparable profiles, maximizes that lowest percentage, then uses average capacity and nearest reset as tie-breakers. An exact tie produces no recommendation. Unknown usage is never displayed as zero. Cached automatic snapshots are kept when the feature is disabled or a refresh fails.
-
-When the master toggle is off, no background CLI sessions are started, no automatic emoji is displayed, and cached snapshots are preserved. **Refresh now** intentionally refreshes the selected profile, while the normal overlay shows only one small emoji beside the profile name. Detailed percentages and reset times are shown in Settings and in the indicator tooltip.
-
-## System tray
-
-The tray menu provides:
-
-- Open Codex
-- Show or hide the switcher
-- Switch profiles
-- Open Settings
-- Enable or disable Start with Windows
-- Exit the application
-
-The tray process stays alive when Codex is closed or minimized and automatically reattaches when Codex becomes available again.
-
-## Privacy and security
-
-Codex Swap Account is designed to operate entirely on the local machine.
-
-- no telemetry;
-- no analytics;
-- no remote account database;
-- no credential upload;
-- no browser-cookie export;
-- no reverse proxy;
-- no Windows service;
-- no administrator privileges;
-- no parsing, printing, or logging of `auth.json` contents.
-
-Local application data is stored under:
-
-```text
-%LOCALAPPDATA%\CodexProfileOverlay
-```
-
-This may contain non-secret settings, logs, backups, profile display metadata, and removed-profile backups.
-
-Read the complete security policy in [SECURITY.md](SECURITY.md).
-
-> [!WARNING]
-> Treat every `auth.json` file like a password. Never share it, attach it to an issue, or commit it to Git.
-
-## Installation options
-
-### Portable
-
-Download the portable ZIP, extract it, and run:
+开发环境需要 .NET 8 SDK。交互界面检查需要 Windows 桌面环境。
 
 ```powershell
-.\CodexProfileOverlay.exe
+dotnet build CodexProfileOverlay.sln -c Release -p:Platform=x64
+dotnet test CodexProfileOverlay.sln -c Release -p:Platform=x64
+.\publish.ps1 -Configuration Release
 ```
 
-### Per-user installation from source
+便携包输出到 `artifacts/`。Windows CI 会构建、运行核心测试、检查仓库文件，并生成下载附件。
+
+快捷键保存及窗口布局检查可以单独运行：
 
 ```powershell
-.\install.ps1 -Launch
+dotnet run --project tests/OverlayUiRegression/OverlayUiRegression.csproj -c Release -p:Platform=x64 -- --hotkeys-only
+dotnet run --project tests/OverlayUiRegression/OverlayUiRegression.csproj -c Release -p:Platform=x64 -- --header-only
 ```
 
-Enable Start with Windows during installation:
+演示图可重复生成，过程使用模拟账号与额度，不读取真实授权：
 
 ```powershell
-.\install.ps1 -StartWithWindows -Launch
+dotnet run --project tests/OverlayUiRegression/OverlayUiRegression.csproj -c Release -p:Platform=x64 -- --docs docs/images/zh-CN
 ```
 
-Default installation location:
+更详细的内部说明见 [架构文档](docs/ARCHITECTURE.md) 和 [界面检查说明](tests/OverlayUiRegression/README.md)。
 
-```text
-%LOCALAPPDATA%\CodexProfileOverlay
-```
+## 当前验证范围
 
-## Uninstall
+本次增强版在本地 Windows 与 .NET 8 环境完成构建、核心测试及针对性 WPF 交互检查。账号切换、额度查询依赖本机 Codex 和实际登录状态，隔离界面检查不等同于真实账号切换的端到端验证。尚未声称覆盖所有 Codex 版本或显示器组合。
 
-From the repository:
+问题反馈请说明 Codex 版本、显示缩放、浮层模式和复现步骤；截图前请遮挡真实邮箱和账号信息。
 
-```powershell
-.\uninstall.ps1
-```
+## 许可证
 
-The uninstaller removes the application, its shortcuts, and its startup entry. It does **not** remove:
-
-- `%USERPROFILE%\.codex`;
-- `%USERPROFILE%\.codex-profiles`;
-- Codex chats;
-- Codex projects;
-- Codex settings;
-- Codex history;
-- account authorization files.
-
-## Build from source
-
-### Prerequisites
-
-- Windows 10/11 x64
-- PowerShell 5.1 or later
-- .NET 8 SDK
-
-Clone the repository:
-
-```powershell
-git clone https://github.com/ZOONGG/codex-swap-account.git
-cd codex-swap-account
-```
-
-Run tests:
-
-```powershell
-.\test.ps1
-```
-
-Build Release:
-
-```powershell
-.\build.ps1
-```
-
-Run the repository safety scan:
-
-```powershell
-.\verify-repository-safety.ps1
-```
-
-Publish the self-contained Windows build:
-
-```powershell
-.\publish.ps1
-```
-
-Output:
-
-```text
-artifacts\publish\CodexProfileOverlay.exe
-artifacts\CodexProfileOverlay-win-x64-portable.zip
-```
-
-## Repository structure
-
-```text
-.
-├── .github/                         GitHub Actions and templates
-├── docs/                            Architecture, privacy, and screenshots
-├── src/
-│   ├── CodexProfileOverlay/         WPF desktop application
-│   └── CodexProfileOverlay.Core/    Profiles, settings, switching, safety
-├── tests/
-│   └── CodexProfileOverlay.Tests/   Unit tests with fake credentials
-├── build.ps1
-├── test.ps1
-├── publish.ps1
-├── install.ps1
-├── uninstall.ps1
-└── verify-repository-safety.ps1
-```
-
-## Troubleshooting
-
-### Codex is not detected
-
-- Make sure the official Codex desktop app is open.
-- Restart Codex Swap Account.
-- Check the logs under `%LOCALAPPDATA%\CodexProfileOverlay\logs`.
-- Verify that Codex can be started normally.
-
-### The overlay is hidden
-
-- Press `Ctrl + Alt + C`.
-- Left-click the tray icon.
-- Use **Show switcher** from the tray menu.
-- Check **Show automatically when Codex opens** in Settings.
-
-### A hotkey does not work
-
-Another application may already own that shortcut. Open **Settings → Hotkeys** and choose a different combination.
-
-### A profile cannot send requests
-
-The stored login may have expired or been revoked. Remove/re-add the local profile or authenticate it again through the Add profile flow.
-
-### Windows SmartScreen blocks the app
-
-Choose **More info → Run anyway** only after downloading from the official repository release and verifying the SHA-256 hash.
-
-## Limitations
-
-- Windows x64 only.
-- Switching requires Codex to restart so it can load the selected authorization.
-- Adding profiles requires the Codex CLI.
-- The current installer is a per-user PowerShell installer rather than MSI/MSIX.
-- The application depends on window/process metadata available to a normal Windows user process.
-
-## Contributing
-
-Contributions are welcome.
-
-Before opening a pull request:
-
-1. read [CONTRIBUTING.md](CONTRIBUTING.md);
-2. keep credential files and local user data out of Git;
-3. run `.\test.ps1`;
-4. run `.\build.ps1`;
-5. run `.\verify-repository-safety.ps1`;
-6. describe manual UI verification where relevant.
-
-Use [GitHub Issues](https://github.com/ZOONGG/codex-swap-account/issues) for reproducible bugs and focused feature requests.
-
-## License
-
-Distributed under the [MIT License](LICENSE).
-
-## Disclaimer
-
-Codex Swap Account is an unofficial community project and is not affiliated with, endorsed by, or sponsored by OpenAI.
-
-OpenAI and Codex are trademarks of their respective owner. This project provides a local companion interface and does not modify the official Codex installation.
+沿用 [MIT License](LICENSE)。感谢 [ZOONGG](https://github.com/ZOONGG) 与原项目贡献者提供的基础实现。

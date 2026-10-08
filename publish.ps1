@@ -37,6 +37,15 @@ if (Test-Path -LiteralPath $Output) {
     -o $Output
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+# Include the attribution, license and illustrated usage guide in portable builds.
+foreach ($name in @("README.md", "README_UPSTREAM.md", "README_RU.md", "CHANGELOG_ZH.md", "LICENSE")) {
+    $document = Join-Path $repo $name
+    if (Test-Path -LiteralPath $document -PathType Leaf) {
+        Copy-Item -LiteralPath $document -Destination $Output -Force
+    }
+}
+Copy-Item -LiteralPath (Join-Path $repo "docs") -Destination $Output -Recurse -Force
+
 $zip = Join-Path $repo "artifacts\CodexProfileOverlay-win-x64-portable.zip"
 if (Test-Path -LiteralPath $zip) {
     Remove-Item -LiteralPath $zip -Force

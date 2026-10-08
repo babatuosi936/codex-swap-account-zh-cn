@@ -36,6 +36,12 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Length == 2 && args[0] == "--docs")
+            {
+                RenderDocumentation(args[1]);
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--hotkeys-only"))
             {
                 RunHotkeysScenario();
