@@ -2,6 +2,7 @@
 
 ## Local UI fix - 2026-10-08
 
+- Show color and manual status settings as a permanent section on the quota settings page, without an expander or collapse arrow.
 - Keep the compact menu open when clicking Refresh all quotas, and update quota results in place. Commands that open another window retain their closing behavior.
 - Keep the compact account menu anchored to the persistent overlay shell when manual or automatic quota refresh replaces account buttons.
 - Close the native popup before rebuilding and reopen it after layout and owner placement are updated, preserving an open menu without detached positioning.

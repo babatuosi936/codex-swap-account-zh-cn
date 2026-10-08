@@ -536,7 +536,15 @@ internal sealed class SettingsWindow : Window
             Padding = new Thickness(16),
             Margin = new Thickness(0, 18, 0, 0),
         });
-        stack.Children.Add(new Expander { Header = localizer["QuotaAdvanced"], Content = advanced, Margin = new Thickness(0, 18, 0, 0), Foreground = Brush("StrongTextBrush") });
+        stack.Children.Add(new TextBlock
+        {
+            Text = localizer["QuotaAdvanced"],
+            FontSize = 20,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Brush("StrongTextBrush"),
+            Margin = new Thickness(0, 18, 0, 10),
+        });
+        stack.Children.Add(advanced);
         return stack;
     }
 
