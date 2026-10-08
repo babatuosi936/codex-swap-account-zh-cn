@@ -2,33 +2,39 @@ namespace CodexProfileOverlay.Core.Services;
 
 public sealed class OverlayVisibilityState
 {
+    private const long FocusLossGraceMilliseconds = 3000;
+    private long? focusLostAt;
     private bool foregroundWasEligible;
 
-    // Keep a visible overlay throughout a recognized capture session, without
-    // changing visibility for ordinary application switches or hidden overlays.
-    public bool ResolveForegroundVisibility(bool foregroundEligible, bool screenshotActive = false)
+    // A capture overlay can temporarily become foreground and cover Codex.
+    // Preserve an already-visible overlay briefly, but never reveal a hidden
+    // overlay just because Codex exists behind another application.
+    public bool ResolveForegroundVisibility(bool foregroundEligible, long monotonicMilliseconds)
     {
         if (!ShouldShowOverlay)
         {
             ResetForegroundVisibility();
             return false;
         }
-        if (screenshotActive)
-        {
-            return foregroundWasEligible;
-        }
         if (foregroundEligible)
         {
             foregroundWasEligible = true;
+            focusLostAt = null;
             return true;
         }
-        ResetForegroundVisibility();
-        return false;
+        if (!foregroundWasEligible)
+        {
+            return false;
+        }
+        focusLostAt ??= monotonicMilliseconds;
+        long elapsed = monotonicMilliseconds - focusLostAt.Value;
+        return elapsed >= 0 && elapsed < FocusLossGraceMilliseconds;
     }
 
     private void ResetForegroundVisibility()
     {
         foregroundWasEligible = false;
+        focusLostAt = null;
     }
 
     public bool CodexAvailable { get; private set; }

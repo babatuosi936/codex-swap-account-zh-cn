@@ -40,7 +40,6 @@ internal sealed class OverlayController : IDisposable
     private CodexWindowInfo? attachedWindow;
     private bool switching;
     private bool automaticUsageRefreshRunning;
-    private bool screenshotWasActive;
 
     public OverlayController(
         AppPaths paths,
@@ -67,7 +66,7 @@ internal sealed class OverlayController : IDisposable
         localizer = new Localizer(settings.Language);
         visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
         windowFinder = new CodexWindowFinder(logger);
-        timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(200) };
+        timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(750) };
         timer.Tick += (_, _) => TickSafely();
         statusStore = new ProfileStatusStore(paths.ProfileStatusFile);
         statusService = new ProfileStatusService(statusStore, new CodexCliStatusUsageProvider(), logger);
@@ -209,13 +208,7 @@ internal sealed class OverlayController : IDisposable
         bool foregroundBelongsToCodexOrOverlay = ForegroundBelongsToCodexOrOverlay(found, overlayWindow!.Handle);
         bool foregroundEligible = foregroundBelongsToCodexOrOverlay
             && IsCodexOrOverlayTopVisibleAtClientCenter(found);
-        bool screenshotActive = ScreenshotWindowDetector.IsCaptureActive();
-        if (screenshotActive != screenshotWasActive)
-        {
-            screenshotWasActive = screenshotActive;
-            logger.Info($"QQ screenshot canvas active: {screenshotActive}.");
-        }
-        bool shouldShowOverlay = visibilityState.ResolveForegroundVisibility(foregroundEligible, screenshotActive);
+        bool shouldShowOverlay = visibilityState.ResolveForegroundVisibility(foregroundEligible, Environment.TickCount64);
         overlayWindow.AllowAutoShow = shouldShowOverlay;
         if (!shouldShowOverlay)
         {
