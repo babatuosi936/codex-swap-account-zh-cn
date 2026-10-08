@@ -8,7 +8,9 @@ See the remaining usage allowance across your accounts, switch from an overlay b
 
 **English** · [简体中文](README.md)
 
-[Download — extract and run](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [Release notes](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) · [Quick start](#quick-start) · [Screenshots](#screenshots) · [Improvements over the original project](#improvements-over-the-original-project)
+[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [How to use](#quick-start)
+
+For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 
 </div>
 
@@ -35,8 +37,8 @@ Switching closes and restarts Codex, so finish your current work before switchin
 
 Requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex CLI is also required for adding accounts and automatic usage queries.
 
-1. Click [Download portable ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) to download `CodexProfileOverlay-win-x64-portable.zip` directly.
-2. Extract it to a permanent folder and run `CodexProfileOverlay.exe`. The portable package includes its runtime, so you do not need to install .NET separately.
+1. Click [Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) and save `CodexProfileOverlay.exe`.
+2. Put the EXE in a permanent folder and double-click it to run. It includes its runtime, so you do not need to install .NET separately.
 3. Open Codex. The account overlay appears once the tool detects its window. You can also show or hide the overlay from the system tray.
 4. Choose **English** under **Settings → Language**, or use the system language setting.
 5. Use **Add profile** to sign in to your accounts. Once saved, they appear in the overlay with any available usage information.
@@ -44,7 +46,9 @@ Requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex C
 
 If you do not need hotkeys, open **Settings → Hotkeys**, clear the individual shortcuts, and click **Save**. To change the overlay position, drag it or choose a preset under **Settings → Appearance**.
 
-The [release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) also includes a standalone, self-contained EXE and `SHA256SUMS.txt` for verification. Windows may show a SmartScreen prompt for an unsigned executable; check the source and published hashes before deciding whether to run it.
+**The ZIP is optional.** To keep the illustrated English and Chinese guides with the program, download the [program and documentation ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip), extract it, and run the EXE inside. It contains the same executable as the standalone download, with identical functionality. Choose either download; you do not need both.
+
+The [release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) provides release notes and `SHA256SUMS.txt`. The checksum file helps verify your download; it is not required to run the program. Windows may show a SmartScreen prompt for an unsigned executable; check the source and published hashes before deciding whether to run it.
 
 This repository is currently private. Access to its code, images, and release downloads requires the appropriate GitHub permissions.
 
