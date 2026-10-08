@@ -8,7 +8,7 @@ See the remaining usage allowance across your accounts, switch from an overlay b
 
 **English** · [简体中文](README.md)
 
-[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [How to use](#quick-start)
+[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.0-zh.1) · [How to use](#quick-start)
 
 For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 

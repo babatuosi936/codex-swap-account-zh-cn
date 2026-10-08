@@ -8,7 +8,7 @@
 
 **简体中文** · [English](README_EN.md)
 
-[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [使用说明](#快速开始)
+[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.0-zh.1) · [使用说明](#快速开始)
 
 日常使用下载 EXE 即可，直接运行，无需解压或额外安装 .NET。
 
