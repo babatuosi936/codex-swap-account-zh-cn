@@ -1,4 +1,4 @@
-> 本文件保留上游英文说明，供出处与设计参考；其中下载与问题链接指向 ZOONGG/codex-swap-account。中文增强版请阅读 [README.md](README.md)。
+> 本文件保留引入时的上游英文说明，供出处与设计参考；其中下载与问题链接指向 ZOONGG/codex-swap-account。当前版本的功能和使用步骤请阅读 [README.md](README.md)。
 
 <div align="center">
 
@@ -30,7 +30,7 @@ Switch between multiple Codex accounts from an overlay attached directly to the 
 </p>
 
 > [!IMPORTANT]
-> Codex Swap Account is an **unofficial community tool**. It is not affiliated with, endorsed by, or sponsored by OpenAI.<br>
+> Codex Swap Account is an **unofficial community tool**. It is not affiliated with, endorsed by, or sponsored by OpenAI.
 > Never publish, upload, or commit your `auth.json` files.
 
 ---
@@ -166,8 +166,6 @@ Hotkeys can be changed or cleared in **Settings → Hotkeys**. The app reports a
 
 ## How switching works
 
-On Windows, the desktop app is identified by its installation and product metadata, including Store versions whose executable and Start-menu display name are ChatGPT. Closing is limited to that desktop app and its Codex workers; VS Code, browsers, project servers, terminals, and the overlay are excluded. Restart uses the OpenAI.Codex AppUserModelID rather than the display name. If process identity cannot be verified, switching stops before changing authorization.
-
 Codex normally stores local state under:
 
 ```text
@@ -246,7 +244,7 @@ Shows all profiles as segmented buttons for immediate one-click switching.
 
 Shows the active profile in a smaller dropdown with access to profiles and common actions.
 
-The overlay can be positioned after the Codex menu, centered, aligned right, or dragged to a custom location with the left mouse button. Drag anywhere on the panel, including an account button; a normal click still opens the menu or selects an account. The custom position is saved when you release the mouse and restored after restarting the overlay.
+The overlay can be positioned after the Codex menu, centered, aligned right, or dragged to a custom location with `Alt + left mouse button`.
 
 ## Profile status and limit indicators
 
