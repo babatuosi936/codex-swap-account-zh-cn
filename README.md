@@ -50,7 +50,7 @@
 
 [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest)提供升级说明及 `SHA256SUMS.txt` 校验文件。校验文件用于核对下载是否完整，不是运行程序必需的文件。Windows 可能对未签名程序显示 SmartScreen 提示，可根据来源与发布页校验值自行判断是否运行。
 
-当前仓库为私有仓库，访问代码、配图和下载附件需要相应的 GitHub 权限。
+本仓库为公开项目，无需登录 GitHub 即可查看源码、配图和下载文件。
 
 ## 界面预览
 

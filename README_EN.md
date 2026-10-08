@@ -50,7 +50,7 @@ If you do not need hotkeys, open **Settings → Hotkeys**, clear the individual 
 
 The [release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) provides release notes and `SHA256SUMS.txt`. The checksum file helps verify your download; it is not required to run the program. Windows may show a SmartScreen prompt for an unsigned executable; check the source and published hashes before deciding whether to run it.
 
-This repository is currently private. Access to its code, images, and release downloads requires the appropriate GitHub permissions.
+This is a public repository. You can view the source code and screenshots and download releases without signing in to GitHub.
 
 ## Screenshots
 
