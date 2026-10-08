@@ -62,13 +62,14 @@ internal static partial class Program
         void Click(Button button) { button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump(); }
         void Press(Button button, Key key) => button.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window!), 0, key) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
         void Check(string stage, bool condition) { Require(condition, "Hotkey draft regression: " + stage); Evidence.Add(new { kind = "hotkey-draft", stage, saveCalls }); }
-        bool AllEmpty(HotkeySettings hotkeys) => hotkeys.ToggleOverlay is null && hotkeys.ProfileHotkeys.All(gesture => gesture is null);
+        bool AllEmpty(HotkeySettings hotkeys) => hotkeys.ToggleOverlay is null && hotkeys.ProfileHotkeys.Take(profiles.Length).All(gesture => gesture is null);
         bool AllSet(HotkeySettings hotkeys) => hotkeys.ToggleOverlay is { IsEmpty: false } && hotkeys.ProfileHotkeys.All(gesture => gesture is { IsEmpty: false });
         try
         {
             window = CreateWindow();
             var clearButtons = Descendants((DependencyObject)window.Content).OfType<Button>().Where(button => Equals(button.Content, "清除")).ToArray();
             Require(clearButtons.Length == 4, "Each visible hotkey needs its own Clear button.");
+            Require(!Descendants((DependencyObject)window.Content).OfType<Button>().Any(button => Equals(button.Content, "全部清除")), "The bulk-clear action must not be shown.");
             Click(clearButtons[0]);
             Check("left-click-clear-is-only-a-draft", Equals(Fields()[0].Content, "未设置") && AllSet(settings.Hotkeys) && AllSet(store.Load().Hotkeys) && saveCalls == 0);
             Click(Fields()[0]);
@@ -85,13 +86,13 @@ internal static partial class Program
             Click(Fields()[2]);
             Press(Fields()[2], Key.Back);
             Check("backspace-clear-is-only-a-draft", Equals(Fields()[2].Content, "未设置") && AllSet(settings.Hotkeys) && saveCalls == 0);
-            Click(ActionButton("全部清除"));
-            Check("clear-all-waits-for-save", Fields().All(button => Equals(button.Content, "未设置")) && ActionButton("保存").IsEnabled && AllSet(settings.Hotkeys) && AllSet(store.Load().Hotkeys));
+            Click(clearButtons[3]);
+            Check("individual-clears-wait-for-save", Fields().All(button => Equals(button.Content, "未设置")) && ActionButton("保存").IsEnabled && AllSet(settings.Hotkeys) && AllSet(store.Load().Hotkeys));
             // Other settings and window geometry also save through this method.
             windowType.GetMethod("Save", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
             Check("other-setting-save-does-not-commit-hotkey-draft", AllSet(settings.Hotkeys) && AllSet(store.Load().Hotkeys));
             Click(ActionButton("保存"));
-            Check("explicit-save-persists-no-hotkeys", AllEmpty(settings.Hotkeys) && AllEmpty(store.Load().Hotkeys) && Fields().All(button => Equals(button.Content, "未设置")) && !ActionButton("保存").IsEnabled);
+            Check("explicit-save-persists-no-hotkeys", AllEmpty(settings.Hotkeys) && AllEmpty(store.Load().Hotkeys) && settings.Hotkeys.ProfileHotkeys.Skip(profiles.Length).All(gesture => gesture is { IsEmpty: false }) && Fields().All(button => Equals(button.Content, "未设置")) && !ActionButton("保存").IsEnabled);
             var managerType = assembly.GetType("CodexProfileOverlay.HotkeyManager")!;
             using (var manager = (IDisposable)Activator.CreateInstance(managerType, new WindowInteropHelper(window).Handle)!)
             {

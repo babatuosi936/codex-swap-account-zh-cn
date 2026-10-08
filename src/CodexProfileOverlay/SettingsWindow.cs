@@ -415,16 +415,7 @@ internal sealed class SettingsWindow : Window
             rows.Add(HotkeyRow(localizer.Format("ProfileHotkey", index + 1, profiles[index].DisplayName), hotkeyDraft.ProfileHotkeys[index], value => hotkeyDraft.ProfileHotkeys[captured] = value));
         }
 
-        rows.Add(CommandRow((localizer["ClearAllHotkeys"], () =>
-        {
-            hotkeyDraft.ToggleOverlay = null;
-            for (int index = 0; index < hotkeyDraft.ProfileHotkeys.Count; index++)
-            {
-                hotkeyDraft.ProfileHotkeys[index] = null;
-            }
-            MarkHotkeysDirty();
-            Rebuild();
-        }, false), (localizer["ResetHotkeys"], () =>
+        rows.Add(CommandRow((localizer["ResetHotkeys"], () =>
         {
             hotkeyDraft = HotkeySettings.CreateDefault();
             MarkHotkeysDirty();

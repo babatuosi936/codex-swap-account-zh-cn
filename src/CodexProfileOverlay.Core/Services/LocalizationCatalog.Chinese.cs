@@ -37,7 +37,6 @@ public static partial class LocalizationCatalog
         ["RestoreDefaults"] = "恢复默认值",
         ["ResetHotkeys"] = "重置快捷键",
         ["ClearHotkey"] = "清除",
-        ["ClearAllHotkeys"] = "全部清除",
         ["HotkeyNotSet"] = "未设置",
         ["SaveHotkeys"] = "保存",
         ["HotkeysSaveHelp"] = "快捷键可以不设置。修改、清除或重置后，点击“保存”才会生效；关闭窗口会放弃未保存的修改。",
