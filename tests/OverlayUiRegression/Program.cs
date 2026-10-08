@@ -17,7 +17,7 @@ using Point = System.Windows.Point;
 
 // Isolated WPF regression fixture. No controller, network calls, real account
 // directories, Codex windows, or account switching are used here.
-internal static class Program
+internal static partial class Program
 {
     private static readonly Type OverlayType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.OverlayWindow")!;
     private static readonly List<object> Evidence = [];
@@ -36,7 +36,11 @@ internal static class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
-            if (!args.Contains("--auxiliary-only"))
+            if (args.Contains("--hotkeys-only"))
+            {
+                RunHotkeysScenario();
+            }
+            if (!args.Contains("--auxiliary-only") && !args.Contains("--hotkeys-only"))
             {
                 foreach (double scale in new[] { 0.8, 1.0, 1.4 })
                     foreach (var mode in new[] { OverlayDisplayMode.Compact, OverlayDisplayMode.Expanded })
@@ -51,10 +55,14 @@ internal static class Program
                     RunExpandedDragScenario(1.4);
                 }
             }
-            if (!args.Contains("--header-only"))
+            if (!args.Contains("--header-only") && !args.Contains("--hotkeys-only"))
             {
                 RunAuxiliaryWindowScenario("SettingsWindow");
                 RunAuxiliaryWindowScenario("ProfileManagerWindow");
+            }
+            if (args.Length == 0)
+            {
+                RunHotkeysScenario();
             }
             System.IO.File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "popup-regression.json"), JsonSerializer.Serialize(Evidence, new JsonSerializerOptions { WriteIndented = true }));
             System.Console.WriteLine($"PASS: {Evidence.Count} UI checks.");

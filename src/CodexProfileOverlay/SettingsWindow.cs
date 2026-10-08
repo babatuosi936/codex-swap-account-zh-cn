@@ -7,7 +7,6 @@ using System.Windows.Media;
 using CodexProfileOverlay.Core.Models;
 using CodexProfileOverlay.Core.Services;
 using Button = System.Windows.Controls.Button;
-using Control = System.Windows.Controls.Control;
 using Forms = System.Windows.Forms;
 
 namespace CodexProfileOverlay;
@@ -40,6 +39,9 @@ internal sealed class SettingsWindow : Window
     private Button? themeButton;
     private string hotkeyConflictMessage = string.Empty;
     private TextBlock? hotkeyConflictText;
+    private HotkeySettings? hotkeyDraft;
+    private bool hotkeysDirty;
+    private Button? saveHotkeysButton;
     private IReadOnlyList<ProfileInfo> profiles;
     private SettingsPage page = SettingsPage.Status;
     private bool isRebuilding;
@@ -394,29 +396,65 @@ internal sealed class SettingsWindow : Window
 
     private UIElement BuildHotkeysPage()
     {
+        hotkeyDraft ??= CopyHotkeys(settings.Hotkeys);
         var stack = PageStack();
         var rows = new List<UIElement>
         {
-            HotkeyRow(localizer["ToggleSwitcher"], settings.Hotkeys.ToggleOverlay, value => settings.Hotkeys.ToggleOverlay = value),
+            new TextBlock { Text = localizer["HotkeysSaveHelp"], Foreground = Brush("MutedTextBrush"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) },
+            HotkeyRow(localizer["ToggleSwitcher"], hotkeyDraft.ToggleOverlay, value => hotkeyDraft.ToggleOverlay = value),
         };
 
-        while (settings.Hotkeys.ProfileHotkeys.Count < 9)
+        while (hotkeyDraft.ProfileHotkeys.Count < 9)
         {
-            settings.Hotkeys.ProfileHotkeys.Add(null);
+            hotkeyDraft.ProfileHotkeys.Add(null);
         }
 
         for (int index = 0; index < Math.Min(9, profiles.Count); index++)
         {
             int captured = index;
-            rows.Add(HotkeyRow(localizer.Format("ProfileHotkey", index + 1, profiles[index].DisplayName), settings.Hotkeys.ProfileHotkeys[index], value => settings.Hotkeys.ProfileHotkeys[captured] = value));
+            rows.Add(HotkeyRow(localizer.Format("ProfileHotkey", index + 1, profiles[index].DisplayName), hotkeyDraft.ProfileHotkeys[index], value => hotkeyDraft.ProfileHotkeys[captured] = value));
         }
 
-        rows.Add(CommandRow((localizer["ResetHotkeys"], () =>
+        rows.Add(CommandRow((localizer["ClearAllHotkeys"], () =>
         {
-            settings.Hotkeys = HotkeySettings.CreateDefault();
-            Save();
+            hotkeyDraft.ToggleOverlay = null;
+            for (int index = 0; index < hotkeyDraft.ProfileHotkeys.Count; index++)
+            {
+                hotkeyDraft.ProfileHotkeys[index] = null;
+            }
+            MarkHotkeysDirty();
+            Rebuild();
+        }, false), (localizer["ResetHotkeys"], () =>
+        {
+            hotkeyDraft = HotkeySettings.CreateDefault();
+            MarkHotkeysDirty();
             Rebuild();
         }, false)));
+
+        saveHotkeysButton = new Button
+        {
+            Content = localizer["SaveHotkeys"],
+            Style = (Style)FindResource("PrimaryButtonStyle"),
+            MinWidth = 132,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            IsEnabled = hotkeysDirty,
+            Margin = new Thickness(0, 0, 0, 14),
+        };
+        saveHotkeysButton.Click += (_, _) =>
+        {
+            HotkeySettings previous = settings.Hotkeys;
+            settings.Hotkeys = CopyHotkeys(hotkeyDraft);
+            if (Save())
+            {
+                hotkeysDirty = false;
+                saveHotkeysButton.IsEnabled = false;
+            }
+            else
+            {
+                settings.Hotkeys = previous;
+            }
+        };
+        rows.Add(saveHotkeysButton);
 
         hotkeyConflictText = new TextBlock
         {
@@ -427,6 +465,23 @@ internal sealed class SettingsWindow : Window
         rows.Add(hotkeyConflictText);
         stack.Children.Add(Card(rows.ToArray()));
         return stack;
+    }
+
+    private static HotkeySettings CopyHotkeys(HotkeySettings source) => new()
+    {
+        ToggleOverlay = source.ToggleOverlay,
+        ProfileHotkeys = [.. source.ProfileHotkeys],
+    };
+
+    private void MarkHotkeysDirty()
+    {
+        hotkeysDirty = true;
+        if (saveHotkeysButton is not null)
+        {
+            saveHotkeysButton.IsEnabled = true;
+        }
+        statusText.Foreground = Brush("MutedTextBrush");
+        statusText.Text = localizer["HotkeysPendingChanges"];
     }
 
     private UIElement BuildLanguagePage()
@@ -1140,13 +1195,47 @@ internal sealed class SettingsWindow : Window
 
     private UIElement HotkeyRow(string title, HotkeyGesture? value, Action<HotkeyGesture?> setter)
     {
-        var button = new Button { Content = value?.ToString() ?? localizer["None"], MinWidth = 190 };
+        string CurrentLabel() => value is { IsEmpty: false } ? value.ToString() : localizer["HotkeyNotSet"];
+        var button = new Button { Content = CurrentLabel(), MinWidth = 190 };
+        var clear = new Button
+        {
+            Content = localizer["ClearHotkey"],
+            MinWidth = 64,
+            Margin = new Thickness(8, 0, 0, 0),
+            IsEnabled = value is { IsEmpty: false },
+        };
         bool recording = false;
+        void Commit(HotkeyGesture? gesture)
+        {
+            value = gesture;
+            recording = false;
+            setter(gesture);
+            button.Content = CurrentLabel();
+            clear.IsEnabled = gesture is { IsEmpty: false };
+            MarkHotkeysDirty();
+        }
+        clear.Click += (_, _) => Commit(null);
+        button.PreviewMouseRightButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            Commit(null);
+        };
         button.Click += (_, _) =>
         {
             recording = true;
-            button.Content = localizer["PressShortcut"];
+            button.Content = new TextBlock
+            {
+                Text = localizer["HotkeyRecordingHint"],
+                FontSize = 12.5,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+            };
             button.Focus();
+        };
+        button.LostKeyboardFocus += (_, _) =>
+        {
+            recording = false;
+            button.Content = CurrentLabel();
         };
         button.PreviewKeyDown += (_, e) =>
         {
@@ -1158,17 +1247,14 @@ internal sealed class SettingsWindow : Window
             e.Handled = true;
             if (e.Key is Key.Escape)
             {
-                button.Content = value?.ToString() ?? localizer["None"];
+                button.Content = CurrentLabel();
                 recording = false;
                 return;
             }
 
             if (e.Key is Key.Back or Key.Delete)
             {
-                setter(null);
-                button.Content = localizer["None"];
-                recording = false;
-                Save();
+                Commit(null);
                 return;
             }
 
@@ -1208,17 +1294,17 @@ internal sealed class SettingsWindow : Window
                 }
 
                 recording = false;
-                button.Content = value?.ToString() ?? localizer["None"];
+                button.Content = CurrentLabel();
                 return;
             }
 
             var gesture = new HotkeyGesture(modifiers, KeyInterop.VirtualKeyFromKey(key));
-            setter(gesture);
-            button.Content = gesture.ToString();
-            recording = false;
-            Save();
+            Commit(gesture);
         };
-        return SettingRow(title, localizer["HotkeyHelp"], button);
+        var controls = new StackPanel { Orientation = Orientation.Horizontal };
+        controls.Children.Add(button);
+        controls.Children.Add(clear);
+        return SettingRow(title, localizer["HotkeyHelp"], controls);
     }
 
     private void OnPreviewMouseDownCommitNumber(object sender, MouseButtonEventArgs e)
@@ -1293,7 +1379,7 @@ internal sealed class SettingsWindow : Window
         Save();
     }
 
-    private UIElement SettingRow(string title, string subtitle, Control control)
+    private UIElement SettingRow(string title, string subtitle, FrameworkElement control)
     {
         var grid = new Grid { Margin = new Thickness(0, 0, 0, 18) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1505,18 +1591,20 @@ internal sealed class SettingsWindow : Window
         }
     }
 
-    private void Save()
+    private bool Save()
     {
         try
         {
+            save(settings);
             statusText.Foreground = Brush("SuccessBrush");
             statusText.Text = localizer["Applied"];
-            save(settings);
+            return true;
         }
         catch (Exception)
         {
             statusText.Foreground = Brush("ErrorBrush");
             statusText.Text = localizer["CouldNotSaveSettings"];
+            return false;
         }
     }
 

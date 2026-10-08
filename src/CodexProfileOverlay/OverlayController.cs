@@ -550,7 +550,7 @@ internal sealed class OverlayController : IDisposable
             localizer,
             statusService,
             backupMaintenance,
-            SaveSettings,
+            updatedSettings => SaveSettings(updatedSettings, propagateError: true),
             RefreshStatusIndicators,
             RefreshUsageForProfileAsync,
             () => _ = AddProfileAsync(),
@@ -742,10 +742,16 @@ internal sealed class OverlayController : IDisposable
         settingsWindow?.RefreshTheme();
         profileManagerWindow?.RefreshTheme();
         trayIcon?.UpdateStartWithWindows(settings.StartWithWindows);
-        _ = RegisterHotkeys();
+        IReadOnlyList<string> conflicts = RegisterHotkeys();
+        settingsWindow?.SetConflicts(conflicts);
     }
 
     private void SaveSettings(OverlaySettings updatedSettings)
+    {
+        SaveSettings(updatedSettings, propagateError: false);
+    }
+
+    private void SaveSettings(OverlaySettings updatedSettings, bool propagateError)
     {
         try
         {
@@ -766,6 +772,10 @@ internal sealed class OverlayController : IDisposable
         {
             logger.Error("Could not save settings.", exception);
             overlayWindow?.ShowError(localizer["CouldNotSaveSettings"]);
+            if (propagateError)
+            {
+                throw;
+            }
         }
     }
 
