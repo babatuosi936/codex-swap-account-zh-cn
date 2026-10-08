@@ -45,6 +45,7 @@
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
@@ -75,6 +76,7 @@
                     <ControlTemplate TargetType="{x:Type MenuItem}">
                         <Border x:Name="Chrome"
                                 Background="{TemplateBinding Background}"
+                                CornerRadius="6"
                                 Padding="{TemplateBinding Padding}"
                                 TextElement.Foreground="{TemplateBinding Foreground}">
                             <ContentPresenter ContentSource="Header"
