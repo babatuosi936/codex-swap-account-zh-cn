@@ -49,6 +49,8 @@ internal sealed class OverlayWindow : Window
     private double lastTargetTop = double.NaN;
     private bool placementDirty = true;
     private string indicatorSignature = string.Empty;
+    private double expandedLogicalWidth = 620;
+    private double availableClientWidth = double.PositiveInfinity;
 
     public OverlayWindow(OverlaySettings settings, SafeLogger logger)
     {
@@ -156,7 +158,8 @@ internal sealed class OverlayWindow : Window
             return;
         }
 
-        OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, clientBounds.Width, resolvedAutoMode);
+        availableClientWidth = clientBounds.Width;
+        OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, clientBounds.Width, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
         if (settings.DisplayMode == OverlayDisplayMode.Auto)
         {
             resolvedAutoMode = nextMode;
@@ -167,6 +170,8 @@ internal sealed class OverlayWindow : Window
             currentMode = nextMode;
             RebuildContent();
         }
+
+        UpdateWidth();
 
         bool geometryChanged = placementDirty || !NearlyEqual(clientBounds, lastClientBounds);
         if (geometryChanged)
@@ -290,15 +295,26 @@ internal sealed class OverlayWindow : Window
         bool reopenPopup = compactPopup.IsOpen && currentMode == OverlayDisplayMode.Compact;
         compactPopup.IsOpen = false;
         placementDirty = true;
-        Width = LogicalWidth * SanitizedScale;
         shell.Height = HeaderHeight;
         shell.MinHeight = HeaderHeight;
         shell.Background = FindBrush("OverlayBackgroundBrush");
         shell.BorderBrush = FindBrush("OverlayBorderBrush");
         shell.BorderThickness = new Thickness(1);
         shell.CornerRadius = new CornerRadius(8);
+        // Measure the complete row, including quota text, active marker, margins
+        // and menu button. Keep this measurement even in compact mode so auto
+        // can decide whether all accounts will fit when the owner grows.
+        UIElement expandedContent = BuildExpandedContent();
+        expandedContent.Measure(new System.Windows.Size(double.PositiveInfinity, HeaderButtonHeight));
+        expandedLogicalWidth = Math.Max(ShowQuota ? 620 : 560, Math.Ceiling(expandedContent.DesiredSize.Width + 12));
+        if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(availableClientWidth))
+        {
+            currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, availableClientWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
+            resolvedAutoMode = currentMode;
+        }
         shell.Padding = new Thickness(currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1, currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1);
-        shell.Child = currentMode == OverlayDisplayMode.Compact ? BuildCompactContent() : BuildExpandedContent();
+        shell.Child = currentMode == OverlayDisplayMode.Compact ? BuildCompactContent() : expandedContent;
+        UpdateWidth();
         compactPopup.Child = BuildCompactPopup();
         compactPopup.PlacementTarget = shell;
         if (reopenPopup && IsVisible)
@@ -539,7 +555,7 @@ internal sealed class OverlayWindow : Window
         {
             Content = content,
             MinWidth = 108,
-            MaxWidth = ShowQuota ? 240 : 176,
+            MaxWidth = ShowQuota ? double.PositiveInfinity : 176,
             Height = HeaderButtonHeight,
             MinHeight = 0,
             Margin = new Thickness(0, 0, 6, 0),
@@ -653,6 +669,7 @@ internal sealed class OverlayWindow : Window
         Foreground = FindBrush("MutedTextBrush"),
         FontSize = 11.5,
         Margin = margin,
+        TextTrimming = TextTrimming.CharacterEllipsis,
         ToolTip = BuildUsageToolTip(profileId),
     };
 
@@ -1081,7 +1098,17 @@ internal sealed class OverlayWindow : Window
 
     private double SanitizedScale => double.IsFinite(settings.Scale) ? Math.Clamp(settings.Scale, 0.8, 1.4) : 1;
 
-    private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : (ShowQuota ? 620 : 560);
+    private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : expandedLogicalWidth;
+
+    private void UpdateWidth()
+    {
+        double targetWidth = Math.Max(1, Math.Min(LogicalWidth * SanitizedScale, availableClientWidth));
+        if (!NearlyEqual(Width, targetWidth))
+        {
+            Width = targetWidth;
+            placementDirty = true;
+        }
+    }
 
     private void ApplyScale()
     {

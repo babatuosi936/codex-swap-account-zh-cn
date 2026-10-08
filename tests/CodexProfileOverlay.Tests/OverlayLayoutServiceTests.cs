@@ -6,6 +6,17 @@ namespace CodexProfileOverlay.Tests;
 public sealed class OverlayLayoutServiceTests
 {
     [Fact]
+    public void ResolveDisplayMode_RequiresTheCompleteScaledAccountRowToFit()
+    {
+        var service = new OverlayLayoutService();
+        Assert.Equal(OverlayDisplayMode.Compact, service.ResolveDisplayMode(OverlayDisplayMode.Auto, 900, OverlayDisplayMode.Expanded, 950));
+        Assert.Equal(OverlayDisplayMode.Expanded, service.ResolveDisplayMode(OverlayDisplayMode.Auto, 950, OverlayDisplayMode.Expanded, 950));
+        Assert.Equal(OverlayDisplayMode.Compact, service.ResolveDisplayMode(OverlayDisplayMode.Auto, 1000, OverlayDisplayMode.Compact, 950));
+        Assert.Equal(OverlayDisplayMode.Expanded, service.ResolveDisplayMode(OverlayDisplayMode.Auto, 1040, OverlayDisplayMode.Compact, 950));
+        Assert.Equal(OverlayDisplayMode.Expanded, service.ResolveDisplayMode(OverlayDisplayMode.Expanded, 600, OverlayDisplayMode.Expanded, 950));
+    }
+
+    [Fact]
     public void ResolveDisplayMode_UsesHysteresis()
     {
         var service = new OverlayLayoutService();

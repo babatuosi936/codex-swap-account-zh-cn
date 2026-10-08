@@ -52,6 +52,9 @@ internal static partial class Program
                     foreach (var mode in new[] { OverlayDisplayMode.Compact, OverlayDisplayMode.Expanded })
                         foreach (bool quota in new[] { false, true })
                             RunHeaderLayoutScenario(scale, mode, quota);
+                foreach (double scale in new[] { 0.8, 1.0, 1.4 })
+                    foreach (var language in new[] { LanguagePreference.ChineseSimplified, LanguagePreference.English, LanguagePreference.Russian })
+                        RunResponsiveLayoutScenario(scale, language);
                 if (!args.Contains("--header-only"))
                 {
                     foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })

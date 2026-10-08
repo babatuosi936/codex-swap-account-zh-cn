@@ -8,7 +8,7 @@ View five-hour and weekly remaining quotas for multiple accounts in a draggable 
 
 **English** · [简体中文](README.md)
 
-[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.0-zh.1) · [How to use](#quick-start)
+[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.1-zh.1) · [How to use](#quick-start)
 
 For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 
@@ -31,7 +31,7 @@ Select a saved, signed-in account from the overlay to switch. The panel periodic
 | Account management and switching | Add, name, and manage accounts. Switch through the overlay, tray menu, or a custom hotkey. The active account is highlighted. |
 | Usage panel | See available five-hour and weekly remaining percentages for multiple accounts, with automatic updates and a manual refresh-all action. |
 | Shared local work | Switching changes account authorization. Your local Codex chats, sessions, and workspaces remain shared across accounts. |
-| Two overlay layouts | Expanded mode shows multiple accounts directly. Compact mode uses a single account button and menu. Automatic mode chooses a layout based on the window width. |
+| Two overlay layouts | Expanded mode sizes itself to the account and quota text. Compact mode uses a single account button and menu. Automatic mode switches to compact when the full account row will not fit, including the selected UI scale. |
 | Position and appearance | Drag the overlay, remember its position, choose a preset beside the menu or along the bottom, and adjust scaling and light or dark themes. Windows DPI scaling is supported. |
 | Mouse or hotkeys | Use the mouse for everyday actions, or configure optional hotkeys. Leave individual hotkeys unset if you prefer. Hotkey edits take effect only after clicking **Save**. |
 | Languages and system tray | Use English, Simplified Chinese, Russian, or the system language. The tray provides access to accounts, settings, and overlay visibility. |

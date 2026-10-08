@@ -9,19 +9,22 @@ public sealed class OverlayLayoutService
     private const double AfterMenuX = 396;
     private const double AfterMenuY = 2;
 
-    public OverlayDisplayMode ResolveDisplayMode(OverlayDisplayMode configuredMode, double clientWidth, OverlayDisplayMode previousAutoMode)
+    public OverlayDisplayMode ResolveDisplayMode(OverlayDisplayMode configuredMode, double clientWidth, OverlayDisplayMode previousAutoMode, double expandedWidth = 0)
     {
         if (configuredMode != OverlayDisplayMode.Auto)
         {
             return configuredMode;
         }
 
-        if (previousAutoMode == OverlayDisplayMode.Expanded && clientWidth < CompactThreshold)
+        double requiredWidth = double.IsFinite(expandedWidth) ? Math.Max(0, expandedWidth) : 0;
+        double compactThreshold = Math.Max(CompactThreshold, requiredWidth);
+        double expandedThreshold = Math.Max(ExpandedThreshold, requiredWidth + 80);
+        if (previousAutoMode == OverlayDisplayMode.Expanded && clientWidth < compactThreshold)
         {
             return OverlayDisplayMode.Compact;
         }
 
-        if (previousAutoMode != OverlayDisplayMode.Expanded && clientWidth > ExpandedThreshold)
+        if (previousAutoMode != OverlayDisplayMode.Expanded && clientWidth > expandedThreshold)
         {
             return OverlayDisplayMode.Expanded;
         }

@@ -8,7 +8,7 @@ Windows 上的 Codex 桌面版账号管理器：在一个可拖动浮层中查�
 
 **简体中文** · [English](README_EN.md)
 
-[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.0-zh.1) · [使用说明](#快速开始)
+[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.1-zh.1) · [使用说明](#快速开始)
 
 日常使用下载 EXE 即可，直接运行，无需解压或额外安装 .NET。
 
@@ -31,7 +31,7 @@ Windows 上的 Codex 桌面版账号管理器：在一个可拖动浮层中查�
 | 多账号管理与切换 | 添加、命名和管理账号，从浮层、托盘或自定义快捷键发起切换；当前账号高亮显示。 |
 | 多账号额度面板 | 同时查看可查询到的 5 小时、每周剩余百分比，支持自动更新与“刷新全部额度”。 |
 | 继续使用已有工作内容 | 切换针对账号授权，本机的 Codex 聊天记录、会话与工作区保持共享。 |
-| 两种浮层布局 | 展开模式直接显示多个账号；紧凑模式用一个账号按钮与菜单节省空间，也可随窗口宽度自动选择。 |
+| 两种浮层布局 | 展开模式按账号和额度文字计算宽度；紧凑模式用一个账号按钮与菜单节省空间，自动模式在完整账号行放不下时切换为紧凑模式，并考虑界面缩放。 |
 | 自定义位置与外观 | 支持拖动、位置记忆、菜单右侧和底部三种预设位置，以及缩放、明暗主题与 Windows DPI 适配。 |
 | 鼠标或快捷键操作 | 全部日常操作可以通过鼠标完成；快捷键可自定义或不设置，修改后点击“保存”才生效。 |
 | 中文界面与托盘入口 | 设置、账号、额度和提示支持简体中文；也提供英文、俄文及系统语言选择。托盘可管理账号、设置与浮层显示。 |
