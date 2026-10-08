@@ -1,10 +1,10 @@
 <div align="center">
 
-# Codex Swap Account
+# Codex Account Manager · Codex Swap Account
 
-**A Windows account switcher and usage panel for the Codex desktop app.**
+**A Windows Codex account manager, account switcher, and quota monitor for multiple ChatGPT Plus accounts.**
 
-See the remaining usage allowance across your accounts, switch from an overlay beside Codex, and continue using your local chats and workspaces.
+View five-hour and weekly remaining quotas for multiple accounts in a draggable overlay beside the Codex desktop app. Switch accounts and continue using your local chats and workspaces, with automatic quota refresh, Chinese and English interfaces, and optional hotkeys.
 
 **English** · [简体中文](README.md)
 
@@ -18,7 +18,13 @@ For everyday use, download the EXE and run it directly. No extraction or separat
 
 ## What it does
 
-If you use several Codex accounts, this tool brings their names, active status, and remaining allowance into one panel beside the Codex window. Once an account has been signed in and saved, select it from the overlay or system tray to start a switch.
+If you sign in to Codex with several ChatGPT Plus accounts, this tool brings their names, active status, and remaining quotas into one panel beside the Codex window. Once an account has been signed in and saved, select it from the overlay or system tray to start a switch.
+
+### Is there a Codex alternative to a VS Code account manager for switching Plus accounts and checking multiple accounts' quotas?
+
+This project provides account management, account switching, and quota monitoring for the **Codex desktop app on Windows**. It is a standalone community tool: download and run the EXE. It offers a workflow similar to a VS Code account manager without requiring a VS Code extension or a native Codex plugin.
+
+Select a saved, signed-in account from the overlay to switch. The panel periodically refreshes the available five-hour and weekly remaining percentages. Switching restarts Codex, and quota updates may be delayed.
 
 | Feature | What you can do |
 | --- | --- |
