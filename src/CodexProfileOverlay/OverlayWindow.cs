@@ -19,9 +19,10 @@ namespace CodexProfileOverlay;
 internal sealed class OverlayWindow : Window
 {
     private static readonly TimeSpan AnimationDuration = TimeSpan.FromMilliseconds(150);
-    // Codex's Windows application-menu bar uses --height-toolbar-sm: 36px.
-    private const double HeaderHeight = 36;
-    private const double HeaderButtonHeight = 32;
+    // Match the full Codex title bar (--height-titlebar: 4px * 11),
+    // including the space around its smaller application-menu controls.
+    private const double HeaderHeight = 44;
+    private const double HeaderButtonHeight = 40;
     private static readonly FontFamily EmojiFont = new("Segoe UI Emoji");
     private readonly OverlaySettings settings;
     private readonly SafeLogger logger;
@@ -347,7 +348,7 @@ internal sealed class OverlayWindow : Window
         {
             Text = isSwitching ? Localizer?["Switching"] ?? "Switching..." : active?.DisplayName ?? Localizer?["NoReadyProfiles"] ?? "No ready profiles",
             Foreground = FindBrush("StrongTextBrush"),
-            FontSize = 12,
+            FontSize = 15,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(9, 0, 8, 0),
             TextTrimming = TextTrimming.CharacterEllipsis,
@@ -356,7 +357,7 @@ internal sealed class OverlayWindow : Window
         nameAndQuota.Children.Add(name);
         if (active is not null && ShowQuota)
         {
-            nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 0, 8, 0), 10.5));
+            nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 1, 8, 0)));
         }
         Grid.SetColumn(nameAndQuota, 1);
         grid.Children.Add(nameAndQuota);
@@ -495,7 +496,7 @@ internal sealed class OverlayWindow : Window
         nameAndQuota.Children.Add(new TextBlock
         {
             Text = profile.DisplayName,
-            FontSize = 12,
+            FontSize = 13.5,
             FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Foreground = isActive ? FindBrush("StrongTextBrush") : FindBrush("MutedTextBrush"),
@@ -505,7 +506,7 @@ internal sealed class OverlayWindow : Window
         });
         if (ShowQuota)
         {
-            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 0, 0, 0), 10.5));
+            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 2, 0, 0)));
         }
         row.Children.Add(nameAndQuota);
 
@@ -646,11 +647,11 @@ internal sealed class OverlayWindow : Window
 
     private bool ShowQuota => settings.ShowAutomaticLimitIndicators && settings.ShowIndicatorsInOverlay;
 
-    private TextBlock CreateQuotaText(string profileId, Thickness margin, double fontSize = 11.5) => new()
+    private TextBlock CreateQuotaText(string profileId, Thickness margin) => new()
     {
         Text = GetProfileIndicator(profileId),
         Foreground = FindBrush("MutedTextBrush"),
-        FontSize = fontSize,
+        FontSize = 11.5,
         Margin = margin,
         ToolTip = BuildUsageToolTip(profileId),
     };

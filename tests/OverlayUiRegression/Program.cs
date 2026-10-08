@@ -83,14 +83,16 @@ internal static class Program
             Call(overlay, "SetStatusDocument", Document(profiles, 0), null);
             overlay.Show();
             Pump();
-            Require(Math.Abs(overlay.ActualHeight - 36 * scale) <= 1, $"Header height does not match Codex's menu bar: mode={mode}, quota={quota}, scale={scale}, actual={overlay.ActualHeight}.");
+            Require(Math.Abs(overlay.ActualHeight - 44 * scale) <= 1, $"Header height does not match Codex's full title bar: mode={mode}, quota={quota}, scale={scale}, actual={overlay.ActualHeight}.");
             var shell = (Border)overlay.Content;
             var textBlocks = Descendants(shell).OfType<TextBlock>().Where(text => text.Text.Contains("账号") || text.Text.Contains('%')).ToArray();
             Require(textBlocks.Length == (mode == OverlayDisplayMode.Compact ? 1 : 3) * (quota ? 2 : 1), "Header lost an account name or quota line.");
             foreach (var text in textBlocks)
             {
                 Rect bounds = text.TransformToAncestor(shell).TransformBounds(new Rect(text.RenderSize));
-                Require(bounds.Top >= 0 && bounds.Bottom <= shell.ActualHeight + 0.5 && text.ActualHeight >= text.DesiredSize.Height - 0.5,
+                // DesiredSize includes the margin; ActualHeight measures the text itself.
+                double desiredTextHeight = text.DesiredSize.Height - text.Margin.Top - text.Margin.Bottom;
+                Require(bounds.Top >= 0 && bounds.Bottom <= shell.ActualHeight + 0.5 && text.ActualHeight >= desiredTextHeight - 0.5,
                     $"Header text is vertically clipped: '{text.Text}', bounds={bounds}, actual={text.ActualHeight}, desired={text.DesiredSize.Height}.");
             }
             Evidence.Add(new { kind = "header-layout", scale, mode = mode.ToString(), quota, height = overlay.ActualHeight, textLines = textBlocks.Length });
