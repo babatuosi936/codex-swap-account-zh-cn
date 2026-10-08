@@ -8,7 +8,7 @@ Windows 上的 Codex 桌面版账号管理器：在一个可拖动浮层中查�
 
 **简体中文** · [English](README_EN.md)
 
-[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.2-zh.1) · [使用说明](#快速开始)
+[下载程序 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.1-zh.1) · [使用说明](#快速开始)
 
 日常使用下载 EXE 即可，直接运行，无需解压或额外安装 .NET。
 
@@ -36,8 +36,6 @@ Windows 上的 Codex 桌面版账号管理器：在一个可拖动浮层中查�
 | 鼠标或快捷键操作 | 全部日常操作可以通过鼠标完成；快捷键可自定义或不设置，修改后点击“保存”才生效。 |
 | 中文界面与托盘入口 | 设置、账号、额度和提示支持简体中文；也提供英文、俄文及系统语言选择。托盘可管理账号、设置与浮层显示。 |
 | 授权备份与恢复 | 切换前备份授权；切换失败时尝试恢复此前授权，并显示结果提示。 |
-
-截图等临时焦点切换有 3 秒隐藏缓冲；持续切到其他应用时再隐藏浮层。手动隐藏、Codex 最小化或关闭仍立即生效。
 
 切换账号会关闭并重新启动 Codex，因此请在当前工作结束后再切换。额度来自服务端查询，可能有更新延迟。
 
