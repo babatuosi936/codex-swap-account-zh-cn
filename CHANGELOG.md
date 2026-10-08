@@ -2,6 +2,7 @@
 
 ## Local UI fix - 2026-10-08
 
+- Keep the compact menu open when clicking Refresh all quotas, and update quota results in place. Commands that open another window retain their closing behavior.
 - Keep the compact account menu anchored to the persistent overlay shell when manual or automatic quota refresh replaces account buttons.
 - Close the native popup before rebuilding and reopen it after layout and owner placement are updated, preserving an open menu without detached positioning.
 - Add an isolated WPF regression fixture covering consecutive updates, manual refresh, scaling and screen-edge placement. It does not access accounts or run the application controller.

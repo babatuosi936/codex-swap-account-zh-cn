@@ -462,7 +462,7 @@ internal sealed class OverlayWindow : Window
 
         panel.Children.Add(new Separator { Margin = new Thickness(2, 5, 2, 5) });
         panel.Children.Add(CreatePopupCommand(Localizer?["AddProfile"] ?? "Add profile", OnAddProfile));
-        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles));
+        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles, closeOnInvoke: false));
         panel.Children.Add(CreatePopupCommand(Localizer?["ManageProfiles"] ?? "Manage profiles", OnManageProfiles));
         panel.Children.Add(CreatePopupCommand(Localizer?["Settings"] ?? "Settings", OnOpenSettings));
         panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
@@ -826,12 +826,15 @@ internal sealed class OverlayWindow : Window
         };
     }
 
-    private Button CreatePopupCommand(string text, Action? action)
+    private Button CreatePopupCommand(string text, Action? action, bool closeOnInvoke = true)
     {
         Button button = CreatePopupButton(text, null);
         button.Click += (_, _) =>
         {
-            compactPopup.IsOpen = false;
+            if (closeOnInvoke)
+            {
+                compactPopup.IsOpen = false;
+            }
             action?.Invoke();
         };
         return button;

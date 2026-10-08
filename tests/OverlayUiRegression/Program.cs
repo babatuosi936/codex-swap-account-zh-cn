@@ -36,7 +36,8 @@ internal static class Program
         try
         {
             foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
-                RunScenario(scenario.Scale, scenario.Edge);
+                foreach (bool staysOpen in new[] { false, true })
+                    RunScenario(scenario.Scale, scenario.Edge, staysOpen);
             System.IO.File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "popup-regression.json"), JsonSerializer.Serialize(Evidence, new JsonSerializerOptions { WriteIndented = true }));
             System.Console.WriteLine($"PASS: {Evidence.Count} popup geometry checks across normal, scaled and screen-edge placement.");
             app.Shutdown();
@@ -50,7 +51,7 @@ internal static class Program
         }
     }
 
-    private static void RunScenario(double scale, bool edge)
+    private static void RunScenario(double scale, bool edge, bool staysOpen)
     {
         var screen = Forms.Screen.PrimaryScreen!.WorkingArea;
         var host = new Window { Title = "Quota Popup Regression Fixture", Width = 1000, Height = 700, Left = 60, Top = 60, ShowInTaskbar = false };
@@ -80,7 +81,7 @@ internal static class Program
             }
 
             var popup = (Popup)OverlayType.GetField("compactPopup", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(overlay)!;
-            popup.StaysOpen = true; // Keep the synthetic popup open without taking focus from the user's app.
+            popup.StaysOpen = staysOpen; // Cover production mouse capture and focus-independent geometry checks.
             Open(overlay);
             Verify(overlay, popup, scale, edge, "initial");
             for (int i = 1; i <= 5; i++)
@@ -90,27 +91,42 @@ internal static class Program
                 Verify(overlay, popup, scale, edge, $"background-refresh-{i}");
             }
 
-            bool callbackRan = false;
+            int refreshCalls = 0;
             OverlayType.GetProperty("OnRefreshProfiles")!.SetValue(overlay, (Action)(() =>
             {
-                Require(!popup.IsOpen, "Manual refresh must close the menu before calling the refresh action.");
-                callbackRan = true;
+                Require(popup.IsOpen, "Manual refresh must keep the menu open when calling the refresh action.");
+                refreshCalls++;
                 Call(overlay, "SetProfiles", profiles, profiles[0].Name);
-                Call(overlay, "SetStatusDocument", Document(profiles, 6), null);
+                Call(overlay, "SetStatusDocument", Document(profiles, 5 + refreshCalls), null);
             }));
-            // Reopen so the refreshed command delegates are installed in the menu.
+            bool managerOpened = false;
+            OverlayType.GetProperty("OnManageProfiles")!.SetValue(overlay, (Action)(() =>
+            {
+                Require(!popup.IsOpen, "Opening the profile manager must still close the menu.");
+                managerOpened = true;
+            }));
+            // Install the command delegates while preserving the open menu.
             Call(overlay, "ApplySettings");
             Pump();
-            var refreshButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("刷新全部额度"));
-            refreshButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int click = 1; click <= 3; click++)
+            {
+                var refreshButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("刷新全部额度"));
+                refreshButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Pump();
+                Require(refreshCalls == click && popup.IsOpen, "Manual refresh unexpectedly closed the menu.");
+                Verify(overlay, popup, scale, edge, $"manual-refresh-{click}");
+                // Simulate another account's asynchronous query result arriving later.
+                Call(overlay, "SetStatusDocument", Document(profiles, 10 + click), null);
+                Pump();
+                Verify(overlay, popup, scale, edge, $"manual-refresh-result-{click}");
+                int remainingShort = 62 - (10 + click);
+                int remainingLong = 36 - (10 + click);
+                Require(Descendants(popup.Child).OfType<TextBlock>().Any(text => text.Text.Contains($"{remainingShort}%") && text.Text.Contains($"{remainingLong}%")), "Open menu did not show the latest quota result.");
+            }
+            var managerButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("管理账号"));
+            managerButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Pump();
-            Require(callbackRan && !popup.IsOpen, "Manual quota refresh callback failed.");
-            Open(overlay);
-            Verify(overlay, popup, scale, edge, "manual-refresh-reopen");
-            Call(overlay, "SetStatusDocument", Document(profiles, 7), null);
-            Pump();
-            Verify(overlay, popup, scale, edge, "manual-refresh-result");
-            popup.IsOpen = false;
+            Require(managerOpened && !popup.IsOpen, "Profile manager command did not close the menu.");
         }
         finally { overlay.Close(); host.Close(); Pump(); }
     }
@@ -144,7 +160,7 @@ internal static class Program
         bool attached = Math.Min(Math.Abs(corner.Y - anchorEnd.Y), Math.Abs(opposite.Y - anchor.Y)) < 24;
         var screen = Forms.Screen.FromHandle(new WindowInteropHelper(overlay).Handle).WorkingArea;
         bool visible = corner.X >= screen.Left - 2 && corner.Y >= screen.Top - 2 && opposite.X <= screen.Right + 2 && opposite.Y <= screen.Bottom + 2;
-        Evidence.Add(new { scale, edge, stage, popupX = corner.X, popupY = corner.Y, popupRight = opposite.X, popupBottom = opposite.Y, anchorX = anchor.X, anchorY = anchor.Y, overlaps, attached, visible });
+        Evidence.Add(new { scale, edge, popup.StaysOpen, stage, popupX = corner.X, popupY = corner.Y, popupRight = opposite.X, popupBottom = opposite.Y, anchorX = anchor.X, anchorY = anchor.Y, overlaps, attached, visible });
         Require(overlaps && attached && visible, $"Popup detached or clipped at {stage}, scale={scale}, edge={edge}: ({corner})..({opposite}), anchor=({anchor})..({anchorEnd})");
     }
 
