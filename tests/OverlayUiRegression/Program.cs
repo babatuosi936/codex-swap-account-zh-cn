@@ -38,16 +38,26 @@ internal static class Program
         {
             if (!args.Contains("--auxiliary-only"))
             {
-                foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
-                    foreach (bool staysOpen in new[] { false, true })
-                        RunScenario(scenario.Scale, scenario.Edge, staysOpen);
-                RunExpandedDragScenario(1.0);
-                RunExpandedDragScenario(1.4);
+                foreach (double scale in new[] { 0.8, 1.0, 1.4 })
+                    foreach (var mode in new[] { OverlayDisplayMode.Compact, OverlayDisplayMode.Expanded })
+                        foreach (bool quota in new[] { false, true })
+                            RunHeaderLayoutScenario(scale, mode, quota);
+                if (!args.Contains("--header-only"))
+                {
+                    foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
+                        foreach (bool staysOpen in new[] { false, true })
+                            RunScenario(scenario.Scale, scenario.Edge, staysOpen);
+                    RunExpandedDragScenario(1.0);
+                    RunExpandedDragScenario(1.4);
+                }
             }
-            RunAuxiliaryWindowScenario("SettingsWindow");
-            RunAuxiliaryWindowScenario("ProfileManagerWindow");
+            if (!args.Contains("--header-only"))
+            {
+                RunAuxiliaryWindowScenario("SettingsWindow");
+                RunAuxiliaryWindowScenario("ProfileManagerWindow");
+            }
             System.IO.File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "popup-regression.json"), JsonSerializer.Serialize(Evidence, new JsonSerializerOptions { WriteIndented = true }));
-            System.Console.WriteLine($"PASS: {Evidence.Count} UI checks across popup placement, account dragging and auxiliary window visibility.");
+            System.Console.WriteLine($"PASS: {Evidence.Count} UI checks.");
             app.Shutdown();
             return 0;
         }
@@ -57,6 +67,44 @@ internal static class Program
             app.Shutdown();
             return 1;
         }
+    }
+
+    private static void RunHeaderLayoutScenario(double scale, OverlayDisplayMode mode, bool quota)
+    {
+        var settings = new OverlaySettings { DisplayMode = mode, Scale = scale, ShowAutomaticLimitIndicators = quota, Language = LanguagePreference.ChineseSimplified };
+        var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
+        try
+        {
+            var localizerType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.Localizer")!;
+            OverlayType.GetProperty("Localizer")!.SetValue(overlay, Activator.CreateInstance(localizerType, LanguagePreference.ChineseSimplified));
+            OverlayType.GetField("currentMode", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(overlay, mode);
+            ProfileInfo[] profiles = [new("header-main", "unused", "unused") { DisplayName = "主账号", Initials = "主" }, new("header-two", "unused", "unused") { DisplayName = "475账号", Initials = "4" }, new("header-three", "unused", "unused") { DisplayName = "199账号", Initials = "1" }];
+            Call(overlay, "SetProfiles", profiles, profiles[0].Name);
+            Call(overlay, "SetStatusDocument", Document(profiles, 0), null);
+            overlay.Show();
+            Pump();
+            Require(Math.Abs(overlay.ActualHeight - 36 * scale) <= 1, $"Header height does not match Codex's menu bar: mode={mode}, quota={quota}, scale={scale}, actual={overlay.ActualHeight}.");
+            var shell = (Border)overlay.Content;
+            var textBlocks = Descendants(shell).OfType<TextBlock>().Where(text => text.Text.Contains("账号") || text.Text.Contains('%')).ToArray();
+            Require(textBlocks.Length == (mode == OverlayDisplayMode.Compact ? 1 : 3) * (quota ? 2 : 1), "Header lost an account name or quota line.");
+            foreach (var text in textBlocks)
+            {
+                Rect bounds = text.TransformToAncestor(shell).TransformBounds(new Rect(text.RenderSize));
+                Require(bounds.Top >= 0 && bounds.Bottom <= shell.ActualHeight + 0.5 && text.ActualHeight >= text.DesiredSize.Height - 0.5,
+                    $"Header text is vertically clipped: '{text.Text}', bounds={bounds}, actual={text.ActualHeight}, desired={text.DesiredSize.Height}.");
+            }
+            Evidence.Add(new { kind = "header-layout", scale, mode = mode.ToString(), quota, height = overlay.ActualHeight, textLines = textBlocks.Length });
+            if (scale == 1 && mode == OverlayDisplayMode.Expanded && quota)
+            {
+                var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(overlay.ActualWidth * 2), (int)Math.Ceiling(overlay.ActualHeight * 2), 192, 192, PixelFormats.Pbgra32);
+                bitmap.Render(shell);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using var file = System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory, "header-layout-preview.png"));
+                encoder.Save(file);
+            }
+        }
+        finally { overlay.Close(); Pump(); }
     }
 
     private static void RunScenario(double scale, bool edge, bool staysOpen)
@@ -155,6 +203,8 @@ internal static class Program
             Call(overlay, "SetStatusDocument", Document(profiles, 0), null);
             overlay.Left = 200;
             overlay.Top = 100;
+            // Keep the intended overflow scenario even when header typography is compact.
+            overlay.Width = 430 * scale;
             overlay.Show();
             Pump();
             var scroller = Descendants((DependencyObject)overlay.Content).OfType<ScrollViewer>().Single();

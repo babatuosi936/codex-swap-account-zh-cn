@@ -19,6 +19,9 @@ namespace CodexProfileOverlay;
 internal sealed class OverlayWindow : Window
 {
     private static readonly TimeSpan AnimationDuration = TimeSpan.FromMilliseconds(150);
+    // Codex's Windows application-menu bar uses --height-toolbar-sm: 36px.
+    private const double HeaderHeight = 36;
+    private const double HeaderButtonHeight = 32;
     private static readonly FontFamily EmojiFont = new("Segoe UI Emoji");
     private readonly OverlaySettings settings;
     private readonly SafeLogger logger;
@@ -287,13 +290,13 @@ internal sealed class OverlayWindow : Window
         compactPopup.IsOpen = false;
         placementDirty = true;
         Width = LogicalWidth * SanitizedScale;
-        shell.Height = double.NaN;
-        shell.MinHeight = currentMode == OverlayDisplayMode.Compact ? 44 : 44;
+        shell.Height = HeaderHeight;
+        shell.MinHeight = HeaderHeight;
         shell.Background = FindBrush("OverlayBackgroundBrush");
         shell.BorderBrush = FindBrush("OverlayBorderBrush");
         shell.BorderThickness = new Thickness(1);
         shell.CornerRadius = new CornerRadius(8);
-        shell.Padding = currentMode == OverlayDisplayMode.Compact ? new Thickness(6, 5, 6, 6) : new Thickness(5, 5, 5, 6);
+        shell.Padding = new Thickness(currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1, currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1);
         shell.Child = currentMode == OverlayDisplayMode.Compact ? BuildCompactContent() : BuildExpandedContent();
         compactPopup.Child = BuildCompactPopup();
         compactPopup.PlacementTarget = shell;
@@ -321,6 +324,7 @@ internal sealed class OverlayWindow : Window
             Cursor = Cursors.Hand,
             IsEnabled = !isSwitching,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Height = HeaderButtonHeight,
             MinHeight = 0,
         };
         button.Click += (_, _) =>
@@ -343,7 +347,7 @@ internal sealed class OverlayWindow : Window
         {
             Text = isSwitching ? Localizer?["Switching"] ?? "Switching..." : active?.DisplayName ?? Localizer?["NoReadyProfiles"] ?? "No ready profiles",
             Foreground = FindBrush("StrongTextBrush"),
-            FontSize = 15,
+            FontSize = 12,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(9, 0, 8, 0),
             TextTrimming = TextTrimming.CharacterEllipsis,
@@ -352,7 +356,7 @@ internal sealed class OverlayWindow : Window
         nameAndQuota.Children.Add(name);
         if (active is not null && ShowQuota)
         {
-            nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 3, 8, 0)));
+            nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 0, 8, 0), 10.5));
         }
         Grid.SetColumn(nameAndQuota, 1);
         grid.Children.Add(nameAndQuota);
@@ -426,7 +430,7 @@ internal sealed class OverlayWindow : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             CanContentScroll = true,
             Content = panel,
-            Height = ShowQuota ? 52 : 32,
+            Height = HeaderButtonHeight,
         };
         Grid.SetColumn(scrollViewer, 0);
 
@@ -491,7 +495,7 @@ internal sealed class OverlayWindow : Window
         nameAndQuota.Children.Add(new TextBlock
         {
             Text = profile.DisplayName,
-            FontSize = 13.5,
+            FontSize = 12,
             FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Foreground = isActive ? FindBrush("StrongTextBrush") : FindBrush("MutedTextBrush"),
@@ -501,7 +505,7 @@ internal sealed class OverlayWindow : Window
         });
         if (ShowQuota)
         {
-            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 2, 0, 0)));
+            nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 0, 0, 0), 10.5));
         }
         row.Children.Add(nameAndQuota);
 
@@ -535,7 +539,7 @@ internal sealed class OverlayWindow : Window
             Content = content,
             MinWidth = 108,
             MaxWidth = ShowQuota ? 240 : 176,
-            Height = ShowQuota ? 52 : 32,
+            Height = HeaderButtonHeight,
             MinHeight = 0,
             Margin = new Thickness(0, 0, 6, 0),
             Padding = isActive ? new Thickness(7, 0, 10, 0) : new Thickness(9, 0, 9, 0),
@@ -642,11 +646,11 @@ internal sealed class OverlayWindow : Window
 
     private bool ShowQuota => settings.ShowAutomaticLimitIndicators && settings.ShowIndicatorsInOverlay;
 
-    private TextBlock CreateQuotaText(string profileId, Thickness margin) => new()
+    private TextBlock CreateQuotaText(string profileId, Thickness margin, double fontSize = 11.5) => new()
     {
         Text = GetProfileIndicator(profileId),
         Foreground = FindBrush("MutedTextBrush"),
-        FontSize = 11.5,
+        FontSize = fontSize,
         Margin = margin,
         ToolTip = BuildUsageToolTip(profileId),
     };
