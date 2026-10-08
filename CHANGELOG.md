@@ -1,5 +1,11 @@
 # Changelog
 
+## Local UI fix - 2026-10-08
+
+- Keep the compact account menu anchored to the persistent overlay shell when manual or automatic quota refresh replaces account buttons.
+- Close the native popup before rebuilding and reopen it after layout and owner placement are updated, preserving an open menu without detached positioning.
+- Add an isolated WPF regression fixture covering consecutive updates, manual refresh, scaling and screen-edge placement. It does not access accounts or run the application controller.
+
 ## 1.0.0 - 2026-09-20
 
 - Fixed a critical storage bug caused by the former per-account state backup implementation recursively copying `sessions`, attachments, rollout JSONL files, and local databases into every `state-*` rollback directory.

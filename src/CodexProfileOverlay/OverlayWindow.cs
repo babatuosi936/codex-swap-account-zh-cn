@@ -281,6 +281,10 @@ internal sealed class OverlayWindow : Window
 
     private void RebuildContent()
     {
+        // Quota refresh replaces the buttons. Close the native popup before detaching
+        // its visual tree, then reopen against the persistent shell after layout.
+        bool reopenPopup = compactPopup.IsOpen && currentMode == OverlayDisplayMode.Compact;
+        compactPopup.IsOpen = false;
         placementDirty = true;
         Width = LogicalWidth * SanitizedScale;
         shell.Height = double.NaN;
@@ -292,6 +296,17 @@ internal sealed class OverlayWindow : Window
         shell.Padding = currentMode == OverlayDisplayMode.Compact ? new Thickness(6, 5, 6, 6) : new Thickness(5, 5, 5, 6);
         shell.Child = currentMode == OverlayDisplayMode.Compact ? BuildCompactContent() : BuildExpandedContent();
         compactPopup.Child = BuildCompactPopup();
+        compactPopup.PlacementTarget = shell;
+        if (reopenPopup && IsVisible)
+        {
+            UpdateLayout();
+            if (ownerHwnd != IntPtr.Zero)
+            {
+                UpdatePlacement(ownerHwnd);
+            }
+
+            compactPopup.IsOpen = IsVisible && currentMode == OverlayDisplayMode.Compact;
+        }
     }
 
     private UIElement BuildCompactContent()
@@ -310,7 +325,8 @@ internal sealed class OverlayWindow : Window
         };
         button.Click += (_, _) =>
         {
-            compactPopup.PlacementTarget = button;
+            // The shell survives content rebuilds; an account button does not.
+            compactPopup.PlacementTarget = shell;
             compactPopup.IsOpen = true;
         };
 
