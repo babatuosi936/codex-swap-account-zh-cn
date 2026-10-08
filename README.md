@@ -6,6 +6,8 @@
 
 在 Codex 窗口旁查看多个账号的剩余额度，选择账号完成切换，并继续使用本机的聊天记录与工作区。
 
+**简体中文** · [English](README_EN.md)
+
 [下载便携版](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) · [快速开始](#快速开始) · [界面预览](#界面预览) · [相对原项目的升级](#相对原项目的升级)
 
 </div>

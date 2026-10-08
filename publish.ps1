@@ -38,7 +38,7 @@ if (Test-Path -LiteralPath $Output) {
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # Include the attribution, license and illustrated usage guide in portable builds.
-foreach ($name in @("README.md", "README_UPSTREAM.md", "README_RU.md", "CHANGELOG_ZH.md", "LICENSE")) {
+foreach ($name in @("README.md", "README_EN.md", "README_UPSTREAM.md", "README_RU.md", "CHANGELOG_ZH.md", "LICENSE")) {
     $document = Join-Path $repo $name
     if (Test-Path -LiteralPath $document -PathType Leaf) {
         Copy-Item -LiteralPath $document -Destination $Output -Force
