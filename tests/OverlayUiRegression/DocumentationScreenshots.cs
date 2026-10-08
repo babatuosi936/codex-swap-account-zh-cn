@@ -112,6 +112,8 @@ internal static partial class Program
                 // Content inherits the native window background on screen. Supply
                 // that same brush when rendering its root without the native frame.
                 panel.Background = background;
+                element.UpdateLayout();
+                Pump();
             }
             bitmap.Render(element);
             var encoder = new PngBitmapEncoder();
