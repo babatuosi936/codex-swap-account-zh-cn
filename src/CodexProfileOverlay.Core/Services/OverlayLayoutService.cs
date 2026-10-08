@@ -40,12 +40,13 @@ public sealed class OverlayLayoutService
     {
         const double safeTop = 34;
         const double safeSide = 14;
+        const double safeBottom = 14;
         double x = preset switch
         {
             PositionPreset.AfterMenu => customOffsetX > 0 ? customOffsetX : AfterMenuX,
             PositionPreset.TopLeft => safeSide,
             PositionPreset.TopCenter => (clientWidth - overlayWidth) / 2,
-            PositionPreset.TopRight => clientWidth - overlayWidth - 138,
+            PositionPreset.TopRight => clientWidth - overlayWidth - safeSide,
             PositionPreset.Custom => customOffsetX,
             _ => safeSide,
         };
@@ -53,6 +54,7 @@ public sealed class OverlayLayoutService
         double y = preset switch
         {
             PositionPreset.AfterMenu => customOffsetY >= 0 ? customOffsetY : AfterMenuY,
+            PositionPreset.TopLeft or PositionPreset.TopCenter or PositionPreset.TopRight => clientHeight - overlayHeight - safeBottom,
             PositionPreset.Custom => customOffsetY,
             _ => safeTop,
         };

@@ -27,15 +27,33 @@ public sealed class OverlayLayoutServiceTests
         Assert.Equal(0, placement.OffsetY);
     }
 
-    [Fact]
-    public void CalculatePlacement_TopRightAvoidsNativeWindowControls()
+    [Theory]
+    [InlineData(PositionPreset.TopLeft, 14)]
+    [InlineData(PositionPreset.TopCenter, 340)]
+    [InlineData(PositionPreset.TopRight, 666)]
+    public void CalculatePlacement_BottomPresetsFollowWindowEdges(PositionPreset preset, double expectedX)
     {
         var service = new OverlayLayoutService();
 
-        OverlayPlacement placement = service.CalculatePlacement(PositionPreset.TopRight, 1200, 800, 520, 46, 0, 0);
+        OverlayPlacement placement = service.CalculatePlacement(preset, 1200, 800, 520, 44, 999, 999);
 
-        Assert.True(placement.OffsetX <= 1200 - 520 - 100);
-        Assert.Equal(34, placement.OffsetY);
+        Assert.Equal(expectedX, placement.OffsetX);
+        Assert.Equal(742, placement.OffsetY);
+    }
+
+    [Theory]
+    [InlineData(PositionPreset.TopLeft)]
+    [InlineData(PositionPreset.TopCenter)]
+    [InlineData(PositionPreset.TopRight)]
+    public void CalculatePlacement_BottomPresetsStayInsideSmallWindows(PositionPreset preset)
+    {
+        var service = new OverlayLayoutService();
+        OverlayPlacement placement = service.CalculatePlacement(preset, 420, 120, 620, 44, 999, 999);
+        Assert.Equal(0, placement.OffsetX);
+        Assert.Equal(62, placement.OffsetY);
+
+        OverlayPlacement shortWindow = service.CalculatePlacement(preset, 420, 30, 620, 44, 999, 999);
+        Assert.Equal(0, shortWindow.OffsetY);
     }
 
     [Fact]
