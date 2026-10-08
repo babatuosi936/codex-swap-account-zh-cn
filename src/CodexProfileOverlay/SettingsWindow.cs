@@ -1350,6 +1350,7 @@ internal sealed class SettingsWindow : Window
             LanguagePreference.SystemDefault => localizer["SystemDefault"],
             LanguagePreference.English => localizer["English"],
             LanguagePreference.Russian => localizer["Russian"],
+            LanguagePreference.ChineseSimplified => localizer["ChineseSimplified"],
             PositionPreset.AfterMenu => localizer["AfterMenu"],
             PositionPreset.TopCenter => localizer["TopCenter"],
             PositionPreset.TopRight => localizer["TopRight"],

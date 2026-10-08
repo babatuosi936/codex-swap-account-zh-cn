@@ -13,6 +13,32 @@ public sealed class LocalizationCatalogTests
     }
 
     [Fact]
+    public void ChineseCatalogCoversEnglishKeys()
+    {
+        Assert.Empty(LocalizationCatalog.MissingChineseKeys());
+    }
+
+    [Theory]
+    [InlineData("zh-CN")]
+    [InlineData("zh-SG")]
+    [InlineData("zh-Hans")]
+    public void SystemDefaultUsesChineseForChineseWindowsCulture(string cultureName)
+    {
+        LanguagePreference resolved = LocalizationCatalog.Resolve(LanguagePreference.SystemDefault, new CultureInfo(cultureName));
+
+        Assert.Equal(LanguagePreference.ChineseSimplified, resolved);
+    }
+
+    [Fact]
+    public void ChineseSwitchProgressPreservesProfileName()
+    {
+        string text = LocalizationCatalog.Text(LanguagePreference.ChineseSimplified, "SwitchingToProfile", "work-account");
+
+        Assert.Contains("work-account", text);
+        Assert.StartsWith("正在切换到", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SystemDefaultUsesRussianForRussianWindowsCulture()
     {
         LanguagePreference resolved = LocalizationCatalog.Resolve(LanguagePreference.SystemDefault, new CultureInfo("ru-RU"));
@@ -32,7 +58,7 @@ public sealed class LocalizationCatalogTests
     [Fact]
     public void StatusLegendAndUnavailableStateAreLocalized()
     {
-        foreach (LanguagePreference language in new[] { LanguagePreference.English, LanguagePreference.Russian })
+        foreach (LanguagePreference language in new[] { LanguagePreference.English, LanguagePreference.Russian, LanguagePreference.ChineseSimplified })
         {
             Assert.NotEqual("IndicatorLegend", LocalizationCatalog.Text(language, "IndicatorLegend"));
             Assert.NotEqual("RecommendedProfile", LocalizationCatalog.Text(language, "RecommendedProfile"));

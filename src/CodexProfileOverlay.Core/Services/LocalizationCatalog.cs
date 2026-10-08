@@ -3,7 +3,7 @@ using CodexProfileOverlay.Core.Models;
 
 namespace CodexProfileOverlay.Core.Services;
 
-public static class LocalizationCatalog
+public static partial class LocalizationCatalog
 {
     private static readonly IReadOnlyDictionary<string, string> English = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -61,6 +61,7 @@ public static class LocalizationCatalog
         ["SystemDefault"] = "System default",
         ["English"] = "English",
         ["Russian"] = "Русский",
+        ["ChineseSimplified"] = "简体中文",
         ["DirectoryName"] = "Directory name",
         ["OpenProfilesFolder"] = "Open profiles folder",
         ["OpenRemovedProfilesFolder"] = "Open removed profiles folder",
@@ -262,6 +263,7 @@ public static class LocalizationCatalog
         ["SystemDefault"] = "Как в системе",
         ["English"] = "English",
         ["Russian"] = "Русский",
+        ["ChineseSimplified"] = "简体中文",
         ["DirectoryName"] = "Имя папки",
         ["OpenProfilesFolder"] = "Открыть папку профилей",
         ["OpenRemovedProfilesFolder"] = "Открыть удалённые профили",
@@ -415,14 +417,22 @@ public static class LocalizationCatalog
         }
 
         culture ??= CultureInfo.CurrentUICulture;
-        return culture.TwoLetterISOLanguageName.Equals("ru", StringComparison.OrdinalIgnoreCase)
-            ? LanguagePreference.Russian
-            : LanguagePreference.English;
+        return culture.TwoLetterISOLanguageName.ToLowerInvariant() switch
+        {
+            "ru" => LanguagePreference.Russian,
+            "zh" => LanguagePreference.ChineseSimplified,
+            _ => LanguagePreference.English,
+        };
     }
 
     public static string Text(LanguagePreference preference, string key, params object[] args)
     {
-        IReadOnlyDictionary<string, string> dictionary = Resolve(preference) == LanguagePreference.Russian ? Russian : English;
+        IReadOnlyDictionary<string, string> dictionary = Resolve(preference) switch
+        {
+            LanguagePreference.Russian => Russian,
+            LanguagePreference.ChineseSimplified => ChineseSimplified,
+            _ => English,
+        };
         string value = dictionary.TryGetValue(key, out string? text)
             ? text
             : English.GetValueOrDefault(key, key);
@@ -432,5 +442,10 @@ public static class LocalizationCatalog
     public static IReadOnlyCollection<string> MissingRussianKeys()
     {
         return English.Keys.Where(key => !Russian.ContainsKey(key)).Order(StringComparer.Ordinal).ToArray();
+    }
+
+    public static IReadOnlyCollection<string> MissingChineseKeys()
+    {
+        return English.Keys.Where(key => !ChineseSimplified.ContainsKey(key)).Order(StringComparer.Ordinal).ToArray();
     }
 }
