@@ -13,6 +13,32 @@ internal sealed class WindowsDesktopProcessRuntime : IDesktopProcessRuntime
 
     public WindowsDesktopProcessRuntime(SafeLogger logger) => this.logger = logger;
 
+    public static IReadOnlyList<int> CurrentJobMembers()
+    {
+        if (!IsProcessInJob(GetCurrentProcess(), IntPtr.Zero, out bool inJob)) throw new Win32Exception(Marshal.GetLastWin32Error());
+        if (!inJob) return [];
+        for (int size = 4096; size <= 1024 * 1024; size *= 2)
+        {
+            IntPtr buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                if (QueryInformationJobObject(IntPtr.Zero, 3, buffer, (uint)size, out _))
+                {
+                    int count = Marshal.ReadInt32(buffer, 4);
+                    if (count < 0 || count > (size - 8) / IntPtr.Size) throw new InvalidOperationException("Invalid job process list.");
+                    return Enumerable.Range(0, count).Select(index => checked((int)Marshal.ReadIntPtr(buffer, 8 + index * IntPtr.Size).ToInt64())).ToArray();
+                }
+                if (Marshal.GetLastWin32Error() != 234) throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            finally { Marshal.FreeHGlobal(buffer); }
+        }
+        throw new InvalidOperationException("Could not verify the helper process lifetime.");
+    }
+
+    [DllImport("kernel32.dll")] private static extern IntPtr GetCurrentProcess();
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool IsProcessInJob(IntPtr process, IntPtr job, out bool result);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool QueryInformationJobObject(IntPtr job, int informationClass, IntPtr buffer, uint size, out uint returned);
+
     public IReadOnlyList<DesktopProcessInfo> Snapshot()
     {
         using SafeFileHandle snapshot = CreateToolhelp32Snapshot(2, 0);

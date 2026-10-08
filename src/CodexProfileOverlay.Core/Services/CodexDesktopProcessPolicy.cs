@@ -9,8 +9,28 @@ public sealed record DesktopProcessInfo(
     bool IsDesktopExecutable = false,
     int Depth = 0);
 
+public sealed class DesktopLifetimeDependencyException : InvalidOperationException
+{
+    public DesktopLifetimeDependencyException() : base("The helper shares the desktop lifetime. Start it from File Explorer before switching; authorization was not changed.") { }
+}
+
 public static class CodexDesktopProcessPolicy
 {
+    public static bool HasLifetimeDependency(IReadOnlyList<DesktopProcessInfo> snapshot, int helperId, IEnumerable<int> jobMembers)
+    {
+        var targets = SelectTargets(snapshot, helperId).Select(process => process.Id).ToHashSet();
+        if (jobMembers.Any(targets.Contains)) return true;
+        var byId = snapshot.ToDictionary(process => process.Id);
+        var visited = new HashSet<int>();
+        int id = helperId;
+        while (byId.TryGetValue(id, out DesktopProcessInfo? process) && visited.Add(id))
+        {
+            if (targets.Contains(process.ParentId)) return true;
+            id = process.ParentId;
+        }
+        return false;
+    }
+
     private static readonly HashSet<string> ProtectedNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "Code", "devenv", "explorer", "chrome", "msedge", "firefox", "WindowsTerminal", "CodexProfileOverlay",

@@ -2,14 +2,15 @@ namespace CodexProfileOverlay.Core.Services;
 
 public sealed class AppPaths
 {
-    public AppPaths(string userProfile, string localAppData)
+    public AppPaths(string userProfile, string localAppData, string? applicationDataDirectory = null)
     {
         UserProfile = RequireDirectoryLikePath(userProfile, nameof(userProfile));
         LocalAppData = RequireDirectoryLikePath(localAppData, nameof(localAppData));
         SharedCodexDirectory = Path.Combine(UserProfile, ".codex");
         SharedAuthFile = Path.Combine(SharedCodexDirectory, "auth.json");
         ProfilesDirectory = Path.Combine(UserProfile, ".codex-profiles");
-        ApplicationDataDirectory = Path.Combine(LocalAppData, "CodexProfileOverlay");
+        ApplicationDataDirectory = applicationDataDirectory is null ? Path.Combine(LocalAppData, "CodexProfileOverlay")
+            : RequireDirectoryLikePath(applicationDataDirectory, nameof(applicationDataDirectory));
         SettingsFile = Path.Combine(ApplicationDataDirectory, "settings.json");
         ProfilesMetadataFile = Path.Combine(ApplicationDataDirectory, "profiles.json");
         ActiveProfileFile = Path.Combine(ApplicationDataDirectory, "active-profile.txt");
@@ -52,7 +53,18 @@ public sealed class AppPaths
     {
         string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return new AppPaths(userProfile, localAppData);
+        return new AppPaths(userProfile, localAppData, ResolveApplicationDataDirectory(localAppData));
+    }
+
+    public static string ResolveApplicationDataDirectory(string localAppData)
+    {
+        string packaged = Path.Combine(localAppData, "Packages", "OpenAI.Codex_2p2nqsd0c76g0", "LocalCache", "Local", "CodexProfileOverlay");
+        // Explicitly reuse the established data, whether launched by packaged Codex or Explorer.
+        if (File.Exists(Path.Combine(packaged, "settings.json")) && File.Exists(Path.Combine(packaged, "active-profile.txt")))
+        {
+            return packaged;
+        }
+        return Path.Combine(localAppData, "CodexProfileOverlay");
     }
 
     private static string RequireDirectoryLikePath(string path, string parameterName)

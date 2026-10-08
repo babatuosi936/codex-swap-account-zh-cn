@@ -80,6 +80,7 @@ public static partial class LocalizationCatalog
         ["HotkeysCouldNotRegister"] = "一个或多个快捷键无法注册，可能已被其他程序占用。",
         ["ForceClosePrompt"] = "将先尝试正常关闭 Codex。如果等待超时后仍在运行，是否允许强制关闭以完成切换？",
         ["CouldNotSwitch"] = "无法切换账号。",
+        ["HelperRequiresIndependentLaunch"] = "工具与 Codex 共用进程组，切换已中止，登录未修改。请退出工具，从文件夹双击启动后再切换。",
         ["AddProfileTitle"] = "添加账号",
         ["ProfileDirectoryName"] = "账号文件夹名称",
         ["StartingLogin"] = "正在为 {0} 启动 Codex 登录…",

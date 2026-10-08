@@ -106,6 +106,7 @@ public partial class App : Application
         var paths = AppPaths.FromEnvironment();
         Directory.CreateDirectory(paths.ApplicationDataDirectory);
         logger = new SafeLogger(paths.LogDirectory);
+        logger.Info($"Using application data directory: {paths.ApplicationDataDirectory}");
 
         try
         {
@@ -118,6 +119,7 @@ public partial class App : Application
             backupMaintenance.CleanupRetention();
             var switchService = new AuthSwitchService(paths, profileDiscovery, activeProfileStore, backups: backupMaintenance);
             var processService = new CodexProcessService(logger);
+            logger.Info($"Helper shares Codex process lifetime: {processService.HasDesktopLifetimeDependency()}");
             controller = new OverlayController(
                 paths,
                 profileManager,

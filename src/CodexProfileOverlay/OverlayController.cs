@@ -323,9 +323,20 @@ internal sealed class OverlayController : IDisposable
             trayIcon?.UpdateOverlayState(false);
             hotkeyManager?.Clear();
             overlayWindow.ShowNotification(localizer.Format("SwitchingToProfile", profileName));
+            int? switchingDesktopId = attachedWindow?.ProcessId;
+
+            // Do not leave native owned windows attached to a desktop that is about to exit.
+            foreach (Window window in Application.Current.Windows.Cast<Window>().ToArray())
+            {
+                if (window is ToastWindow) window.Close();
+                else if (window != overlayWindow) new WindowInteropHelper(window).Owner = IntPtr.Zero;
+            }
+            overlayWindow.DetachFromOwner();
+            attachedWindow = null;
+            visibilityState.MarkCodexUnavailable();
 
             bool allowForceClose = settings.ForceCloseFallback;
-            await processService.CloseCodexAsync(settings.GracefulCloseTimeoutSeconds, allowForceClose, disposalTokenSource.Token, attachedWindow?.ProcessId).ConfigureAwait(true);
+            await processService.CloseCodexAsync(settings.GracefulCloseTimeoutSeconds, allowForceClose, disposalTokenSource.Token, switchingDesktopId).ConfigureAwait(true);
             MigrateLegacyProfileStateSafely();
             switchResult = await switchService.SwitchAsync(profileName, disposalTokenSource.Token).ConfigureAwait(true);
             RefreshProfiles();
@@ -352,8 +363,11 @@ internal sealed class OverlayController : IDisposable
                 }
             }
             logger.Error($"Switch to profile '{profileName}' failed.", exception);
-            overlayWindow?.ShowError(localizer["CouldNotSwitch"] + " " + localizer["PreviousAuthorizationRestored"] + ".");
-            trayIcon?.ShowBalloon("Codex Profile Overlay", localizer["CouldNotSwitch"] + " " + localizer["PreviousAuthorizationRestored"] + ".");
+            string failureMessage = exception is DesktopLifetimeDependencyException
+                ? localizer["HelperRequiresIndependentLaunch"]
+                : localizer["CouldNotSwitch"] + " " + localizer["PreviousAuthorizationRestored"] + ".";
+            overlayWindow?.ShowError(failureMessage);
+            trayIcon?.ShowBalloon("Codex Profile Overlay", failureMessage);
         }
         finally
         {

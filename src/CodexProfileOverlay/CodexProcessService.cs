@@ -17,6 +17,10 @@ internal sealed class CodexProcessService
 
     public Task CloseCodexAsync(int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken, int? attachedDesktopProcessId = null)
     {
+        if (HasDesktopLifetimeDependency())
+        {
+            throw new DesktopLifetimeDependencyException();
+        }
         if (attachedDesktopProcessId is int id)
         {
             DesktopProcessInfo? attached = desktopRuntime.Snapshot().FirstOrDefault(process => process.Id == id);
@@ -31,6 +35,9 @@ internal sealed class CodexProcessService
 
     public IReadOnlyList<DesktopProcessInfo> InspectDesktopProcesses() =>
         CodexDesktopProcessPolicy.SelectTargets(desktopRuntime.Snapshot(), Environment.ProcessId);
+
+    public bool HasDesktopLifetimeDependency() => CodexDesktopProcessPolicy.HasLifetimeDependency(
+        desktopRuntime.Snapshot(), Environment.ProcessId, WindowsDesktopProcessRuntime.CurrentJobMembers());
 
     public void LaunchCodex()
     {

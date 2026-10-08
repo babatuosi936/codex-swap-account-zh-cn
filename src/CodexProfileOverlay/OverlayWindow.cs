@@ -122,6 +122,14 @@ internal sealed class OverlayWindow : Window
         ApplyToolWindowStyle(helper.Handle);
     }
 
+    public void DetachFromOwner()
+    {
+        Hide();
+        compactPopup.IsOpen = false;
+        new WindowInteropHelper(this).Owner = IntPtr.Zero;
+        ownerHwnd = IntPtr.Zero;
+    }
+
     public void UpdatePlacement(IntPtr codexHwnd)
     {
         if (!NativeMethods.IsWindowVisible(codexHwnd) || NativeMethods.IsIconic(codexHwnd))
