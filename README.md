@@ -242,7 +242,7 @@ Shows all profiles as segmented buttons for immediate one-click switching.
 
 Shows the active profile in a smaller dropdown with access to profiles and common actions.
 
-The overlay can be positioned after the Codex menu, centered, aligned right, or dragged to a custom location with `Alt + left mouse button`.
+The overlay can be positioned after the Codex menu, centered, aligned right, or dragged to a custom location with the left mouse button. Drag anywhere on the panel, including an account button; a normal click still opens the menu or selects an account. The custom position is saved when you release the mouse and restored after restarting the overlay.
 
 ## Profile status and limit indicators
 

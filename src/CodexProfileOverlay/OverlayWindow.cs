@@ -33,8 +33,10 @@ internal sealed class OverlayWindow : Window
     private ProfileStatusDocument? statusDocument;
     private IntPtr ownerHwnd;
     private bool isDragging;
+    private bool dragPending;
     private bool isSwitching;
     private Point dragOffset;
+    private Point dragStartScreen;
     private OverlayDisplayMode resolvedAutoMode = OverlayDisplayMode.Expanded;
     private OverlayDisplayMode currentMode = OverlayDisplayMode.Expanded;
     private Rect lastClientBounds = Rect.Empty;
@@ -63,14 +65,22 @@ internal sealed class OverlayWindow : Window
 
         Content = shell;
         RebuildContent();
-        MouseLeftButtonDown += OnMouseLeftButtonDown;
-        MouseMove += OnMouseMove;
-        MouseLeftButtonUp += OnMouseLeftButtonUp;
+        PreviewMouseLeftButtonDown += OnMouseLeftButtonDown;
+        PreviewMouseMove += OnMouseMove;
+        PreviewMouseLeftButtonUp += OnMouseLeftButtonUp;
+        LostMouseCapture += (_, e) =>
+        {
+            if (ReferenceEquals(e.OriginalSource, this))
+            {
+                FinishDrag();
+            }
+        };
         SourceInitialized += OnSourceInitialized;
         IsVisibleChanged += (_, _) =>
         {
             if (!IsVisible)
             {
+                FinishDrag();
                 compactPopup.IsOpen = false;
             }
         };
@@ -124,6 +134,12 @@ internal sealed class OverlayWindow : Window
         {
             Hide();
             compactPopup.IsOpen = false;
+            return;
+        }
+
+        // The tracking timer must not reposition or rebuild the surface mid-drag.
+        if (isDragging)
+        {
             return;
         }
 
@@ -189,11 +205,13 @@ internal sealed class OverlayWindow : Window
         if (positionChanged || (!wasVisible && IsVisible))
         {
             var handle = new WindowInteropHelper(this).Handle;
+            Point devicePosition = hwndSource?.CompositionTarget?.TransformToDevice.Transform(new Point(Left, Top))
+                ?? new Point(Left, Top);
             _ = NativeMethods.SetWindowPos(
                 handle,
                 IntPtr.Zero,
-                (int)Math.Round(Left),
-                (int)Math.Round(Top),
+                (int)Math.Round(devicePosition.X),
+                (int)Math.Round(devicePosition.Y),
                 0,
                 0,
                 NativeMethods.SwpNoSize | NativeMethods.SwpNoZOrder | NativeMethods.SwpNoActivate | NativeMethods.SwpShowWindow);
@@ -842,8 +860,9 @@ internal sealed class OverlayWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        hwndSource = (HwndSource?)PresentationSource.FromVisual(this);
-        ApplyToolWindowStyle(new WindowInteropHelper(this).Handle);
+        var handle = new WindowInteropHelper(this).Handle;
+        hwndSource = HwndSource.FromHwnd(handle);
+        ApplyToolWindowStyle(handle);
     }
 
     private static void ApplyToolWindowStyle(IntPtr handle)
@@ -856,43 +875,85 @@ internal sealed class OverlayWindow : Window
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if ((Keyboard.Modifiers & ModifierKeys.Alt) == 0)
+        if (ownerHwnd == IntPtr.Zero || e.ButtonState != MouseButtonState.Pressed)
         {
             return;
         }
 
-        settings.PositionPreset = PositionPreset.Custom;
-        isDragging = true;
+        // Let buttons handle a normal click; capture only after the drag threshold.
+        dragPending = true;
         dragOffset = e.GetPosition(this);
-        CaptureMouse();
-        e.Handled = true;
+        dragStartScreen = DeviceToDip(PointToScreen(dragOffset));
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        if (!isDragging || ownerHwnd == IntPtr.Zero || !TryGetClientBounds(ownerHwnd, out Rect clientBounds))
+        if (!dragPending && !isDragging)
         {
+            return;
+        }
+
+        if (e.LeftButton != MouseButtonState.Pressed || ownerHwnd == IntPtr.Zero || !TryGetClientBounds(ownerHwnd, out Rect clientBounds))
+        {
+            FinishDrag();
             return;
         }
 
         Point screenPoint = PointToScreen(e.GetPosition(this));
         Point screenDip = DeviceToDip(screenPoint);
+        if (!isDragging)
+        {
+            if (Math.Abs(screenDip.X - dragStartScreen.X) < SystemParameters.MinimumHorizontalDragDistance
+                && Math.Abs(screenDip.Y - dragStartScreen.Y) < SystemParameters.MinimumVerticalDragDistance)
+            {
+                return;
+            }
+
+            if (!CaptureMouse())
+            {
+                dragPending = false;
+                return;
+            }
+
+            dragPending = false;
+            isDragging = true;
+            settings.PositionPreset = PositionPreset.Custom;
+            compactPopup.IsOpen = false;
+        }
+
         settings.OffsetX = OverlayLayoutService.Clamp(screenDip.X - clientBounds.Left - dragOffset.X, 0, Math.Max(0, clientBounds.Width - ActualWidth));
         settings.OffsetY = OverlayLayoutService.Clamp(screenDip.Y - clientBounds.Top - dragOffset.Y, 0, Math.Max(0, clientBounds.Height - ActualHeight));
         Left = clientBounds.Left + settings.OffsetX;
         Top = clientBounds.Top + settings.OffsetY;
+        placementDirty = true;
+        e.Handled = true;
     }
 
     private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (!isDragging)
+        bool wasDragging = isDragging;
+        FinishDrag();
+        if (wasDragging)
         {
-            return;
+            // Prevent releasing a drag from also opening a menu or switching accounts.
+            e.Handled = true;
+        }
+    }
+
+    private void FinishDrag()
+    {
+        dragPending = false;
+        bool wasDragging = isDragging;
+        isDragging = false;
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
         }
 
-        isDragging = false;
-        ReleaseMouseCapture();
-        TrySaveSettings();
+        if (wasDragging)
+        {
+            TrySaveSettings();
+        }
     }
 
     private void TrySaveSettings()
