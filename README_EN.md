@@ -8,7 +8,7 @@ View five-hour and weekly remaining quotas for multiple accounts in a draggable 
 
 **English** · [简体中文](README.md)
 
-[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.1-zh.1) · [How to use](#quick-start)
+[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.1.2-zh.1) · [How to use](#quick-start)
 
 For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 
@@ -36,6 +36,8 @@ Select a saved, signed-in account from the overlay to switch. The panel periodic
 | Mouse or hotkeys | Use the mouse for everyday actions, or configure optional hotkeys. Leave individual hotkeys unset if you prefer. Hotkey edits take effect only after clicking **Save**. |
 | Languages and system tray | Use English, Simplified Chinese, Russian, or the system language. The tray provides access to accounts, settings, and overlay visibility. |
 | Authorization backup and recovery | Authorization is backed up before a switch. If switching fails, the tool attempts to restore the previous authorization and reports the result. |
+
+The visible overlay has a three-second hiding grace period for brief focus changes, such as starting a screenshot. Staying in another app hides it after that delay. Manual hiding, minimizing, or closing Codex still takes effect immediately.
 
 Switching closes and restarts Codex, so finish your current work before switching. Usage values come from server queries and may take time to update.
 

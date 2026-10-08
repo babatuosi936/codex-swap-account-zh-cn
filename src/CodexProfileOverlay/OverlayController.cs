@@ -206,9 +206,9 @@ internal sealed class OverlayController : IDisposable
         visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
         visibilityState.MarkCodexAvailable(found.IsMinimized);
         bool foregroundBelongsToCodexOrOverlay = ForegroundBelongsToCodexOrOverlay(found, overlayWindow!.Handle);
-        bool shouldShowOverlay = visibilityState.ShouldShowOverlay
-            && foregroundBelongsToCodexOrOverlay
+        bool foregroundEligible = foregroundBelongsToCodexOrOverlay
             && IsCodexOrOverlayTopVisibleAtClientCenter(found);
+        bool shouldShowOverlay = visibilityState.ResolveForegroundVisibility(foregroundEligible, Environment.TickCount64);
         overlayWindow.AllowAutoShow = shouldShowOverlay;
         if (!shouldShowOverlay)
         {
