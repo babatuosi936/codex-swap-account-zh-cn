@@ -8,7 +8,7 @@
 
 **简体中文** · [English](README_EN.md)
 
-[下载便携版](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) · [快速开始](#快速开始) · [界面预览](#界面预览) · [相对原项目的升级](#相对原项目的升级)
+[下载便携版](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [版本说明](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) · [快速开始](#快速开始) · [界面预览](#界面预览) · [相对原项目的升级](#相对原项目的升级)
 
 </div>
 
@@ -35,7 +35,7 @@
 
 运行环境：**Windows 10/11 x64 + Codex 桌面版**。添加账号和自动额度查询还需要可用的 Codex CLI。
 
-1. 打开 [下载页面](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest)，下载 `CodexProfileOverlay-win-x64-portable.zip`。
+1. 点击 [直接下载便携包 ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip)，保存 `CodexProfileOverlay-win-x64-portable.zip`。
 2. 解压到固定文件夹，运行 `CodexProfileOverlay.exe`。便携包包含运行时，无需额外安装 .NET。
 3. 打开 Codex，工具识别到窗口后会显示账号浮层；也可从系统托盘显示或隐藏。
 4. 在“设置 → 语言”选择简体中文。中文系统默认语言也可自动使用中文。
@@ -44,7 +44,7 @@
 
 不需要快捷键时，进入“设置 → 快捷键”，逐项点击“清除”，然后点击“保存”。想换位置，直接拖动浮层，或在“设置 → 外观”选择位置预设。
 
-发布页也提供单独的自包含 EXE 与 `SHA256SUMS.txt` 校验文件。Windows 可能对未签名程序显示 SmartScreen 提示，可根据来源与发布页校验值自行判断是否运行。
+[版本发布页](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest)也提供单独的自包含 EXE 与 `SHA256SUMS.txt` 校验文件。Windows 可能对未签名程序显示 SmartScreen 提示，可根据来源与发布页校验值自行判断是否运行。
 
 当前仓库为私有仓库，访问代码、配图和下载附件需要相应的 GitHub 权限。
 
