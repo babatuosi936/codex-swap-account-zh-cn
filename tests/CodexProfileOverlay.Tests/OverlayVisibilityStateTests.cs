@@ -5,28 +5,28 @@ namespace CodexProfileOverlay.Tests;
 public sealed class OverlayVisibilityStateTests
 {
     [Fact]
-    public void ScreenshotFocusInterruptionKeepsVisibleOverlayAndRecoveryResetsGrace()
+    public void CaptureSessionStaysVisibleUntilItEndsWithoutATimeLimit()
     {
         var state = new OverlayVisibilityState();
         state.MarkCodexAvailable(false);
-        Assert.True(state.ResolveForegroundVisibility(true, 1000));
-        Assert.True(state.ResolveForegroundVisibility(false, 1750));
-        Assert.True(state.ResolveForegroundVisibility(false, 3750));
-        Assert.True(state.ResolveForegroundVisibility(true, 4000));
-        Assert.True(state.ResolveForegroundVisibility(false, 4750));
-        Assert.True(state.ResolveForegroundVisibility(false, 6750));
-        Assert.False(state.ResolveForegroundVisibility(false, 7750));
-        Assert.False(state.ResolveForegroundVisibility(false, 8500));
-        Assert.True(state.ResolveForegroundVisibility(true, 9000));
+        Assert.True(state.ResolveForegroundVisibility(true));
+        // More than a minute of 200-ms tracking checks while the canvas stays open.
+        for (int tick = 0; tick < 400; tick++)
+            Assert.True(state.ResolveForegroundVisibility(false, screenshotActive: true));
+        Assert.True(state.ResolveForegroundVisibility(true, screenshotActive: false));
+        Assert.False(state.ResolveForegroundVisibility(false, screenshotActive: false));
+        Assert.False(state.ResolveForegroundVisibility(false, screenshotActive: true));
+        Assert.True(state.ResolveForegroundVisibility(true));
     }
 
     [Fact]
-    public void BackgroundStartupDoesNotRevealOverlayDuringGrace()
+    public void ScreenshotDoesNotRevealAnOverlayStartedBehindAnotherApp()
     {
         var state = new OverlayVisibilityState();
         state.MarkCodexAvailable(false);
-        Assert.False(state.ResolveForegroundVisibility(false, 1000));
-        Assert.False(state.ResolveForegroundVisibility(false, 2000));
+        Assert.False(state.ResolveForegroundVisibility(false));
+        Assert.False(state.ResolveForegroundVisibility(false, screenshotActive: true));
+        Assert.False(state.ResolveForegroundVisibility(true, screenshotActive: true));
     }
 
     [Theory]
@@ -34,12 +34,12 @@ public sealed class OverlayVisibilityStateTests
     [InlineData("minimized")]
     [InlineData("closed")]
     [InlineData("disabled")]
-    public void ExplicitHideAndUnavailableCodexOverrideFocusGrace(string reason)
+    public void ExplicitHideAndUnavailableCodexOverrideScreenshotSession(string reason)
     {
         var state = new OverlayVisibilityState();
         state.MarkCodexAvailable(false);
-        Assert.True(state.ResolveForegroundVisibility(true, 1000));
-        Assert.True(state.ResolveForegroundVisibility(false, 1750));
+        Assert.True(state.ResolveForegroundVisibility(true));
+        Assert.True(state.ResolveForegroundVisibility(false, screenshotActive: true));
         switch (reason)
         {
             case "manual": state.MarkManualHide(); break;
@@ -47,13 +47,24 @@ public sealed class OverlayVisibilityStateTests
             case "closed": state.MarkCodexUnavailable(); break;
             case "disabled": state.AutomaticDisplayEnabled = false; break;
         }
-        Assert.False(state.ResolveForegroundVisibility(false, 2000));
-        Assert.False(state.ResolveForegroundVisibility(true, 2100));
+        Assert.False(state.ResolveForegroundVisibility(false, screenshotActive: true));
         state.RevealManually();
         state.MarkCodexAvailable(false);
         state.AutomaticDisplayEnabled = true;
-        Assert.False(state.ResolveForegroundVisibility(false, 2500));
-        Assert.True(state.ResolveForegroundVisibility(true, 3000));
+        Assert.False(state.ResolveForegroundVisibility(false, screenshotActive: true));
+        Assert.True(state.ResolveForegroundVisibility(true));
+    }
+
+    [Theory]
+    [InlineData("QQScreenshot", true)]
+    [InlineData("qqscreenshot", true)]
+    [InlineData("QQ", false)]
+    [InlineData("TIM", false)]
+    [InlineData("QQScreenshotHelper", false)]
+    [InlineData(null, false)]
+    public void ScreenshotPolicyOnlyExemptsTheDedicatedCaptureProcess(string? name, bool expected)
+    {
+        Assert.Equal(expected, ScreenshotWindowPolicy.IsDedicatedCaptureProcess(name));
     }
 
     [Fact]

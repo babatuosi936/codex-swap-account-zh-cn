@@ -37,7 +37,7 @@ Select a saved, signed-in account from the overlay to switch. The panel periodic
 | Languages and system tray | Use English, Simplified Chinese, Russian, or the system language. The tray provides access to accounts, settings, and overlay visibility. |
 | Authorization backup and recovery | Authorization is backed up before a switch. If switching fails, the tool attempts to restore the previous authorization and reports the result. |
 
-The visible overlay has a three-second hiding grace period for brief focus changes, such as starting a screenshot. Staying in another app hides it after that delay. Manual hiding, minimizing, or closing Codex still takes effect immediately.
+The local build recognizes the QQ NT capture canvas and preserves an already-visible overlay throughout capture, with no fixed timeout. Ordinary app switches, manual hiding, minimizing, and closing Codex hide it immediately. Window tracking runs every 200 ms. This change has not been published to GitHub; the download page still serves the released version.
 
 Switching closes and restarts Codex, so finish your current work before switching. Usage values come from server queries and may take time to update.
 
