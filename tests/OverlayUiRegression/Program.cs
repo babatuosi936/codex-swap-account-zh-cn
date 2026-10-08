@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,7 +23,7 @@ internal static class Program
     private static readonly List<object> Evidence = [];
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
         var app = new FixtureApp { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("OverlayUiRegression.FixtureResources.xaml")!;
@@ -35,13 +36,18 @@ internal static class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
-            foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
-                foreach (bool staysOpen in new[] { false, true })
-                    RunScenario(scenario.Scale, scenario.Edge, staysOpen);
-            RunExpandedDragScenario(1.0);
-            RunExpandedDragScenario(1.4);
+            if (!args.Contains("--auxiliary-only"))
+            {
+                foreach (var scenario in new[] { (Scale: 1.0, Edge: false), (Scale: 1.4, Edge: false), (Scale: 1.0, Edge: true), (Scale: 1.4, Edge: true) })
+                    foreach (bool staysOpen in new[] { false, true })
+                        RunScenario(scenario.Scale, scenario.Edge, staysOpen);
+                RunExpandedDragScenario(1.0);
+                RunExpandedDragScenario(1.4);
+            }
+            RunAuxiliaryWindowScenario("SettingsWindow");
+            RunAuxiliaryWindowScenario("ProfileManagerWindow");
             System.IO.File.WriteAllText(System.IO.Path.Combine(AppContext.BaseDirectory, "popup-regression.json"), JsonSerializer.Serialize(Evidence, new JsonSerializerOptions { WriteIndented = true }));
-            System.Console.WriteLine($"PASS: {Evidence.Count} UI checks across popup placement and expanded account dragging.");
+            System.Console.WriteLine($"PASS: {Evidence.Count} UI checks across popup placement, account dragging and auxiliary window visibility.");
             app.Shutdown();
             return 0;
         }
@@ -183,6 +189,88 @@ internal static class Program
         finally { overlay.Close(); host.Close(); Pump(); }
     }
 
+    private static void RunAuxiliaryWindowScenario(string typeName)
+    {
+        string root = System.IO.Path.Combine(AppContext.BaseDirectory, "local-test-data", typeName);
+        System.IO.Directory.CreateDirectory(root);
+        var logger = new SafeLogger(System.IO.Path.Combine(root, "logs"));
+        using var service = new ProfileStatusService(new ProfileStatusStore(System.IO.Path.Combine(root, "profile-status.json")), new FixtureUsageProvider(), logger);
+        var paths = new AppPaths(root, root);
+        var settings = new OverlaySettings { Language = LanguagePreference.ChineseSimplified };
+        ProfileInfo[] profiles = [new("auxiliary-test", root, "unused") { DisplayName = "测试账号" }];
+        var localizerType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.Localizer")!;
+        object localizer = Activator.CreateInstance(localizerType, LanguagePreference.ChineseSimplified)!;
+        Type windowType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay." + typeName)!;
+        var constructor = windowType.GetConstructors().Single();
+        var arguments = constructor.GetParameters().Select(parameter => parameter.ParameterType == typeof(OverlaySettings) ? (object)settings
+            : parameter.ParameterType == typeof(IReadOnlyList<ProfileInfo>) ? profiles
+            : parameter.ParameterType == localizerType ? localizer
+            : parameter.ParameterType == typeof(ProfileStatusService) ? service
+            : parameter.ParameterType == typeof(BackupMaintenanceService) ? new BackupMaintenanceService(paths)
+            : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)(_ => { })
+            : parameter.ParameterType == typeof(Func<string, Task>) ? (Func<string, Task>)(_ => Task.CompletedTask)
+            : parameter.ParameterType == typeof(Action<ProfileInfo>) ? (Action<ProfileInfo>)(_ => { })
+            : parameter.ParameterType == typeof(Action<IReadOnlyList<string>>) ? (Action<IReadOnlyList<string>>)(_ => { })
+            : parameter.ParameterType == typeof(string) ? profiles[0].Name
+            : (Action)(() => { })).ToArray();
+        var host = new Window { Title = "Auxiliary Minimize Regression Fixture", Width = 700, Height = 500, Left = 40, Top = 40, ShowInTaskbar = false };
+        host.Show();
+        var window = (Window)constructor.Invoke(arguments);
+        try
+        {
+            bool closed = false;
+            int stateEvents = 0;
+            window.StateChanged += (_, _) => stateEvents++;
+            window.Closed += (_, _) => closed = true;
+            window.ShowInTaskbar = false;
+            // Use the native owner path used for Codex, not a managed WPF Owner.
+            new WindowInteropHelper(window).Owner = new WindowInteropHelper(host).Handle;
+            window.Show();
+            Pump();
+            var handle = new WindowInteropHelper(window).Handle;
+            object originalContent = window.Content;
+            for (int cycle = 1; cycle <= 3; cycle++)
+            {
+                if (cycle == 2)
+                    _ = SendMessage(handle, 0x0112, (IntPtr)0xF020, IntPtr.Zero); // Native title-bar minimize command.
+                else
+                    window.WindowState = WindowState.Minimized;
+                WaitFor(() => !window.IsVisible);
+                bool hidden = !window.IsVisible && !IsWindowVisible(handle);
+                Evidence.Add(new { kind = "auxiliary-minimized", typeName, cycle, hidden, closed });
+                Require(hidden && !closed, $"{typeName} left a visible minimized desktop caption or closed the window: managedVisible={window.IsVisible}, nativeVisible={IsWindowVisible(handle)}, state={window.WindowState}, closed={closed}, stateEvents={stateEvents}.");
+                var controllerType = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.OverlayController")!;
+                controllerType.GetMethod("BringToFront", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, [window]);
+                Pump();
+                bool restored = window.IsVisible && IsWindowVisible(handle) && !IsIconic(handle) && window.WindowState == WindowState.Normal;
+                bool reused = ReferenceEquals(originalContent, window.Content) && new WindowInteropHelper(window).Handle == handle;
+                Evidence.Add(new { kind = "auxiliary-restored", typeName, cycle, restored, reused });
+                Require(restored && reused && !closed, $"{typeName} failed to restore the same window and controls.");
+            }
+            window.WindowState = WindowState.Minimized;
+            window.Close();
+            Pump();
+            Evidence.Add(new { kind = "auxiliary-close-during-minimize", typeName, closed });
+            Require(closed && !IsWindowVisible(handle), $"{typeName} failed to close during a queued minimize.");
+        }
+        finally { window.Close(); host.Close(); Pump(); }
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(IntPtr handle);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(IntPtr handle);
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr handle, int message, IntPtr wParam, IntPtr lParam);
+
+    private sealed class FixtureUsageProvider : IUsageProvider
+    {
+        public UsageProviderCapability Capability => UsageProviderCapability.Supported;
+        public Task<UsageSnapshot?> GetUsageAsync(string directory, CancellationToken token) => Task.FromResult<UsageSnapshot?>(null);
+    }
+
     private static ProfileStatusDocument Document(ProfileInfo[] profiles, int sequence)
     {
         var document = new ProfileStatusDocument();
@@ -225,6 +313,12 @@ internal static class Program
     }
     private static void Call(Window overlay, string method, params object?[] arguments) => OverlayType.GetMethod(method)!.Invoke(overlay, arguments);
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+    private static void WaitFor(Func<bool> condition)
+    {
+        DateTime deadline = DateTime.UtcNow.AddSeconds(2);
+        do { Pump(); } while (!condition() && DateTime.UtcNow < deadline);
+    }
+
     private static void Pump()
     {
         var frame = new DispatcherFrame();

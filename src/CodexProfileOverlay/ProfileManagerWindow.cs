@@ -58,6 +58,7 @@ internal sealed class ProfileManagerWindow : Window
         UseLayoutRounding = true;
         SnapsToDevicePixels = true;
         WindowCaptionThemeService.ApplyCurrent(this);
+        AuxiliaryWindowVisibility.HideWhenMinimized(this);
 
         Content = BuildShell(addProfile);
         localizer.LanguageChanged += Rebuild;

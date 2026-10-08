@@ -538,9 +538,9 @@ internal sealed class OverlayController : IDisposable
 
     private void ShowSettingsWindow()
     {
-        if (settingsWindow is { IsVisible: true })
+        if (settingsWindow is not null)
         {
-            BringToFront(settingsWindow);
+            ShowCodexOwnedWindow(settingsWindow);
             return;
         }
 
@@ -570,9 +570,9 @@ internal sealed class OverlayController : IDisposable
 
     private void ShowProfileManager()
     {
-        if (profileManagerWindow is { IsVisible: true })
+        if (profileManagerWindow is not null)
         {
-            BringToFront(profileManagerWindow);
+            ShowCodexOwnedWindow(profileManagerWindow);
             return;
         }
 
@@ -677,7 +677,6 @@ internal sealed class OverlayController : IDisposable
     {
         AttachToCodexOwner(window);
         window.ShowInTaskbar = false;
-        window.Show();
         BringToFront(window);
     }
 
@@ -723,9 +722,16 @@ internal sealed class OverlayController : IDisposable
         }
 
         window.Show();
+        IntPtr handle = new WindowInteropHelper(window).Handle;
+        // Changing WindowState while hidden does not always restore the native
+        // HWND. Restore it explicitly before focusing the reopened window.
+        if (NativeMethods.IsIconic(handle))
+        {
+            _ = NativeMethods.ShowWindow(handle, NativeMethods.SwRestore);
+        }
         window.Activate();
         window.Focus();
-        _ = NativeMethods.SetForegroundWindow(new WindowInteropHelper(window).Handle);
+        _ = NativeMethods.SetForegroundWindow(handle);
     }
 
     private void ApplySettings()

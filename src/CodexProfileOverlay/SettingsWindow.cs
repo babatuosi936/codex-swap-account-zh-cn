@@ -96,6 +96,7 @@ internal sealed class SettingsWindow : Window
         SnapsToDevicePixels = true;
         WindowStartupLocation = WindowStartupLocation.Manual;
         WindowCaptionThemeService.Apply(this, settings.Theme);
+        AuxiliaryWindowVisibility.HideWhenMinimized(this);
         ApplySavedGeometry();
 
         Content = BuildShell();

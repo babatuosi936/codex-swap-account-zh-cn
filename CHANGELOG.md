@@ -2,6 +2,7 @@
 
 ## Local UI fix - 2026-10-08
 
+- Hide minimized settings and profile-manager windows instead of leaving small desktop captions, reuse their instances when reopened, and restore the native window state before focusing them.
 - Prevent profile-button focus from horizontally scrolling the expanded account row during a pending or active drag, keeping the main account visible when pressing the third account.
 - Show color and manual status settings as a permanent section on the quota settings page, without an expander or collapse arrow.
 - Keep the compact menu open when clicking Refresh all quotas, and update quota results in place. Commands that open another window retain their closing behavior.
