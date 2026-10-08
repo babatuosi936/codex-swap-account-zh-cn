@@ -324,7 +324,7 @@ internal sealed class OverlayController : IDisposable
             overlayWindow.ShowNotification(localizer.Format("SwitchingToProfile", profileName));
 
             bool allowForceClose = settings.ForceCloseFallback;
-            await processService.CloseCodexAsync(settings.GracefulCloseTimeoutSeconds, allowForceClose, disposalTokenSource.Token).ConfigureAwait(true);
+            await processService.CloseCodexAsync(settings.GracefulCloseTimeoutSeconds, allowForceClose, disposalTokenSource.Token, attachedWindow?.ProcessId).ConfigureAwait(true);
             MigrateLegacyProfileStateSafely();
             switchResult = await switchService.SwitchAsync(profileName, disposalTokenSource.Token).ConfigureAwait(true);
             RefreshProfiles();

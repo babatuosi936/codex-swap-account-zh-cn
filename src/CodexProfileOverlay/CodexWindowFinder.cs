@@ -122,22 +122,12 @@ internal sealed class CodexWindowFinder
 
     private static bool IsLikelyOfficialCodexProcess(Process process)
     {
-        string[] rejectedNames = ["chrome", "msedge", "firefox", "code", "devenv", "explorer", "windowsterminal", "cmd", "powershell"];
-        if (rejectedNames.Any(name => process.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-
-        if (process.ProcessName.Contains("Codex", StringComparison.OrdinalIgnoreCase))
-        {
-            return !process.ProcessName.Contains("Overlay", StringComparison.OrdinalIgnoreCase);
-        }
-
         try
         {
-            var versionInfo = process.MainModule?.FileVersionInfo;
-            return versionInfo?.FileDescription?.Contains("Codex", StringComparison.OrdinalIgnoreCase) == true
-                || versionInfo?.ProductName?.Contains("Codex", StringComparison.OrdinalIgnoreCase) == true;
+            var module = process.MainModule;
+            var versionInfo = module?.FileVersionInfo;
+            return CodexDesktopProcessPolicy.IsOfficialDesktopExecutable(
+                module?.FileName, versionInfo?.ProductName, versionInfo?.FileDescription, versionInfo?.CompanyName);
         }
         catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
         {

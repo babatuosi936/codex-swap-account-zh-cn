@@ -7,80 +7,30 @@ namespace CodexProfileOverlay;
 internal sealed class CodexProcessService
 {
     private readonly SafeLogger logger;
+    private readonly WindowsDesktopProcessRuntime desktopRuntime;
 
     public CodexProcessService(SafeLogger logger)
     {
         this.logger = logger;
+        desktopRuntime = new WindowsDesktopProcessRuntime(logger);
     }
 
-    public async Task CloseCodexAsync(int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken)
+    public Task CloseCodexAsync(int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken, int? attachedDesktopProcessId = null)
     {
-        var processes = FindCodexProcesses().ToArray();
-        foreach (Process process in processes)
+        if (attachedDesktopProcessId is int id)
         {
-            using (process)
+            DesktopProcessInfo? attached = desktopRuntime.Snapshot().FirstOrDefault(process => process.Id == id);
+            if (attached is not null && !attached.IsDesktopExecutable)
             {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        logger.Info($"Requesting Codex close for process {process.Id}.");
-                        _ = process.CloseMainWindow();
-                    }
-                }
-                catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-                {
-                    logger.Error("Failed to request Codex close.", exception);
-                }
+                throw new InvalidOperationException("Cannot verify the attached Codex Desktop process; authorization was not changed.");
             }
         }
-
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(gracefulTimeoutSeconds, 1, 60));
-        while (DateTimeOffset.UtcNow < deadline && FindCodexProcesses().Any())
-        {
-            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (!FindCodexProcesses().Any())
-        {
-            return;
-        }
-
-        if (!allowForceClose)
-        {
-            throw new InvalidOperationException("Codex is still running, so the profile cannot be switched safely.");
-        }
-
-        foreach (Process process in FindCodexProcesses())
-        {
-            using (process)
-            {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        logger.Info($"Terminating Codex process {process.Id} after graceful timeout.");
-                        process.Kill(entireProcessTree: true);
-                    }
-                }
-                catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
-                {
-                    logger.Error("Failed to terminate Codex process.", exception);
-                }
-            }
-        }
-
-        deadline = DateTimeOffset.UtcNow.AddSeconds(5);
-        while (DateTimeOffset.UtcNow < deadline && FindCodexProcesses().Any())
-        {
-            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (FindCodexProcesses().Any())
-        {
-            throw new InvalidOperationException("Codex processes did not exit after forced termination.");
-        }
+        return new CodexDesktopCloseService(desktopRuntime, Environment.ProcessId)
+            .CloseAsync(gracefulTimeoutSeconds, allowForceClose, cancellationToken);
     }
+
+    public IReadOnlyList<DesktopProcessInfo> InspectDesktopProcesses() =>
+        CodexDesktopProcessPolicy.SelectTargets(desktopRuntime.Snapshot(), Environment.ProcessId);
 
     public void LaunchCodex()
     {
@@ -149,12 +99,13 @@ internal sealed class CodexProcessService
         if (!string.IsNullOrWhiteSpace(appId))
         {
             logger.Info("Launching Codex through Start menu AppUserModelID.");
-            _ = Process.Start(new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = "explorer.exe",
-                Arguments = $"shell:AppsFolder\\{appId}",
                 UseShellExecute = true,
-            }) ?? throw new InvalidOperationException("Could not start Codex through Start menu AppUserModelID.");
+            };
+            startInfo.ArgumentList.Add($"shell:AppsFolder\\{appId}");
+            _ = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start Codex through Start menu AppUserModelID.");
             return true;
         }
 
@@ -180,16 +131,28 @@ internal sealed class CodexProcessService
             using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"(Get-StartApps | Where-Object { $_.Name -eq 'Codex' } | Select-Object -First 1 -ExpandProperty AppID)\"",
+                Arguments = "-NoProfile -Command \"(Get-StartApps | Where-Object { $_.AppID -like 'OpenAI.Codex_*!*' } | Select-Object -First 1 -ExpandProperty AppID)\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
-                RedirectStandardError = false,
+                RedirectStandardError = true,
                 CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
             });
 
-            string? output = process?.StandardOutput.ReadLine();
-            process?.WaitForExit(3000);
-            return string.IsNullOrWhiteSpace(output) ? null : output.Trim();
+            if (process is null)
+            {
+                return null;
+            }
+            Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+            Task<string> errorTask = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(5000))
+            {
+                process.Kill();
+                return null;
+            }
+            string output = outputTask.GetAwaiter().GetResult().Trim();
+            _ = errorTask.GetAwaiter().GetResult();
+            return CodexDesktopProcessPolicy.IsOfficialAppId(output) ? output : null;
         }
         catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
@@ -207,7 +170,7 @@ internal sealed class CodexProcessService
 
         foreach (string root in roots.Where(Directory.Exists))
         {
-            string? shortcut = Directory.EnumerateFiles(root, "*Codex*.lnk", SearchOption.AllDirectories)
+            string? shortcut = Directory.EnumerateFiles(root, "Codex.lnk", SearchOption.AllDirectories)
                 .OrderBy(static path => path.Length)
                 .FirstOrDefault();
             if (shortcut is not null)
@@ -219,25 +182,4 @@ internal sealed class CodexProcessService
         return null;
     }
 
-    private static IEnumerable<Process> FindCodexProcesses()
-    {
-        return Process.GetProcesses()
-            .Where(static process =>
-            {
-                try
-                {
-                    if (process.Id == Environment.ProcessId)
-                    {
-                        return false;
-                    }
-
-                    return process.ProcessName.Contains("Codex", StringComparison.OrdinalIgnoreCase)
-                        && !process.ProcessName.Contains("Overlay", StringComparison.OrdinalIgnoreCase);
-                }
-                catch (InvalidOperationException)
-                {
-                    return false;
-                }
-            });
-    }
 }

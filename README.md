@@ -164,6 +164,8 @@ Hotkeys can be changed or cleared in **Settings → Hotkeys**. The app reports a
 
 ## How switching works
 
+On Windows, the desktop app is identified by its installation and product metadata, including Store versions whose executable and Start-menu display name are ChatGPT. Closing is limited to that desktop app and its Codex workers; VS Code, browsers, project servers, terminals, and the overlay are excluded. Restart uses the OpenAI.Codex AppUserModelID rather than the display name. If process identity cannot be verified, switching stops before changing authorization.
+
 Codex normally stores local state under:
 
 ```text
