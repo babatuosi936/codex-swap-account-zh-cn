@@ -17,6 +17,7 @@ internal sealed class UsageHoverController
     private bool overAccount;
     private bool overCard;
     private bool pinned;
+    public bool Suspended { get; set; }
     public bool IsOpen => current?.IsOpen == true;
     public event Action? Closed;
     public void RefreshContent() { if (current?.Tag is Action refresh) refresh(); }
@@ -42,7 +43,7 @@ internal sealed class UsageHoverController
         card.Closed += (_, _) => Closed?.Invoke();
         account.MouseEnter += (_, _) =>
         {
-            if (pinned) return;
+            if (pinned || Suspended) return;
             if (!ReferenceEquals(current, card))
             {
                 Close();

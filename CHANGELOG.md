@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.14-local - 2026-10-09
+
+- Hold an account tab for 450 ms, then drag horizontally to reorder saved accounts. Show an insertion cue and scroll at the account viewport edges.
+- Save through the existing profile-order store, suppress account switching after reordering, and retain ordinary clicks and quick overlay dragging.
+- Cancel unfinished sorting when the overlay hides, changes owner, or closes; defer quota layout updates during sorting.
+
 ## 1.1.13-local - 2026-10-09
 
 - Move quota refresh from the floating menus into the quota panels: refresh one account in its detail panel, or all saved accounts from Overview.

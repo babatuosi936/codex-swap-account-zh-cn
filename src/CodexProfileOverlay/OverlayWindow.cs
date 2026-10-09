@@ -17,7 +17,7 @@ using Point = System.Windows.Point;
 
 namespace CodexProfileOverlay;
 
-internal sealed class OverlayWindow : Window
+internal sealed partial class OverlayWindow : Window
 {
     private static readonly TimeSpan AnimationDuration = TimeSpan.FromMilliseconds(150);
     // Match the full Codex title bar (--height-titlebar: 4px * 11),
@@ -73,9 +73,10 @@ internal sealed class OverlayWindow : Window
         ApplyScale();
 
         Content = shell;
+        InitializeAccountReorder();
         usageHover.Closed += () => Dispatcher.BeginInvoke(new Action(() =>
         {
-            if (quotaRebuildPending && !usageHover.IsOpen && !isDragging && !dragPending)
+            if (quotaRebuildPending && !usageHover.IsOpen && !isDragging && !dragPending && !accountReordering && accountHoldButton is null)
             {
                 quotaRebuildPending = false;
                 RebuildContent();
@@ -105,6 +106,7 @@ internal sealed class OverlayWindow : Window
     }
 
     public Action<string>? OnSwitchProfile { get; set; }
+    public Action<IReadOnlyList<string>>? OnReorderProfiles { get; set; }
 
     public Action? OnRefreshProfiles { get; set; }
     public Func<string, Task>? OnRefreshQuota { get; set; }
@@ -136,6 +138,7 @@ internal sealed class OverlayWindow : Window
     {
         if (ownerHwnd != codexHwnd)
         {
+            FinishAccountReorder(commit: false);
             compactPopup.IsOpen = false;
             usageHover.Close();
             placementDirty = true;
@@ -282,7 +285,7 @@ internal sealed class OverlayWindow : Window
         if (!string.Equals(indicatorSignature, newSignature, StringComparison.Ordinal))
         {
             indicatorSignature = newSignature;
-            if (isDragging || dragPending || usageHover.IsOpen)
+            if (isDragging || dragPending || accountReordering || accountHoldButton is not null || usageHover.IsOpen)
             {
                 quotaRebuildPending = true;
                 // Update the open quota card without unloading its hovered button.
@@ -297,6 +300,7 @@ internal sealed class OverlayWindow : Window
 
     public void SetSwitching(bool switching)
     {
+        if (switching) FinishAccountReorder(commit: false);
         isSwitching = switching;
         compactPopup.IsOpen = false;
         foreach (Button button in profileButtons)
@@ -317,6 +321,8 @@ internal sealed class OverlayWindow : Window
 
     private void RebuildContent()
     {
+        quotaRebuildPending = false;
+        FinishAccountReorder(commit: false);
         usageHover.Close();
         // Quota refresh replaces the buttons. Close the native popup before detaching
         // its visual tree, then reopen against the persistent shell after layout.
@@ -630,6 +636,7 @@ internal sealed class OverlayWindow : Window
         ConfigureUsageHover(button);
         button.Click += (_, _) =>
         {
+            if (accountReordering) return;
             if (!isActive)
             {
                 OnSwitchProfile?.Invoke(profile.Name);
@@ -1010,6 +1017,7 @@ internal sealed class OverlayWindow : Window
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        TrackAccountHold(e);
         if (ownerHwnd == IntPtr.Zero || e.ButtonState != MouseButtonState.Pressed)
         {
             return;
@@ -1023,6 +1031,14 @@ internal sealed class OverlayWindow : Window
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
+        if (accountReordering)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed) UpdateAccountReorder(e.GetPosition(this));
+            else FinishAccountReorder(commit: false);
+            e.Handled = true;
+            return;
+        }
+        CancelAccountHoldIfMoved(e.GetPosition(this));
         if (!dragPending && !isDragging)
         {
             return;
@@ -1066,6 +1082,13 @@ internal sealed class OverlayWindow : Window
 
     private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (accountReordering)
+        {
+            UpdateAccountReorder(e.GetPosition(this));
+            FinishAccountReorder(commit: true);
+            e.Handled = true;
+            return;
+        }
         bool wasDragging = isDragging;
         FinishDrag();
         if (wasDragging)
@@ -1077,6 +1100,7 @@ internal sealed class OverlayWindow : Window
 
     private void FinishDrag()
     {
+        FinishAccountReorder(commit: false);
         dragPending = false;
         bool wasDragging = isDragging;
         isDragging = false;

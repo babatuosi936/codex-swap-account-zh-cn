@@ -133,6 +133,7 @@ internal sealed class OverlayController : IDisposable
         overlayWindow = new OverlayWindow(settings, logger)
         {
             OnSwitchProfile = profile => _ = SwitchProfileAsync(profile),
+            OnReorderProfiles = ReorderProfiles,
             OnRefreshProfiles = () => { RefreshProfiles(); _ = RefreshAllUsageAsync(); },
             OnRefreshQuota = RefreshUsageForProfileAsync,
             OnRefreshAllQuotas = async () =>

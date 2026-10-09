@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--reorder-only") || args.Length == 0) RunAccountReorderScenario();
+            if (args.Contains("--reorder-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} account reorder checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--overview-only") || args.Length == 0) RunAccountsOverviewScenario();
             if (args.Contains("--overview-only"))
             {
@@ -396,7 +403,7 @@ internal static partial class Program
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             foreach (var child in Descendants(VisualTreeHelper.GetChild(parent, i))) yield return child;
     }
-    private static void Call(Window overlay, string method, params object?[] arguments) => OverlayType.GetMethod(method)!.Invoke(overlay, arguments);
+    private static void Call(Window overlay, string method, params object?[] arguments) => OverlayType.GetMethod(method, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.Invoke(overlay, arguments);
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
     private static void WaitFor(Func<bool> condition)
     {
