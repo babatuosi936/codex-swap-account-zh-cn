@@ -136,7 +136,6 @@ internal sealed class TrayIconService : IDisposable
     {
         menu.Items.Clear();
         menu.Items.Add(localizer["OpenCodex"], null, (_, _) => OpenCodexRequested?.Invoke());
-        menu.Items.Add(overlayVisible ? localizer["HideSwitcher"] : localizer["ShowSwitcher"], null, (_, _) => ToggleOverlayRequested?.Invoke());
 
         var profilesMenu = new ToolStripMenuItem(localizer["Profiles"]);
         foreach (ProfileInfo profile in profiles)

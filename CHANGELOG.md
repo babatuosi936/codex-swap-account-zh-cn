@@ -1,3 +1,8 @@
+## 1.1.17-local - 2026-10-09
+
+- Move account-overlay visibility from floating and tray menus to the General settings toggle, with immediate application and persisted state.
+- Reveal the overlay when the settings toggle is enabled after a previous manual hide.
+
 # Changelog
 
 ## 1.1.16-local - 2026-10-09
@@ -109,3 +114,4 @@
 ## Previous Releases
 
 Added tray lifecycle, single-instance activation, startup registration, compact/expanded/auto display modes, global hotkeys, settings, profile management, notifications, docs, CI, packaging scripts, and repository safety checks.
+

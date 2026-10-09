@@ -825,9 +825,14 @@ internal sealed class OverlayController : IDisposable
 
             statusService.SetStaleThreshold(TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes));
             localizer.SetLanguage(settings.Language);
+            if (settings.ShowAutomaticallyWhenCodexOpens && !visibilityState.AutomaticDisplayEnabled)
+            {
+                visibilityState.RevealManually();
+            }
             visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
             settingsService.Save(settings);
             ApplySettings();
+            Tick();
             RefreshStatusIndicators();
         }
         catch (Exception exception)

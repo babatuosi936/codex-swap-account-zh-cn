@@ -542,7 +542,6 @@ internal sealed partial class OverlayWindow : Window
         panel.Children.Add(new Separator { Margin = new Thickness(2, 5, 2, 5) });
         panel.Children.Add(CreatePopupCommand(Localizer?["AddProfile"] ?? "Add profile", OnManageProfiles));
         panel.Children.Add(CreatePopupCommand(Localizer?["Settings"] ?? "Settings", OnOpenSettings));
-        panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
         border.Child = panel;
         return border;
     }
@@ -791,7 +790,6 @@ internal sealed partial class OverlayWindow : Window
         };
         menu.Items.Add(CreateMenuItem(Localizer?["AddProfile"] ?? "Add profile", () => OnManageProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["Settings"] ?? "Settings", () => OnOpenSettings?.Invoke()));
-        menu.Items.Add(CreateMenuItem(Localizer?["HideSwitcher"] ?? "Hide switcher", () => OnHideOverlay?.Invoke()));
         button.ContextMenu = menu;
         button.Click += (_, _) =>
         {
