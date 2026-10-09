@@ -5,6 +5,7 @@ using CodexProfileOverlay.Core.Models;
 using CodexProfileOverlay.Core.Services;
 using Button = System.Windows.Controls.Button;
 using Point = System.Windows.Point;
+using Panel = System.Windows.Controls.Panel;
 
 internal static partial class Program
 {
@@ -12,7 +13,7 @@ internal static partial class Program
     {
         foreach (double scale in new[] { 0.8, 1.0, 1.4 })
         {
-            var settings = new OverlaySettings { DisplayMode = OverlayDisplayMode.Expanded, Scale = scale, ShowAutomaticLimitIndicators = true };
+            var settings = new OverlaySettings { DisplayMode = OverlayDisplayMode.Expanded, Scale = scale, ShowAutomaticLimitIndicators = true, AnimationsEnabled = scale != 0.8 };
             var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
             try
             {
@@ -59,7 +60,10 @@ internal static partial class Program
                     OverlayType.GetField("accountReordering", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(overlay, true);
                     var hover = OverlayType.GetField("usageHover", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(overlay)!;
                     hover.GetType().GetProperty("Suspended")!.SetValue(hover, true);
-                    source.Opacity = 0.55;
+                    OverlayType.GetField("accountHoldPoint", flags)!.SetValue(overlay,
+                        source.TransformToAncestor(overlay).Transform(new Point(source.ActualWidth / 2, 20)));
+                    Call(overlay, "InitializeAccountDragVisuals", source);
+                    source.Opacity = 0.95;
                 }
                 foreach (bool toRight in new[] { true, false })
                 {
@@ -77,11 +81,28 @@ internal static partial class Program
                     Point drop = (toRight ? buttons[^1] : buttons[0]).TransformToAncestor(overlay)
                         .Transform(new Point(toRight ? buttons[^1].ActualWidth + 3 : -3, 20));
                     Call(overlay, "UpdateAccountReorder", drop);
-                    Require(buttons.Any(b => b.BorderThickness.Left == 3 || b.BorderThickness.Right == 3), "Sorting must indicate the insertion edge.");
+                    var sourceShift = ((System.Windows.Media.TransformGroup)source.RenderTransform).Children.OfType<System.Windows.Media.TranslateTransform>().Last();
+                    Require(Math.Abs(sourceShift.X) > 10 && Panel.GetZIndex(source) == 100, "The grabbed account must follow the pointer and render above neighboring tabs.");
+                    Require(Math.Abs(source.TransformToAncestor(overlay).Transform(new Point(source.ActualWidth / 2, 20)).X - drop.X) < 0.5,
+                        "The pointer grip must stay aligned with the grabbed card at every overlay scale.");
+                    var neighborShifts = buttons.Where(b => !ReferenceEquals(b, source)).Select(b =>
+                        ((System.Windows.Media.TransformGroup)b.RenderTransform).Children.OfType<System.Windows.Media.TranslateTransform>().Last()).ToArray();
+                    Require(neighborShifts.Any(shift => Math.Abs((double)shift.GetAnimationBaseValue(System.Windows.Media.TranslateTransform.XProperty)) > 10),
+                        "Neighboring tabs must move into preview slots before release.");
+                    Require(neighborShifts.Any(shift => shift.HasAnimatedProperties) == settings.AnimationsEnabled,
+                        "Preview motion must animate only when animations are enabled.");
+                    int insertion = (int)OverlayType.GetField("accountInsertion", flags)!.GetValue(overlay)!;
+                    Call(overlay, "UpdateAccountReorder", drop);
+                    Require(insertion == (int)OverlayType.GetField("accountInsertion", flags)!.GetValue(overlay)!, "Animated neighbor positions must not change insertion hit testing.");
+                    if (!settings.AnimationsEnabled)
+                        Require(buttons.Any(b => b.BorderThickness.Left == 3 || b.BorderThickness.Right == 3), "Without animation, sorting must indicate the insertion edge.");
                     Call(overlay, "FinishAccountReorder", true); Pump();
                     var expected = toRight ? new[] { "sort-1", "sort-2", "sort-0" } : new[] { "sort-0", "sort-1", "sort-2" };
                     Require(saved!.SequenceEqual(expected) && Order().SequenceEqual(expected), "Moving the first/last account must persist and render the new order.");
                     Require(!overlay.IsMouseCaptured && switches == 0, "Completing sorting must release capture without switching accounts.");
+                    for (int i = 0; i < 2; i++) Pump();
+                    Require(Buttons().All(b => !b.RenderTransform.HasAnimatedProperties && b.RenderTransform.Value.IsIdentity),
+                        "After settling, tab transforms must return to normal without accumulating offsets.");
                     Require(AutomationProperties.GetAutomationId(Descendants((DependencyObject)overlay.Content).OfType<Button>().First()) == "AccountsOverview",
                         "The fixed Overview entry must remain first.");
                     Evidence.Add(new { scenario = "account-reorder", scale, toRight });

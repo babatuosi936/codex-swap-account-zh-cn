@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.16-local - 2026-10-09
+
+- Animate account sorting like browser tabs: the grabbed card follows the pointer above its neighbors, adjacent cards slide into preview slots, and cards settle smoothly after release or cancellation.
+- Use stable layout positions for insertion hit testing to avoid animation-induced oscillation; retain drag-region separation and the animation preference.
+
 ## 1.1.15-local - 2026-10-09
 
 - Reserve account tabs exclusively for account sorting; pressing or moving on a tab never starts overlay positioning, including during the hold delay.
