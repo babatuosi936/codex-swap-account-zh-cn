@@ -18,6 +18,10 @@ internal static class UsageToolTipBuilder
         var windows = snapshot is null ? [] : UsageIntelligence.GetKnownWindows(snapshot);
         AddQuotaRow(Text("FiveHourWindow"), windows.FirstOrDefault(window => window.Duration == TimeSpan.FromHours(5) || window.Name is "5h" or "short"));
         AddQuotaRow(Text("WeeklyWindow"), windows.FirstOrDefault(window => window.Duration == TimeSpan.FromDays(7) || window.Name is "Weekly" or "weekly" or "7d" or "long"));
+        if (rows.Children.Count == 0)
+        {
+            rows.Children.Add(new TextBlock { Text = Text("QuotaUnknown"), FontSize = 13, Foreground = Brush("MutedTextBrush") });
+        }
 
         var updated = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         updated.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -65,6 +69,7 @@ internal static class UsageToolTipBuilder
 
         void AddQuotaRow(string label, UsageLimitWindow? window)
         {
+            if (window is null) return;
             var row = new Grid { Margin = new Thickness(0, rows.Children.Count == 0 ? 0 : 8, 0, 0) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

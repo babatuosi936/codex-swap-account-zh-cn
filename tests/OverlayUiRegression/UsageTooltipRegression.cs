@@ -49,12 +49,16 @@ internal static partial class Program
                 Require(placements[0].Point == new System.Windows.Point(-75, 44), "Hover card must be centered immediately below the account.");
                 var surface = (Border)tooltip.Child;
                 var card = (Border)surface.Child;
-                Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == 3, "Usage hover must contain exactly three styled rows.");
+                int expectedRows = kind == "complete" ? 3 : 2;
+                Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == expectedRows, "Usage hover must omit unavailable limit rows and shrink to fit.");
                 var text = string.Join(" ", Descendants(card).OfType<TextBlock>().Select(item => item.Text));
                 Require(!text.Contains("MUST-NOT-APPEAR") && !text.Contains(LocalizationCatalog.Text(language, "UsageDataStale")), "Tooltip contains extra diagnostics instead of three rows.");
-                Require(text.Contains(LocalizationCatalog.Text(language, "FiveHourWindow")) && text.Contains(LocalizationCatalog.Text(language, "WeeklyWindow")) && text.Contains(LocalizationCatalog.Text(language, "LastUpdated")), "Tooltip labels are missing.");
+                Require(text.Contains(LocalizationCatalog.Text(language, "LastUpdated")), "Last updated must remain visible.");
+                Require(text.Contains(LocalizationCatalog.Text(language, "FiveHourWindow")) == (kind == "complete"), "Absent five-hour limits must not appear in the card.");
+                Require(text.Contains(LocalizationCatalog.Text(language, "WeeklyWindow")) == (kind != "unknown"), "Only available weekly limits should appear.");
                 if (kind == "complete") Require(text.Contains("80%") && text.Contains("2%"), "Tooltip percentages are incorrect.");
-                if (kind != "complete") Require(text.Contains('—') && !text.Contains("0%"), "Unknown quota must not be displayed as zero.");
+                if (kind == "weekly-only") Require(text.Contains("2%") && !text.Contains('—'), "Weekly-only cards must not include empty limit placeholders.");
+                if (kind == "unknown") Require(text.Contains(LocalizationCatalog.Text(language, "QuotaUnknown")) && !text.Contains("0%"), "Unknown quota must not be displayed as zero.");
                 surface.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
                 surface.Arrange(new Rect(surface.DesiredSize));
                 surface.UpdateLayout();
@@ -64,7 +68,7 @@ internal static partial class Program
                     natural.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
                     Require(label.ActualWidth >= natural.DesiredSize.Width - 1, "Hover card clips a quota, label or timestamp.");
                 }
-                Evidence.Add(new { kind = "usage-tooltip", theme = theme.ToString(), language = language.ToString(), data = kind, rows = 3, width = surface.ActualWidth });
+                Evidence.Add(new { kind = "usage-tooltip", theme = theme.ToString(), language = language.ToString(), data = kind, rows = expectedRows, width = surface.ActualWidth });
                 if (language == LanguagePreference.ChineseSimplified && kind == "complete")
                 {
                     var bitmap = new RenderTargetBitmap((int)Math.Ceiling(surface.ActualWidth * 2), (int)Math.Ceiling(surface.ActualHeight * 2), 192, 192, PixelFormats.Pbgra32);
