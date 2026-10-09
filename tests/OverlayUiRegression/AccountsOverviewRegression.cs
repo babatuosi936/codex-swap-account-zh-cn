@@ -49,6 +49,24 @@ internal static partial class Program
                     var first = Descendants((DependencyObject)overlay.Content).OfType<Button>().First();
                     Require(ReferenceEquals(first, overview), "Overview must precede account buttons.");
                     var popup = (Popup)overview.ToolTip;
+                    overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Require(popup.IsOpen && !popup.StaysOpen, "Click must open overview immediately with outside-click dismissal.");
+                    overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseLeaveEvent });
+                    popup.Child.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseLeaveEvent });
+                    for (int i = 0; i < 6; i++) Pump();
+                    Require(popup.IsOpen, "Clicked overview must remain open after the pointer leaves.");
+                    popup.Child.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+                        PresentationSource.FromVisual(popup.Child), Environment.TickCount, System.Windows.Input.Key.Escape)
+                        { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent });
+                    Pump();
+                    Require(!popup.IsOpen && popup.StaysOpen, "Escape must dismiss the clicked overview and restore hover behavior.");
+                    overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
+                    WaitFor(() => popup.IsOpen);
+                    overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    for (int i = 0; i < 6; i++) Pump();
+                    Require(popup.IsOpen && !popup.StaysOpen, "Clicking an existing hover preview must pin it without closing it.");
+                    popup.IsOpen = false;
+                    Pump();
                     overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
                     WaitFor(() => popup.IsOpen);
                     Require(popup.IsOpen && ReferenceEquals(popup.PlacementTarget, overlay.Content), "Overview must anchor to the whole floating bar.");

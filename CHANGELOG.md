@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.11-local - 2026-10-09
+
+- Clicking Overview opens the account panel immediately and keeps it visible after the pointer leaves. Clicking outside dismisses it.
+- Retain hover previews and close the panel when the floating window hides or changes owner.
+
 ## 1.1.10-local - 2026-10-09
 
 - Arrange overview account cards horizontally with vertical details inside each card, wrapping into further rows on smaller monitors or with more accounts.

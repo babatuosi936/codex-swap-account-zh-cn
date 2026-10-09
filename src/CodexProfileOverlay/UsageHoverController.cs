@@ -16,6 +16,7 @@ internal sealed class UsageHoverController
     private bool opening;
     private bool overAccount;
     private bool overCard;
+    private bool pinned;
 
     public UsageHoverController()
     {
@@ -24,11 +25,11 @@ internal sealed class UsageHoverController
             timer.Stop();
             if (current is null) return;
             if (opening && overAccount) current.IsOpen = true;
-            else if (!overAccount && !overCard) Close();
+            else if (!pinned && !overAccount && !overCard) Close();
         };
     }
 
-    public void Attach(FrameworkElement account, Popup card, FrameworkElement? placementTarget = null)
+    public void Attach(FrameworkElement account, Popup card, FrameworkElement? placementTarget = null, bool openOnClick = false)
     {
         card.PlacementTarget = placementTarget ?? account;
         card.StaysOpen = true;
@@ -37,6 +38,7 @@ internal sealed class UsageHoverController
         ToolTipService.SetIsEnabled(account, false);
         account.MouseEnter += (_, _) =>
         {
+            if (pinned) return;
             if (!ReferenceEquals(current, card))
             {
                 Close();
@@ -50,7 +52,7 @@ internal sealed class UsageHoverController
         {
             if (!ReferenceEquals(current, card)) return;
             overAccount = false;
-            Schedule(false, 500);
+            if (!pinned) Schedule(false, 500);
         };
         card.Child.MouseEnter += (_, _) =>
         {
@@ -62,10 +64,34 @@ internal sealed class UsageHoverController
         {
             if (!ReferenceEquals(current, card)) return;
             overCard = false;
-            Schedule(false, 500);
+            if (!pinned) Schedule(false, 500);
         };
         account.Unloaded += (_, _) => { if (ReferenceEquals(current, card)) Close(); };
-        account.PreviewMouseDown += (_, _) => Close();
+        if (openOnClick && account is Button button)
+        {
+            button.Click += (_, _) =>
+            {
+                if (!ReferenceEquals(current, card)) Close();
+                timer.Stop();
+                current = card;
+                pinned = true;
+                card.StaysOpen = false;
+                card.IsOpen = true;
+            };
+            card.Closed += (_, _) =>
+            {
+                card.StaysOpen = true;
+                if (ReferenceEquals(current, card))
+                {
+                    timer.Stop();
+                    current = null;
+                    pinned = false;
+                    overAccount = false;
+                    overCard = false;
+                }
+            };
+        }
+        else account.PreviewMouseDown += (_, _) => Close();
         card.Child.PreviewKeyDown += (_, args) =>
         {
             if (args.Key == Key.Escape) { Close(); args.Handled = true; }
@@ -77,6 +103,7 @@ internal sealed class UsageHoverController
         timer.Stop();
         if (current is not null) current.IsOpen = false;
         current = null;
+        pinned = false;
         overAccount = false;
         overCard = false;
     }
