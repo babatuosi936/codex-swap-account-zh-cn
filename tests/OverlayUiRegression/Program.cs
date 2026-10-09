@@ -202,7 +202,7 @@ internal static partial class Program
                 int remainingLong = 36 - (10 + click);
                 Require(Descendants(popup.Child).OfType<TextBlock>().Any(text => text.Text.Contains($"{remainingShort}%") && text.Text.Contains($"{remainingLong}%")), "Open menu did not show the latest quota result.");
             }
-            var managerButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("管理账号"));
+            var managerButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("添加账号"));
             managerButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Pump();
             Require(managerOpened && !popup.IsOpen, "Profile manager command did not close the menu.");
