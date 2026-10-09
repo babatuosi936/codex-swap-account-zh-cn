@@ -500,9 +500,8 @@ internal sealed class OverlayWindow : Window
         }
 
         panel.Children.Add(new Separator { Margin = new Thickness(2, 5, 2, 5) });
-        panel.Children.Add(CreatePopupCommand(Localizer?["AddProfile"] ?? "Add profile", OnAddProfile));
-        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles, closeOnInvoke: false));
         panel.Children.Add(CreatePopupCommand(Localizer?["ManageProfiles"] ?? "Manage profiles", OnManageProfiles));
+        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles, closeOnInvoke: false));
         panel.Children.Add(CreatePopupCommand(Localizer?["Settings"] ?? "Settings", OnOpenSettings));
         panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
         border.Child = panel;
@@ -699,7 +698,7 @@ internal sealed class OverlayWindow : Window
             Background = FindBrush("TabBackgroundBrush"),
             Cursor = Cursors.Hand,
             Margin = new Thickness(4, 0, 0, 0),
-            ToolTip = Localizer?["AddProfile"] ?? "Add profile",
+            ToolTip = Localizer?["ManageProfiles"] ?? "Manage profiles",
         };
 
         var menu = new ContextMenu
@@ -711,9 +710,8 @@ internal sealed class OverlayWindow : Window
             SnapsToDevicePixels = true,
             UseLayoutRounding = true,
         };
-        menu.Items.Add(CreateMenuItem(Localizer?["AddProfile"] ?? "Add profile", () => OnAddProfile?.Invoke()));
-        menu.Items.Add(CreateMenuItem(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", () => OnRefreshProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["ManageProfiles"] ?? "Manage profiles", () => OnManageProfiles?.Invoke()));
+        menu.Items.Add(CreateMenuItem(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", () => OnRefreshProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["Settings"] ?? "Settings", () => OnOpenSettings?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["HideSwitcher"] ?? "Hide switcher", () => OnHideOverlay?.Invoke()));
         button.ContextMenu = menu;
