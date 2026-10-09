@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--owner-only") || args.Length == 0) RunOwnerVisibilityScenario();
+            if (args.Contains("--owner-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} owner visibility checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Length == 2 && args[0] == "--docs")
             {
                 RenderDocumentation(args[1]);

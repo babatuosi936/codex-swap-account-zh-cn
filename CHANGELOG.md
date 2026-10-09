@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.6-local - 2026-10-09
+
+- Recover a natively hidden or minimized overlay even when WPF still reports it visible and its geometry has not changed.
+- Re-establish overlay stacking above its current owner without activating it when moving between instances.
+- Add eight repeated native-hide/owner-change regression cycles and verify that the controller's hide decision still prevents recovery.
+- Extend the opt-in live probe to repeat window switching and check that the overlay is actually above its owner, instead of checking visibility alone.
+
 ## 1.1.5-local - 2026-10-09
 
 - Follow the foreground Codex desktop window across independent instances and highlight its actual account using the instance's CODEX_HOME, including Cockpit instances on another drive.

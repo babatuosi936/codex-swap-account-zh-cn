@@ -223,14 +223,20 @@ internal sealed class OverlayWindow : Window
         }
 
         bool wasVisible = IsVisible;
+        IntPtr handle = Handle;
+        // Windows may hide/minimize an owned HWND while WPF still reports it
+        // visible. Recover that native state when the controller permits display.
+        bool nativeHidden = !NativeMethods.IsWindowVisible(handle) || NativeMethods.IsIconic(handle);
+        if (AllowAutoShow && settings.ShowAutomaticallyWhenCodexOpens && NativeMethods.IsIconic(handle))
+            WindowState = WindowState.Normal;
         if (!IsVisible && settings.ShowAutomaticallyWhenCodexOpens && AllowAutoShow)
         {
             Show();
         }
 
-        if (positionChanged || (!wasVisible && IsVisible))
+        if (IsVisible && AllowAutoShow && (positionChanged || !wasVisible || nativeHidden))
         {
-            var handle = new WindowInteropHelper(this).Handle;
+            if (nativeHidden) NativeMethods.ShowWindow(handle, 4); // SW_SHOWNOACTIVATE
             Point devicePosition = hwndSource?.CompositionTarget?.TransformToDevice.Transform(new Point(Left, Top))
                 ?? new Point(Left, Top);
             _ = NativeMethods.SetWindowPos(
@@ -240,7 +246,7 @@ internal sealed class OverlayWindow : Window
                 (int)Math.Round(devicePosition.Y),
                 0,
                 0,
-                NativeMethods.SwpNoSize | NativeMethods.SwpNoZOrder | NativeMethods.SwpNoActivate | NativeMethods.SwpShowWindow);
+                NativeMethods.SwpNoSize | NativeMethods.SwpNoActivate | NativeMethods.SwpShowWindow);
         }
     }
 
