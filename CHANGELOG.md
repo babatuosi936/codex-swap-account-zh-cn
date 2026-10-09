@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.7-local - 2026-10-09
+
+- Refresh tracking immediately on Windows foreground-change and minimize-end events, avoiding the normal wait for the 750 ms timer when switching instances using the taskbar or Alt+Tab.
+- Coalesce queued events on the UI dispatcher, retain periodic recovery, and unregister native hooks before closing the helper.
+- Add native event delivery, response-time and hook-disposal regression checks.
+
 ## 1.1.6-local - 2026-10-09
 
 - Recover a natively hidden or minimized overlay even when WPF still reports it visible and its geometry has not changed.

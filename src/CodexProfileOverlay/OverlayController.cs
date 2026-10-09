@@ -21,6 +21,7 @@ internal sealed class OverlayController : IDisposable
     private readonly CodexWindowFinder windowFinder;
     private readonly CodexInstanceResolver instanceResolver;
     private readonly DispatcherTimer timer;
+    private readonly ForegroundWindowMonitor foregroundMonitor;
     private readonly AppPaths paths;
     private readonly OverlayVisibilityState visibilityState = new();
     private readonly CancellationTokenSource disposalTokenSource = new();
@@ -70,6 +71,7 @@ internal sealed class OverlayController : IDisposable
         instanceResolver = new CodexInstanceResolver(paths.SharedCodexDirectory);
         timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(750) };
         timer.Tick += (_, _) => TickSafely();
+        foregroundMonitor = new ForegroundWindowMonitor(Dispatcher.CurrentDispatcher, TickSafely, logger);
         statusStore = new ProfileStatusStore(paths.ProfileStatusFile);
         statusService = new ProfileStatusService(statusStore, new CodexCliStatusUsageProvider(), logger);
         stateMigrationService = new SharedCodexStateMigrationService(paths);
@@ -88,6 +90,7 @@ internal sealed class OverlayController : IDisposable
         RefreshProfiles();
         ApplySettings();
         timer.Start();
+        foregroundMonitor.Start();
         if (settings.LaunchCodexWhenOverlayStarts)
         {
             _ = LaunchCodexAndWaitAsync(disposalTokenSource.Token);
@@ -98,6 +101,7 @@ internal sealed class OverlayController : IDisposable
 
     public void Dispose()
     {
+        foregroundMonitor.Dispose();
         disposalTokenSource.Cancel();
         timer.Stop();
         statusService.Dispose();

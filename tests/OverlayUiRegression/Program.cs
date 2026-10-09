@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--foreground-only") || args.Length == 0) RunForegroundMonitorScenario();
+            if (args.Contains("--foreground-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} foreground event checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--owner-only") || args.Length == 0) RunOwnerVisibilityScenario();
             if (args.Contains("--owner-only"))
             {
