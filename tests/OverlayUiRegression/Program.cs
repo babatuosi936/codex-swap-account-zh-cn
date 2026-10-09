@@ -46,7 +46,11 @@ internal static partial class Program
             {
                 RunHotkeysScenario();
             }
-            if (!args.Contains("--auxiliary-only") && !args.Contains("--hotkeys-only"))
+            if (args.Contains("--tooltip-only") || args.Length == 0)
+            {
+                RunUsageTooltipScenario();
+            }
+            if (!args.Contains("--auxiliary-only") && !args.Contains("--hotkeys-only") && !args.Contains("--tooltip-only"))
             {
                 foreach (double scale in new[] { 0.8, 1.0, 1.4 })
                     foreach (var mode in new[] { OverlayDisplayMode.Compact, OverlayDisplayMode.Expanded })
@@ -64,7 +68,7 @@ internal static partial class Program
                     RunExpandedDragScenario(1.4);
                 }
             }
-            if (!args.Contains("--header-only") && !args.Contains("--hotkeys-only"))
+            if (!args.Contains("--header-only") && !args.Contains("--hotkeys-only") && !args.Contains("--tooltip-only"))
             {
                 RunAuxiliaryWindowScenario("SettingsWindow");
                 RunAuxiliaryWindowScenario("ProfileManagerWindow");

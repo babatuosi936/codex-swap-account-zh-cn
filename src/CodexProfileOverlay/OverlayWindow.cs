@@ -344,6 +344,11 @@ internal sealed class OverlayWindow : Window
             Height = HeaderButtonHeight,
             MinHeight = 0,
         };
+        if (active is not null && ShowQuota)
+        {
+            button.ToolTip = BuildUsageToolTip(active.Name);
+            ConfigureUsageHover(button);
+        }
         button.Click += (_, _) =>
         {
             // The shell survives content rebuilds; an account button does not.
@@ -476,9 +481,10 @@ internal sealed class OverlayWindow : Window
             bool isActive = string.Equals(profile.Name, activeProfile, StringComparison.OrdinalIgnoreCase);
             string indicator = GetProfileIndicator(profile.Name);
             Button item = CreateProfilePopupButton(profile, indicator, isActive);
-            if (!string.IsNullOrEmpty(indicator))
+            if (ShowQuota || !string.IsNullOrEmpty(indicator))
             {
                 item.ToolTip = BuildUsageToolTip(profile.Name);
+                ConfigureUsageHover(item);
             }
             item.IsEnabled = !isActive && !isSwitching;
             string name = profile.Name;
@@ -565,10 +571,11 @@ internal sealed class OverlayWindow : Window
             Background = isActive ? FindBrush("TabActiveBrush") : FindBrush("TabBackgroundBrush"),
             Cursor = isActive ? Cursors.Arrow : Cursors.Hand,
             Tag = profile.Name,
-            ToolTip = profile.DisplayName,
+            ToolTip = ShowQuota ? BuildUsageToolTip(profile.Name) : profile.DisplayName,
             IsEnabled = !isSwitching,
         };
 
+        ConfigureUsageHover(button);
         button.Click += (_, _) =>
         {
             if (!isActive)
@@ -614,47 +621,18 @@ internal sealed class OverlayWindow : Window
         return icon;
     }
 
-    private object? BuildUsageToolTip(string profileId)
+    private ToolTip BuildUsageToolTip(string profileId)
     {
-        if (statusDocument is null || !statusDocument.Snapshots.TryGetValue(profileId, out UsageSnapshot? snapshot))
-        {
-            return null;
-        }
+        UsageSnapshot? snapshot = statusDocument?.Snapshots.GetValueOrDefault(profileId);
+        return UsageToolTipBuilder.Build(snapshot, Localizer?.Language ?? settings.Language);
+    }
 
-        var lines = new List<string>();
-        foreach (UsageLimitWindow window in UsageIntelligence.GetKnownWindows(snapshot))
-        {
-            string reset = window.ResetAt is null
-                ? string.Empty
-                : $", {Localizer?["ResetsAt"] ?? "resets"} {UsageDisplayFormatter.FormatLocal(window.ResetAt.Value)}";
-            lines.Add($"{UsageQuotaFormatter.WindowName(window, Localizer?.Language ?? LanguagePreference.English)}: {window.RemainingPercent}%{reset}");
-        }
-
-        lines.Add($"{Localizer?["LastUpdated"] ?? "Last updated"}: {UsageDisplayFormatter.FormatLocal(snapshot.CapturedAt)}");
-        if (!string.IsNullOrWhiteSpace(snapshot.Source))
-        {
-            lines.Add($"{Localizer?["UsageSource"] ?? "Source"}: {snapshot.Source}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.CodexCliVersion))
-        {
-            lines.Add($"{Localizer?["CodexCliVersion"] ?? "Codex CLI version"}: {snapshot.CodexCliVersion}");
-        }
-
-        if (UsageIntelligence.IsStale(snapshot, DateTimeOffset.UtcNow, TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes)))
-        {
-            lines.Add(Localizer?["UsageDataStale"] ?? "Usage data is stale");
-        }
-
-        string? error = statusDocument.Profiles
-            .FirstOrDefault(status => profileId.Equals(status.ProfileId, StringComparison.OrdinalIgnoreCase))
-            ?.LastRefreshError;
-        if (!string.IsNullOrWhiteSpace(error))
-        {
-            lines.Add($"{Localizer?["RefreshError"] ?? "Refresh error"}: {error}");
-        }
-
-        return string.Join(Environment.NewLine, lines);
+    private static void ConfigureUsageHover(FrameworkElement target)
+    {
+        ToolTipService.SetInitialShowDelay(target, 250);
+        ToolTipService.SetBetweenShowDelay(target, 0);
+        ToolTipService.SetShowDuration(target, 60000);
+        ToolTipService.SetShowOnDisabled(target, true);
     }
 
     private string BuildIndicatorSignature()
@@ -670,7 +648,6 @@ internal sealed class OverlayWindow : Window
         FontSize = 11.5,
         Margin = margin,
         TextTrimming = TextTrimming.CharacterEllipsis,
-        ToolTip = BuildUsageToolTip(profileId),
     };
 
     private static string FirstTextElement(string? value)
