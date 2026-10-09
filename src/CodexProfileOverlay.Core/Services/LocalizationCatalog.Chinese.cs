@@ -19,6 +19,7 @@ public static partial class LocalizationCatalog
         ["Remove"] = "移除",
         ["SwitchingToProfile"] = "正在切换到 {0}…",
         ["SwitchedToAccount"] = "已切换账号：{0}",
+        ["OpenAccountInstanceFirst"] = "请先在 Cockpit 中打开这个账号的 Codex 实例，再从浮层切换窗口。",
         ["PreviousAuthorizationRestored"] = "已恢复原来的登录",
         ["General"] = "常规",
         ["Appearance"] = "外观",

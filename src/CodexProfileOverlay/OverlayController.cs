@@ -19,6 +19,7 @@ internal sealed class OverlayController : IDisposable
     private readonly SafeLogger logger;
     private readonly BackupMaintenanceService backupMaintenance;
     private readonly CodexWindowFinder windowFinder;
+    private readonly CodexInstanceResolver instanceResolver;
     private readonly DispatcherTimer timer;
     private readonly AppPaths paths;
     private readonly OverlayVisibilityState visibilityState = new();
@@ -66,6 +67,7 @@ internal sealed class OverlayController : IDisposable
         localizer = new Localizer(settings.Language);
         visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
         windowFinder = new CodexWindowFinder(logger);
+        instanceResolver = new CodexInstanceResolver(paths.SharedCodexDirectory);
         timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(750) };
         timer.Tick += (_, _) => TickSafely();
         statusStore = new ProfileStatusStore(paths.ProfileStatusFile);
@@ -179,9 +181,9 @@ internal sealed class OverlayController : IDisposable
         }
 
         EnsureOverlay();
-        CodexWindowInfo? found = attachedWindow is null
-            ? windowFinder.FindMainWindow()
-            : windowFinder.RefreshKnownWindow(attachedWindow) ?? windowFinder.FindMainWindow();
+        CodexWindowInfo? found = windowFinder.FindForegroundWindow()
+            ?? (attachedWindow is null ? null : windowFinder.RefreshKnownWindow(attachedWindow))
+            ?? windowFinder.FindMainWindow();
         if (found is null)
         {
             visibilityState.MarkCodexUnavailable();
@@ -202,6 +204,8 @@ internal sealed class OverlayController : IDisposable
 
             logger.Info($"Attached overlay to Codex process {found.ProcessId}.");
         }
+
+        UpdateInstanceProfile(found);
 
         visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
         visibilityState.MarkCodexAvailable(found.IsMinimized);
@@ -263,7 +267,7 @@ internal sealed class OverlayController : IDisposable
         {
             profileManager.EnsureMetadata();
             profiles = profileManager.ListProfiles();
-            string? activeProfile = activeProfileStore.Read();
+            string? activeProfile = CurrentInstanceProfile();
             overlayWindow?.SetProfiles(profiles, activeProfile);
             trayIcon?.UpdateProfiles(profiles, activeProfile);
             settingsWindow?.UpdateProfiles(profiles);
@@ -302,10 +306,39 @@ internal sealed class OverlayController : IDisposable
 
     private async Task SwitchProfileAsync(string profileName)
     {
-        if (switching || string.Equals(profileName, activeProfileStore.Read(), StringComparison.OrdinalIgnoreCase))
+        if (switching)
         {
             return;
         }
+
+        // With independent instances, selecting an open account selects its
+        // window. Never run the legacy global auth replacement/close flow here.
+        IReadOnlyList<CodexWindowInfo> windows = windowFinder.FindAllWindows();
+        CodexWindowInfo? target = windows.FirstOrDefault(window => string.Equals(
+            instanceResolver.FindActiveProfile(window.ProcessId, profiles), profileName, StringComparison.OrdinalIgnoreCase));
+        if (target is not null)
+        {
+            if (target.IsMinimized) NativeMethods.ShowWindow(target.Hwnd, NativeMethods.SwRestore);
+            NativeMethods.SetForegroundWindow(target.Hwnd);
+            if (attachedWindow?.Hwnd != target.Hwnd)
+            {
+                attachedWindow = target;
+                EnsureOverlay();
+                overlayWindow!.AttachTo(target.Hwnd);
+            }
+            UpdateInstanceProfile(target);
+            TickSafely();
+            return;
+        }
+        CodexWindowInfo? current = windowFinder.FindForegroundWindow() ?? attachedWindow;
+        if (windows.Select(window => window.ProcessId).Distinct().Count() > 1
+            || (current is not null && !instanceResolver.IsDefaultHome(current.ProcessId)))
+        {
+            EnsureOverlay();
+            overlayWindow!.ShowError(localizer["OpenAccountInstanceFirst"]);
+            return;
+        }
+        if (string.Equals(profileName, CurrentInstanceProfile(), StringComparison.OrdinalIgnoreCase)) return;
 
         EnsureOverlay();
         switching = true;
@@ -578,7 +611,7 @@ internal sealed class OverlayController : IDisposable
 
         profileManagerWindow = new ProfileManagerWindow(
             profiles,
-            activeProfileStore.Read(),
+            CurrentInstanceProfile(),
             localizer,
             () => _ = AddProfileAsync(),
             RenameDisplayName,
@@ -713,6 +746,24 @@ internal sealed class OverlayController : IDisposable
         attachedWindow = found;
         return found.Hwnd;
     }
+
+    private string? CurrentInstanceProfile() => attachedWindow is null
+        ? activeProfileStore.Read()
+        : instanceResolver.FindActiveProfile(attachedWindow.ProcessId, profiles);
+
+    private void UpdateInstanceProfile(CodexWindowInfo window)
+    {
+        string? active = instanceResolver.FindActiveProfile(window.ProcessId, profiles);
+        overlayWindow?.SetProfiles(profiles, active);
+        if (!string.Equals(lastInstanceProfile, active, StringComparison.OrdinalIgnoreCase))
+        {
+            lastInstanceProfile = active;
+            trayIcon?.UpdateProfiles(profiles, active);
+            profileManagerWindow?.UpdateProfiles(profiles, active);
+        }
+    }
+
+    private string? lastInstanceProfile;
 
     private static void BringToFront(Window window)
     {

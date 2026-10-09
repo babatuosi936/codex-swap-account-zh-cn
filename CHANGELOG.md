@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.5-local - 2026-10-09
+
+- Follow the foreground Codex desktop window across independent instances and highlight its actual account using the instance's CODEX_HOME, including Cockpit instances on another drive.
+- Selecting an account already open in Codex focuses its window and restores it if minimized. Other instances and their tasks keep running.
+- Ask users to open an unavailable account in Cockpit when using independent instances; do not replace shared authorization in this mode.
+- Restrict the legacy single-instance close flow to the selected desktop process and its descendants, protecting other instances and reused process IDs.
+- Close quota popups when changing the overlay owner to avoid detached detail windows.
+- Add account-identity and process-isolation tests and an opt-in local multi-instance verification probe that never writes credentials.
+
 ## Local UI fix - 2026-10-08
 
 - Hide minimized settings and profile-manager windows instead of leaving small desktop captions, reuse their instances when reopened, and restore the native window state before focusing them.

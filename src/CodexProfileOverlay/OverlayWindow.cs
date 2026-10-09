@@ -123,6 +123,12 @@ internal sealed class OverlayWindow : Window
 
     public void AttachTo(IntPtr codexHwnd)
     {
+        if (ownerHwnd != codexHwnd)
+        {
+            compactPopup.IsOpen = false;
+            usageHover.Close();
+            placementDirty = true;
+        }
         ownerHwnd = codexHwnd;
         var helper = new WindowInteropHelper(this);
         _ = helper.EnsureHandle();

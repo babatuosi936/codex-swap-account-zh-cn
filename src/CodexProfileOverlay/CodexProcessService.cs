@@ -30,7 +30,7 @@ internal sealed class CodexProcessService
             }
         }
         return new CodexDesktopCloseService(desktopRuntime, Environment.ProcessId)
-            .CloseAsync(gracefulTimeoutSeconds, allowForceClose, cancellationToken);
+            .CloseAsync(gracefulTimeoutSeconds, allowForceClose, cancellationToken, attachedDesktopProcessId);
     }
 
     public IReadOnlyList<DesktopProcessInfo> InspectDesktopProcesses() =>

@@ -86,7 +86,8 @@ public static class CodexDesktopProcessPolicy
     public static IReadOnlyList<DesktopProcessInfo> SelectTargets(
         IReadOnlyList<DesktopProcessInfo> snapshot,
         int overlayProcessId,
-        IEnumerable<DesktopProcessInfo>? tracked = null)
+        IEnumerable<DesktopProcessInfo>? tracked = null,
+        DesktopProcessInfo? selectedRoot = null)
     {
         var byId = snapshot.ToDictionary(process => process.Id);
         var children = snapshot.GroupBy(process => process.ParentId).ToDictionary(group => group.Key, group => group.ToArray());
@@ -107,6 +108,11 @@ public static class CodexDesktopProcessPolicy
 
         var roots = snapshot.Where(process => process.IsDesktopExecutable
             && (!byId.TryGetValue(process.ParentId, out DesktopProcessInfo? parent) || !parent.IsDesktopExecutable)).ToList();
+        if (selectedRoot is not null)
+        {
+            roots = roots.Where(process => process.Id == selectedRoot.Id
+                && process.StartTimeUtc == selectedRoot.StartTimeUtc).ToList();
+        }
         // Keep watching known descendants even after their desktop parent has exited.
         foreach (DesktopProcessInfo remembered in tracked ?? [])
         {

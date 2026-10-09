@@ -16,6 +16,13 @@ internal sealed class CodexWindowFinder
     public CodexWindowInfo? FindMainWindow()
     {
         IntPtr foreground = NativeMethods.GetForegroundWindow();
+        return FindAllWindows().OrderByDescending(info => info.Hwnd == foreground).FirstOrDefault();
+    }
+
+    public CodexWindowInfo? FindForegroundWindow() => TryCreateWindowInfo(NativeMethods.GetForegroundWindow());
+
+    public IReadOnlyList<CodexWindowInfo> FindAllWindows()
+    {
         var matches = new List<CodexWindowInfo>();
         NativeMethods.EnumWindows((hwnd, _) =>
         {
@@ -28,9 +35,7 @@ internal sealed class CodexWindowFinder
             return true;
         }, IntPtr.Zero);
 
-        return matches
-            .OrderByDescending(info => info.Hwnd == foreground)
-            .FirstOrDefault();
+        return matches;
     }
 
     public CodexWindowInfo? RefreshKnownWindow(CodexWindowInfo knownWindow)

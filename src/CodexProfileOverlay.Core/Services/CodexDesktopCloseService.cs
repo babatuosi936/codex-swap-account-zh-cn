@@ -19,15 +19,22 @@ public sealed class CodexDesktopCloseService
         this.overlayProcessId = overlayProcessId;
     }
 
-    public async Task CloseAsync(int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken)
+    public async Task CloseAsync(int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken,
+        int? desktopProcessId = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        DesktopProcessInfo? selectedRoot = null;
+        if (desktopProcessId is int id)
+        {
+            selectedRoot = runtime.Snapshot().FirstOrDefault(process => process.Id == id && process.IsDesktopExecutable)
+                ?? throw new InvalidOperationException("The selected Codex instance is no longer available.");
+        }
         var tracked = new Dictionary<(int Id, DateTime? Started), DesktopProcessInfo>();
         var requested = new HashSet<(int Id, DateTime? Started)>();
 
         IReadOnlyList<DesktopProcessInfo> Refresh()
         {
-            foreach (DesktopProcessInfo process in CodexDesktopProcessPolicy.SelectTargets(runtime.Snapshot(), overlayProcessId, tracked.Values))
+            foreach (DesktopProcessInfo process in CodexDesktopProcessPolicy.SelectTargets(runtime.Snapshot(), overlayProcessId, tracked.Values, selectedRoot))
             {
                 var key = (process.Id, process.StartTimeUtc);
                 if (!tracked.TryGetValue(key, out DesktopProcessInfo? previous) || previous.Depth < process.Depth)
