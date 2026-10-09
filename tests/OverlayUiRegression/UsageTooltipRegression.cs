@@ -11,6 +11,17 @@ internal static partial class Program
 {
     private static void RunUsageTooltipScenario()
     {
+        var builder = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.UsageToolTipBuilder")!;
+        var format = builder.GetMethod("FormatReset", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var now = new DateTimeOffset(2026, 10, 9, 11, 21, 0, TimeSpan.FromHours(8));
+        string Reset(DateTimeOffset? at, LanguagePreference language) => (string)format.Invoke(null, [at, now, language])!;
+        Require(Reset(now.AddHours(4).AddMinutes(5), LanguagePreference.ChineseSimplified) == "4小时 5分钟 (10/09 15:26)", "Short reset countdown is incorrect.");
+        Require(Reset(now.AddDays(5).AddHours(3).AddMinutes(21), LanguagePreference.ChineseSimplified) == "5天 3小时 21分钟 (10/14 14:42)", "Weekly reset countdown is incorrect.");
+        Require(Reset(now.AddSeconds(1), LanguagePreference.English).StartsWith("1m "), "Sub-minute remaining time must round up.");
+        Require(Reset(now.AddMinutes(-1), LanguagePreference.ChineseSimplified).StartsWith("已到重置时间"), "Expired reset must not produce a negative countdown.");
+        Require(Reset(null, LanguagePreference.ChineseSimplified) == "—", "Missing reset time must stay unknown.");
+        Require(Reset(now.AddHours(4).AddMinutes(5), LanguagePreference.English).StartsWith("4h 5m ") && Reset(now.AddHours(4), LanguagePreference.Russian).StartsWith("4 ч "), "Countdown units must follow the selected language.");
+        Evidence.Add(new { kind = "reset-countdown", shortWindow = "passed", weekly = "passed", boundary = "passed", languages = "passed" });
         foreach (var theme in new[] { AppTheme.Light, AppTheme.Dark })
         foreach (var language in new[] { LanguagePreference.ChineseSimplified, LanguagePreference.English, LanguagePreference.Russian })
         foreach (var kind in new[] { "complete", "weekly-only", "unknown" })
