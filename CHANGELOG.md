@@ -1,3 +1,7 @@
+## 1.1.20-local - 2026-10-09
+
+- Read and write app-server quota messages explicitly as UTF-8. Prevent Windows legacy console encodings from corrupting initialization JSON for Chinese account paths and leaving quota permanently stale after refresh timeouts.
+
 ## 1.1.19-local - 2026-10-09
 
 - Verify account identity before querying shared credentials for the active profile. Query saved credentials when identities differ or cannot be verified, preventing quota from another instance appearing under the wrong account.

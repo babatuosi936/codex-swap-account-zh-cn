@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using CodexProfileOverlay.Core.Models;
 
@@ -131,6 +132,11 @@ public sealed class CodexAppServerRateLimitsSource : ICodexRateLimitsSource
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            // The app-server protocol is UTF-8, regardless of the Windows console code page.
+            // A legacy code page can consume JSON delimiters beside a Chinese profile path.
+            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = new UTF8Encoding(false),
+            StandardErrorEncoding = new UTF8Encoding(false),
             CreateNoWindow = true,
         };
         startInfo.ArgumentList.Add("app-server");
