@@ -18,6 +18,7 @@ internal sealed partial class OverlayWindow
     private Button? accountHoldButton;
     private Point accountHoldPoint;
     private bool accountReordering;
+    private bool accountPressMoved;
     private int accountInsertion;
     private Button? accountDropCue;
     private Thickness savedCueThickness;
@@ -43,27 +44,29 @@ internal sealed partial class OverlayWindow
         Closed += (_, _) => FinishAccountReorder(commit: false);
     }
 
-    private void TrackAccountHold(MouseButtonEventArgs e)
+    private bool TrackAccountHold(DependencyObject? element, Point point)
     {
         FinishAccountReorder(commit: false);
-        if (currentMode != Core.Models.OverlayDisplayMode.Expanded || isSwitching || profiles.Count < 2) return;
-        DependencyObject? element = e.OriginalSource as DependencyObject;
+        if (currentMode != Core.Models.OverlayDisplayMode.Expanded) return false;
         while (element is not null && element is not Button)
             element = element is Visual ? VisualTreeHelper.GetParent(element) : null;
-        if (element is not Button button || !profileButtons.Contains(button)) return;
+        if (element is not Button button || !profileButtons.Contains(button)) return false;
+        // Account tabs never participate in moving the overlay, even before
+        // the hold delay has elapsed. All other header regions retain dragging.
+        dragPending = false;
         accountHoldButton = button;
-        accountHoldPoint = e.GetPosition(this);
-        accountHoldTimer.Start();
+        accountHoldPoint = point;
+        if (!isSwitching && profiles.Count >= 2) accountHoldTimer.Start();
+        return true;
     }
 
-    private void CancelAccountHoldIfMoved(Point point)
+    private void UpdateAccountHold(Point point)
     {
         if (accountHoldButton is null) return;
         if (Math.Abs(point.X - accountHoldPoint.X) >= SystemParameters.MinimumHorizontalDragDistance
             || Math.Abs(point.Y - accountHoldPoint.Y) >= SystemParameters.MinimumVerticalDragDistance)
         {
-            accountHoldTimer.Stop();
-            accountHoldButton = null;
+            accountPressMoved = true;
         }
     }
 
@@ -124,6 +127,7 @@ internal sealed partial class OverlayWindow
         ClearAccountDropCue();
         accountHoldButton = null;
         accountReordering = false;
+        accountPressMoved = false;
         usageHover.Suspended = false;
         if (!wasReordering) return;
         Cursor = null;

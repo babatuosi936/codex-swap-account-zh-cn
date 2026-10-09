@@ -1017,7 +1017,7 @@ internal sealed partial class OverlayWindow : Window
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        TrackAccountHold(e);
+        if (TrackAccountHold(e.OriginalSource as DependencyObject, e.GetPosition(this))) return;
         if (ownerHwnd == IntPtr.Zero || e.ButtonState != MouseButtonState.Pressed)
         {
             return;
@@ -1038,7 +1038,12 @@ internal sealed partial class OverlayWindow : Window
             e.Handled = true;
             return;
         }
-        CancelAccountHoldIfMoved(e.GetPosition(this));
+        if (accountHoldButton is not null)
+        {
+            UpdateAccountHold(e.GetPosition(this));
+            e.Handled = true;
+            return;
+        }
         if (!dragPending && !isDragging)
         {
             return;
@@ -1087,6 +1092,13 @@ internal sealed partial class OverlayWindow : Window
             UpdateAccountReorder(e.GetPosition(this));
             FinishAccountReorder(commit: true);
             e.Handled = true;
+            return;
+        }
+        if (accountHoldButton is not null)
+        {
+            bool moved = accountPressMoved;
+            FinishDrag();
+            if (moved) e.Handled = true;
             return;
         }
         bool wasDragging = isDragging;

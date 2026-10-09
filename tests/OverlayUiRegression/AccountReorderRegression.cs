@@ -30,6 +30,27 @@ internal static partial class Program
                 overlay.Left = 250; overlay.Top = 200; overlay.Show(); Pump();
                 Button[] Buttons() => Descendants((DependencyObject)overlay.Content).OfType<Button>().Where(b => b.Tag is string).ToArray();
                 string[] Order() => Buttons().Select(b => (string)b.Tag).ToArray();
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var track = OverlayType.GetMethod("TrackAccountHold", flags)!;
+                foreach (var account in Buttons())
+                {
+                    var label = Descendants(account).OfType<TextBlock>().First();
+                    var point = account.TransformToAncestor(overlay).Transform(new Point(10, 20));
+                    OverlayType.GetField("dragPending", flags)!.SetValue(overlay, true);
+                    Require((bool)track.Invoke(overlay, new object[] { label, point })!, "The entire account card, including nested text, must reserve the sorting gesture.");
+                    Require(!(bool)OverlayType.GetField("dragPending", flags)!.GetValue(overlay)!, "Account presses must not leave overlay movement pending.");
+                    double left = overlay.Left, top = overlay.Top;
+                    Call(overlay, "UpdateAccountHold", new Point(point.X + 30, point.Y));
+                    Require(ReferenceEquals(account, OverlayType.GetField("accountHoldButton", flags)!.GetValue(overlay)), "Moving during the hold delay must retain the account gesture rather than switch to overlay movement.");
+                    Require(overlay.Left == left && overlay.Top == top, "Account movement must not change the overlay position.");
+                    var release = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,
+                        Environment.TickCount, System.Windows.Input.MouseButton.Left) { RoutedEvent = System.Windows.Input.Mouse.PreviewMouseUpEvent };
+                    OverlayType.GetMethod("OnMouseLeftButtonUp", flags | System.Reflection.BindingFlags.DeclaredOnly)!.Invoke(overlay, new object[] { overlay, release });
+                    Require(release.Handled && switches == 0 && saves == 0, "A moved tab released before the hold delay must not switch accounts or save a new overlay position.");
+                }
+                foreach (var region in Descendants((DependencyObject)overlay.Content).OfType<Button>().Where(b => b.Tag is not string).Cast<DependencyObject>().Append((DependencyObject)overlay.Content))
+                    Require(!(bool)track.Invoke(overlay, new object[] { region, new Point() })!, "Overview, collapse controls and background must remain available for whole-overlay dragging.");
+                Evidence.Add(new { scenario = "account-drag-regions", scale });
                 void StartSort(Button source)
                 {
                     // Seed a held-pointer gesture without generating real desktop mouse

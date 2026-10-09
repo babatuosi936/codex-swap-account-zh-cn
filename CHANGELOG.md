@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.15-local - 2026-10-09
+
+- Reserve account tabs exclusively for account sorting; pressing or moving on a tab never starts overlay positioning, including during the hold delay.
+- Retain whole-overlay dragging on Overview, collapse/menu controls, and the header background.
+- Suppress accidental account switches when a tab is moved and released before the hold delay completes.
+
 ## 1.1.14-local - 2026-10-09
 
 - Hold an account tab for 450 ms, then drag horizontally to reorder saved accounts. Show an insertion cue and scroll at the account viewport edges.
