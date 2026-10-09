@@ -897,7 +897,9 @@ internal sealed class OverlayController : IDisposable
             }
             // Load after acquiring the gate so manual and automatic refreshes cannot overwrite another account's result.
             ProfileStatusDocument document = statusService.Load();
-            string directory = UsageRefreshPolicy.QueryDirectory(profile.Name, activeProfileStore.Read(), profile.DirectoryPath, paths.SharedCodexDirectory);
+            string directory = UsageRefreshPolicy.QueryDirectory(profile.Name, activeProfileStore.Read(), profile.DirectoryPath, paths.SharedCodexDirectory,
+                InstanceAccountIdentity.Read(Path.Combine(profile.DirectoryPath, "auth.json")),
+                InstanceAccountIdentity.Read(paths.SharedAuthFile));
             await statusService.RefreshUsageAsync(profile.Name, directory, document, disposalTokenSource.Token).ConfigureAwait(true);
             lastUsageRefreshAttempts[profile.Name] = DateTimeOffset.UtcNow;
             RefreshStatusIndicators();

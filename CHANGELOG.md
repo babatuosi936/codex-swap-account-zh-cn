@@ -1,3 +1,7 @@
+## 1.1.19-local - 2026-10-09
+
+- Verify account identity before querying shared credentials for the active profile. Query saved credentials when identities differ or cannot be verified, preventing quota from another instance appearing under the wrong account.
+
 ## 1.1.18-local - 2026-10-09
 
 - Place Reset Hotkeys and Save on the same row, aligned to the left and right of the settings card.

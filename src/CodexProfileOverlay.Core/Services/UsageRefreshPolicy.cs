@@ -15,6 +15,10 @@ public static class UsageRefreshPolicy
             active ? Math.Clamp(settings.ActiveProfileRefreshIntervalSeconds, 15, 3600)
                 : Math.Clamp(settings.InactiveProfileRefreshIntervalSeconds, 30, 86400)));
 
-    public static string QueryDirectory(string profileId, string? activeProfileId, string savedProfileDirectory, string sharedDirectory) =>
-        string.Equals(profileId, activeProfileId, StringComparison.OrdinalIgnoreCase) ? sharedDirectory : savedProfileDirectory;
+    public static string QueryDirectory(string profileId, string? activeProfileId, string savedProfileDirectory, string sharedDirectory,
+        string? savedAccountId = null, string? sharedAccountId = null) =>
+        string.Equals(profileId, activeProfileId, StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(savedAccountId)
+        && string.Equals(savedAccountId, sharedAccountId, StringComparison.Ordinal)
+            ? sharedDirectory : savedProfileDirectory;
 }

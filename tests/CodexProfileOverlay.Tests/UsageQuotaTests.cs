@@ -45,7 +45,9 @@ public sealed class UsageQuotaTests
     [Fact]
     public void Refresh_UsesLiveAuthorizationOnlyForActiveAccount()
     {
-        Assert.Equal("shared", UsageRefreshPolicy.QueryDirectory("main", "MAIN", "saved-main", "shared"));
+        Assert.Equal("shared", UsageRefreshPolicy.QueryDirectory("main", "MAIN", "saved-main", "shared", "account-a", "account-a"));
+        Assert.Equal("saved-main", UsageRefreshPolicy.QueryDirectory("main", "MAIN", "saved-main", "shared", "account-a", "account-b"));
+        Assert.Equal("saved-main", UsageRefreshPolicy.QueryDirectory("main", "MAIN", "saved-main", "shared"));
         Assert.Equal("saved-other", UsageRefreshPolicy.QueryDirectory("other", "main", "saved-other", "shared"));
         Assert.Equal("saved-main", UsageRefreshPolicy.QueryDirectory("main", null, "saved-main", "shared"));
     }
