@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--overview-only") || args.Length == 0) RunAccountsOverviewScenario();
+            if (args.Contains("--overview-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} overview checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--foreground-only") || args.Length == 0) RunForegroundMonitorScenario();
             if (args.Contains("--foreground-only"))
             {
@@ -369,7 +376,9 @@ internal static partial class Program
     private static void Open(Window overlay)
     {
         var shell = (Border)overlay.Content;
-        ((Button)shell.Child).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Descendants(shell).OfType<Button>()
+            .First(item => System.Windows.Automation.AutomationProperties.GetAutomationId(item) != "AccountsOverview")
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Pump();
     }
 

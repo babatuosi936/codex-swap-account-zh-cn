@@ -422,15 +422,24 @@ internal sealed class OverlayWindow : Window
         button.Content = grid;
         button.MouseEnter += (_, _) => shell.Background = FindBrush("TabHoverBrush");
         button.MouseLeave += (_, _) => shell.Background = FindBrush("OverlayBackgroundBrush");
-        return button;
+        if (profiles.Count < 2) return button;
+        var combined = new Grid();
+        combined.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        combined.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        combined.Children.Add(CreateOverviewButton());
+        Grid.SetColumn(button, 1);
+        combined.Children.Add(button);
+        return combined;
     }
 
     private UIElement BuildExpandedContent()
     {
         profileButtons.Clear();
         var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        if (profiles.Count >= 2) grid.Children.Add(CreateOverviewButton());
 
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
         panel.RequestBringIntoView += (_, e) =>
@@ -469,10 +478,10 @@ internal sealed class OverlayWindow : Window
             Content = panel,
             Height = HeaderButtonHeight,
         };
-        Grid.SetColumn(scrollViewer, 0);
+        Grid.SetColumn(scrollViewer, 1);
 
         Button menuButton = CreateMenuButton();
-        Grid.SetColumn(menuButton, 1);
+        Grid.SetColumn(menuButton, 2);
         grid.Children.Add(scrollViewer);
         grid.Children.Add(menuButton);
         return grid;
@@ -518,6 +527,23 @@ internal sealed class OverlayWindow : Window
         panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
         border.Child = panel;
         return border;
+    }
+
+    private Button CreateOverviewButton()
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        row.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M0,0 H6 V6 H0 Z M9,0 H15 V6 H9 Z M0,9 H6 V15 H0 Z M9,9 H15 V15 H9 Z"),
+            Fill = FindBrush("AccentBrush"), Width = 15, Height = 15, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 7, 0) });
+        row.Children.Add(new TextBlock { Text = Localizer?["Overview"] ?? "Overview", FontSize = 12, Foreground = FindBrush("StrongTextBrush"), VerticalAlignment = VerticalAlignment.Center });
+        var button = new Button { Content = row, Height = HeaderButtonHeight, MinHeight = 0, Padding = new Thickness(10, 0, 10, 0),
+            Margin = new Thickness(0, 0, 6, 0), Background = FindBrush("TabBackgroundBrush"), BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand, ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
+                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language) };
+        System.Windows.Automation.AutomationProperties.SetAutomationId(button, "AccountsOverview");
+        ConfigureUsageHover(button);
+        button.MouseEnter += (_, _) => AnimateBrush(button, "TabHoverBrush");
+        button.MouseLeave += (_, _) => AnimateBrush(button, "TabBackgroundBrush");
+        return button;
     }
 
     private Button CreateProfileButton(ProfileInfo profile, bool isActive)

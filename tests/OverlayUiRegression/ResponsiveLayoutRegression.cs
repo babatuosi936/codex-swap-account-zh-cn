@@ -9,7 +9,8 @@ internal static partial class Program
 {
     private static void RunResponsiveLayoutScenario(double scale, LanguagePreference language)
     {
-        var host = new Window { Title = "Responsive Overlay Fixture", Width = 1450, Height = 700, Left = 20, Top = 20, ShowInTaskbar = false };
+        // Include the leading overview control in the wide-layout baseline.
+        var host = new Window { Title = "Responsive Overlay Fixture", Width = 2000, Height = 700, Left = 20, Top = 20, ShowInTaskbar = false };
         var settings = new OverlaySettings { DisplayMode = OverlayDisplayMode.Auto, Scale = scale, ShowAutomaticLimitIndicators = true, Language = language, PositionPreset = PositionPreset.TopCenter };
         var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
         try
@@ -37,7 +38,7 @@ internal static partial class Program
                 "Auto mode must become compact when the actual account row no longer fits.");
             Require(overlay.ActualWidth <= host.ActualWidth, "Compact overlay exceeds its owner window.");
 
-            host.Width = 1450;
+            host.Width = 2000;
             Pump();
             Call(overlay, "UpdatePlacement", handle);
             Pump();

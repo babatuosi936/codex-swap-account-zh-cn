@@ -12,6 +12,8 @@ public static partial class LocalizationCatalog
         ["StartWithWindows"] = "开机启动",
         ["Exit"] = "退出",
         ["Active"] = "当前账号",
+        ["Overview"] = "总览",
+        ["AllAccountsOverview"] = "全部账号",
         ["AddProfile"] = "添加账号",
         ["ManageProfiles"] = "管理账号",
         ["Rename"] = "重命名",

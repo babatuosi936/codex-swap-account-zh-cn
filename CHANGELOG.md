@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.8-local - 2026-10-09
+
+- Add a leading Overview entry to expanded and compact layouts only when at least two saved accounts exist.
+- Hover to view every account's quota details, reset countdowns and last update, with current-account highlighting and scrolling for larger lists.
+- Reuse the existing quota card format, omit unavailable five-hour windows, and preserve the mouse transition into the overview panel.
+
 ## 1.1.7-local - 2026-10-09
 
 - Refresh tracking immediately on Windows foreground-change and minimize-end events, avoiding the normal wait for the 750 ms timer when switching instances using the taskbar or Alt+Tab.
