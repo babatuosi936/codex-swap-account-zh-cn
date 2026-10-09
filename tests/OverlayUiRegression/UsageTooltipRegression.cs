@@ -63,7 +63,9 @@ internal static partial class Program
                 Require(placements[0].Point == new System.Windows.Point(-75, 44), "Hover card must be centered immediately below the account.");
                 var surface = (Border)tooltip.Child;
                 var card = (Border)surface.Child;
-                int expectedRows = kind == "complete" ? 4 : 3;
+                int expectedRows = kind == "complete" ? 5 : 4;
+                Require(Descendants(card).OfType<System.Windows.Controls.Button>().Single().Content?.ToString() == LocalizationCatalog.Text(language, "RefreshQuota"),
+                    "Single-account detail must expose its own refresh action.");
                 Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == expectedRows, "Usage hover must omit unavailable limit rows and shrink to fit.");
                 var text = string.Join(" ", Descendants(card).OfType<TextBlock>().Select(item => item.Text));
                 Require(text.Contains(LocalizationCatalog.Text(language, "RemainingQuota")) && text.Contains(LocalizationCatalog.Text(language, "ResetCredits")), "Credit balance and reset opportunities must appear in quota details.");

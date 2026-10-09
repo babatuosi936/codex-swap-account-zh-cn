@@ -16,6 +16,7 @@ internal static partial class Program
 {
     private static void RunAccountsOverviewScenario()
     {
+        RunQuotaPopupRefreshScenario();
         var builder = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.AccountsOverviewBuilder")!;
         var resolve = builder.GetMethod("ResolveColumns", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
         foreach (var (width, expected) in new[] { (420d, 1), (800d, 2), (1200d, 3) })
@@ -111,5 +112,54 @@ internal static partial class Program
             finally { overlay.Close(); Pump(); }
         }
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
+    }
+
+    private static void RunQuotaPopupRefreshScenario()
+    {
+        var settings = new OverlaySettings { DisplayMode = OverlayDisplayMode.Expanded, Language = LanguagePreference.ChineseSimplified, ShowAutomaticLimitIndicators = true };
+        var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
+        try
+        {
+            var profiles = Enumerable.Range(0, 3).Select(i => new ProfileInfo("refresh-" + i, "unused", "unused") { DisplayName = "测试账号 " + i }).ToArray();
+            var document = Document(profiles, 0);
+            var pending = new TaskCompletionSource<bool>();
+            int allCalls = 0;
+            string? singleId = null;
+            OverlayType.GetProperty("OnRefreshAllQuotas")!.SetValue(overlay, (Func<Task>)(() => { allCalls++; return pending.Task; }));
+            OverlayType.GetProperty("OnRefreshQuota")!.SetValue(overlay, (Func<string, Task>)(id =>
+            {
+                singleId = id;
+                document.Snapshots[id] = new UsageSnapshot { LongWindowRemainingPercent = 91, CapturedAt = DateTimeOffset.UtcNow };
+                Call(overlay, "SetStatusDocument", document, null);
+                return Task.CompletedTask;
+            }));
+            Call(overlay, "SetProfiles", profiles, profiles[0].Name);
+            Call(overlay, "SetStatusDocument", document, null);
+            overlay.Show(); Pump();
+            var overview = Descendants((DependencyObject)overlay.Content).OfType<Button>().Single(b => AutomationProperties.GetAutomationId(b) == "AccountsOverview");
+            overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var popup = (Popup)overview.ToolTip;
+            Button RefreshButton(Popup panel, string id) => Descendants(panel.Child).OfType<Button>().Single(b => AutomationProperties.GetAutomationId(b) == id);
+            var refresh = RefreshButton(popup, "RefreshAllQuota");
+            refresh.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Require(allCalls == 1 && !refresh.IsEnabled, "Overview refresh must invoke all-account callback and disable repeats.");
+            document.Snapshots[profiles[0].Name] = new UsageSnapshot { LongWindowRemainingPercent = 89, CapturedAt = DateTimeOffset.UtcNow };
+            Call(overlay, "SetStatusDocument", document, null); Pump();
+            Require(popup.IsOpen && !RefreshButton(popup, "RefreshAllQuota").IsEnabled, "Intermediate quota updates must preserve the open panel and busy state.");
+            RefreshButton(popup, "RefreshAllQuota").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Require(allCalls == 1, "Rebuilt refresh controls must not submit another request while busy.");
+            pending.SetResult(true); Pump();
+            Require(popup.IsOpen && RefreshButton(popup, "RefreshAllQuota").IsEnabled, "Completion must update the existing overview and restore refresh action.");
+            popup.IsOpen = false; Pump();
+            var account = Descendants((DependencyObject)overlay.Content).OfType<Button>().Single(b => Equals(b.Tag, profiles[1].Name));
+            account.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
+            var single = (Popup)account.ToolTip;
+            WaitFor(() => single.IsOpen);
+            RefreshButton(single, "RefreshQuota").RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Pump();
+            Require(singleId == profiles[1].Name && single.IsOpen, "Individual refresh must target its own account and keep details visible.");
+            Require(Descendants(single.Child).OfType<TextBlock>().Any(t => t.Text == "91%"), "Individual card must show the newly returned quota.");
+            Evidence.Add(new { scenario = "quota-popup-refresh", allCalls, singleId });
+        }
+        finally { overlay.Close(); Pump(); }
     }
 }

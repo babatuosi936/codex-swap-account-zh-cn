@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -72,6 +73,14 @@ internal sealed class OverlayWindow : Window
         ApplyScale();
 
         Content = shell;
+        usageHover.Closed += () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (quotaRebuildPending && !usageHover.IsOpen && !isDragging && !dragPending)
+            {
+                quotaRebuildPending = false;
+                RebuildContent();
+            }
+        }));
         RebuildContent();
         PreviewMouseLeftButtonDown += OnMouseLeftButtonDown;
         PreviewMouseMove += OnMouseMove;
@@ -98,6 +107,8 @@ internal sealed class OverlayWindow : Window
     public Action<string>? OnSwitchProfile { get; set; }
 
     public Action? OnRefreshProfiles { get; set; }
+    public Func<string, Task>? OnRefreshQuota { get; set; }
+    public Func<Task>? OnRefreshAllQuotas { get; set; }
 
     public Action? OnOpenProfilesFolder { get; set; }
 
@@ -271,9 +282,11 @@ internal sealed class OverlayWindow : Window
         if (!string.Equals(indicatorSignature, newSignature, StringComparison.Ordinal))
         {
             indicatorSignature = newSignature;
-            if (isDragging || dragPending)
+            if (isDragging || dragPending || usageHover.IsOpen)
             {
                 quotaRebuildPending = true;
+                // Update the open quota card without unloading its hovered button.
+                usageHover.RefreshContent();
             }
             else
             {
@@ -522,7 +535,6 @@ internal sealed class OverlayWindow : Window
 
         panel.Children.Add(new Separator { Margin = new Thickness(2, 5, 2, 5) });
         panel.Children.Add(CreatePopupCommand(Localizer?["AddProfile"] ?? "Add profile", OnManageProfiles));
-        panel.Children.Add(CreatePopupCommand(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", OnRefreshProfiles, closeOnInvoke: false));
         panel.Children.Add(CreatePopupCommand(Localizer?["Settings"] ?? "Settings", OnOpenSettings));
         panel.Children.Add(CreatePopupCommand(Localizer?["HideSwitcher"] ?? "Hide switcher", OnHideOverlay));
         border.Child = panel;
@@ -538,7 +550,7 @@ internal sealed class OverlayWindow : Window
         var button = new Button { Content = row, Height = HeaderButtonHeight, MinHeight = 0, Padding = new Thickness(10, 0, 10, 0),
             Margin = new Thickness(0, 0, 6, 0), Background = FindBrush("TabBackgroundBrush"), BorderThickness = new Thickness(0),
             Cursor = Cursors.Hand, ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
-                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language) };
+                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language, OnRefreshAllQuotas) };
         System.Windows.Automation.AutomationProperties.SetAutomationId(button, "AccountsOverview");
         usageHover.Attach(button, (Popup)button.ToolTip, shell, openOnClick: true);
         button.MouseEnter += (_, _) => AnimateBrush(button, "TabHoverBrush");
@@ -664,8 +676,30 @@ internal sealed class OverlayWindow : Window
 
     private Popup BuildUsageToolTip(string profileId)
     {
-        UsageSnapshot? snapshot = statusDocument?.Snapshots.GetValueOrDefault(profileId);
-        return UsageToolTipBuilder.Build(snapshot, Localizer?.Language ?? settings.Language);
+        var language = Localizer?.Language ?? settings.Language;
+        var popup = UsageToolTipBuilder.Build(statusDocument?.Snapshots.GetValueOrDefault(profileId), language);
+        var surface = (Border)popup.Child;
+        var refreshState = new QuotaRefreshButtonBuilder.State();
+        void Refresh()
+        {
+            var updated = UsageToolTipBuilder.Build(statusDocument?.Snapshots.GetValueOrDefault(profileId), language);
+            var updatedSurface = (Border)updated.Child;
+            var card = (Border)updatedSurface.Child;
+            updatedSurface.Child = null;
+            var rows = (StackPanel)card.Child;
+            var refresh = QuotaRefreshButtonBuilder.Build("RefreshQuota", language,
+                OnRefreshQuota is null ? null : () => OnRefreshQuota(profileId), Refresh, refreshState);
+            refresh.Margin = new Thickness(0, 12, 0, 0);
+            rows.Children.Add(refresh);
+            surface.Child = card;
+        }
+        popup.Tag = (Action)Refresh;
+        var countdown = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        countdown.Tick += (_, _) => Refresh();
+        popup.Opened += (_, _) => { Refresh(); countdown.Start(); };
+        popup.Closed += (_, _) => countdown.Stop();
+        Refresh();
+        return popup;
     }
 
     private void ConfigureUsageHover(FrameworkElement target)
@@ -749,7 +783,6 @@ internal sealed class OverlayWindow : Window
             UseLayoutRounding = true,
         };
         menu.Items.Add(CreateMenuItem(Localizer?["AddProfile"] ?? "Add profile", () => OnManageProfiles?.Invoke()));
-        menu.Items.Add(CreateMenuItem(Localizer?["RefreshAllQuota"] ?? "Refresh quotas", () => OnRefreshProfiles?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["Settings"] ?? "Settings", () => OnOpenSettings?.Invoke()));
         menu.Items.Add(CreateMenuItem(Localizer?["HideSwitcher"] ?? "Hide switcher", () => OnHideOverlay?.Invoke()));
         button.ContextMenu = menu;

@@ -191,14 +191,6 @@ internal static partial class Program
                 Verify(overlay, popup, scale, edge, $"background-refresh-{i}");
             }
 
-            int refreshCalls = 0;
-            OverlayType.GetProperty("OnRefreshProfiles")!.SetValue(overlay, (Action)(() =>
-            {
-                Require(popup.IsOpen, "Manual refresh must keep the menu open when calling the refresh action.");
-                refreshCalls++;
-                Call(overlay, "SetProfiles", profiles, profiles[0].Name);
-                Call(overlay, "SetStatusDocument", Document(profiles, 5 + refreshCalls), null);
-            }));
             bool managerOpened = false;
             OverlayType.GetProperty("OnManageProfiles")!.SetValue(overlay, (Action)(() =>
             {
@@ -208,13 +200,10 @@ internal static partial class Program
             // Install the command delegates while preserving the open menu.
             Call(overlay, "ApplySettings");
             Pump();
+            Require(!Descendants(popup.Child).OfType<Button>().Any(button => Text(button).Contains("刷新全部额度")),
+                "Quota refresh must be moved from the compact menu to its quota panels.");
             for (int click = 1; click <= 3; click++)
             {
-                var refreshButton = Descendants(popup.Child).OfType<Button>().Single(button => Text(button).Contains("刷新全部额度"));
-                refreshButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Pump();
-                Require(refreshCalls == click && popup.IsOpen, "Manual refresh unexpectedly closed the menu.");
-                Verify(overlay, popup, scale, edge, $"manual-refresh-{click}");
                 // Simulate another account's asynchronous query result arriving later.
                 Call(overlay, "SetStatusDocument", Document(profiles, 10 + click), null);
                 Pump();

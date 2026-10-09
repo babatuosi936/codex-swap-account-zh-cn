@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.13-local - 2026-10-09
+
+- Move quota refresh from the floating menus into the quota panels: refresh one account in its detail panel, or all saved accounts from Overview.
+- Show refreshing state and block repeat submissions, update open cards in place, and defer the account-bar rebuild until the panel closes.
+- Manual refresh of all accounts does not depend on automatic-polling preferences.
+
 ## 1.1.12-local - 2026-10-09
 
 - Toggle the clicked Overview panel closed on a second click, including when popup outside-click capture dismisses it before the button Click event.

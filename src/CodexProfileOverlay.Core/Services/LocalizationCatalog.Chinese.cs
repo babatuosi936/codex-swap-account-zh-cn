@@ -151,6 +151,8 @@ public static partial class LocalizationCatalog
         ["QuotaPollingHelp"] = "当前账号每 {0} 秒、其他账号每 {1} 秒自动刷新。显示服务器返回的额度，可能有延迟。",
         ["QuotaAdvanced"] = "颜色与手动状态设置",
         ["RefreshAllQuota"] = "刷新全部额度",
+        ["RefreshQuota"] = "刷新额度",
+        ["QuotaRefreshFailed"] = "刷新失败，请重试",
         ["QuotaRemaining"] = "{0}剩余 {1}%",
         ["QuotaUpdated"] = "更新于 {0}",
         ["QuotaRefreshing"] = "正在刷新…",

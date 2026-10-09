@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -29,11 +30,12 @@ internal static class AccountsOverviewBuilder
         return SystemParameters.WorkArea.Size;
     }
 
-    public static Popup Build(IReadOnlyList<ProfileInfo> profiles, string? active, Func<string, UsageSnapshot?> snapshotFor, LanguagePreference language)
+    public static Popup Build(IReadOnlyList<ProfileInfo> profiles, string? active, Func<string, UsageSnapshot?> snapshotFor, LanguagePreference language, Func<Task>? refreshAll = null)
     {
         Brush Brush(string key) => (Brush)Application.Current.FindResource(key);
         string Text(string key) => LocalizationCatalog.Text(language, key);
         var surface = new Border { Padding = new Thickness(8), Background = Brushes.Transparent };
+        var refreshState = new QuotaRefreshButtonBuilder.State();
         var popup = new Popup
         {
             Child = surface, AllowsTransparency = true, StaysOpen = true, Placement = PlacementMode.Custom,
@@ -83,8 +85,13 @@ internal static class AccountsOverviewBuilder
                 index++;
             }
             var root = new StackPanel();
-            root.Children.Add(new TextBlock { Text = Text("AllAccountsOverview") + " · " + profiles.Count,
-                Foreground = Brush("StrongTextBrush"), FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(4, 0, 0, 12) });
+            var header = new DockPanel { Margin = new Thickness(4, 0, 0, 12) };
+            var refreshButton = QuotaRefreshButtonBuilder.Build("RefreshAllQuota", language, refreshAll, Refresh, refreshState);
+            DockPanel.SetDock(refreshButton, Dock.Right);
+            header.Children.Add(refreshButton);
+            header.Children.Add(new TextBlock { Text = Text("AllAccountsOverview") + " · " + profiles.Count,
+                Foreground = Brush("StrongTextBrush"), FontSize = 15, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            root.Children.Add(header);
             root.Children.Add(new ScrollViewer { Content = list, MaxHeight = Math.Min(480, area.Height * 0.65),
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
             surface.Child = new Border { Child = root, Width = Math.Min(columns * 340 + 30, area.Width - 48),
@@ -93,6 +100,7 @@ internal static class AccountsOverviewBuilder
                 Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 3, Opacity = 0.14 } };
         }
         Refresh();
+        popup.Tag = (Action)Refresh;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         timer.Tick += (_, _) => Refresh();
         popup.Opened += (_, _) => { Refresh(); timer.Start(); };

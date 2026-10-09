@@ -134,6 +134,12 @@ internal sealed class OverlayController : IDisposable
         {
             OnSwitchProfile = profile => _ = SwitchProfileAsync(profile),
             OnRefreshProfiles = () => { RefreshProfiles(); _ = RefreshAllUsageAsync(); },
+            OnRefreshQuota = RefreshUsageForProfileAsync,
+            OnRefreshAllQuotas = async () =>
+            {
+                foreach (var profile in profiles.ToArray())
+                    await RefreshUsageForProfileAsync(profile.Name).ConfigureAwait(true);
+            },
             OnOpenProfilesFolder = () => OpenFolder(paths.ProfilesDirectory),
             OnOpenApplicationDataFolder = () => OpenFolder(paths.ApplicationDataDirectory),
             OnOpenSettings = ShowSettingsWindow,
