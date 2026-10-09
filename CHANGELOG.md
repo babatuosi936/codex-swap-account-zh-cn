@@ -1,3 +1,7 @@
+## 1.1.18-local - 2026-10-09
+
+- Place Reset Hotkeys and Save on the same row, aligned to the left and right of the settings card.
+
 ## 1.1.17-local - 2026-10-09
 
 - Move account-overlay visibility from floating and tray menus to the General settings toggle, with immediate application and persisted state.

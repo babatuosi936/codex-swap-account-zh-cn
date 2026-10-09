@@ -415,21 +415,31 @@ internal sealed class SettingsWindow : Window
             rows.Add(HotkeyRow(localizer.Format("ProfileHotkey", index + 1, profiles[index].DisplayName), hotkeyDraft.ProfileHotkeys[index], value => hotkeyDraft.ProfileHotkeys[captured] = value));
         }
 
-        rows.Add(CommandRow((localizer["ResetHotkeys"], () =>
+        var hotkeyActions = new Grid { Margin = new Thickness(0, 0, 0, 14) };
+        hotkeyActions.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        hotkeyActions.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var resetHotkeysButton = new Button
+        {
+            Content = localizer["ResetHotkeys"],
+            MinWidth = 132,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 0, 16, 0),
+        };
+        resetHotkeysButton.Click += (_, _) =>
         {
             hotkeyDraft = HotkeySettings.CreateDefault();
             MarkHotkeysDirty();
             Rebuild();
-        }, false)));
+        };
+        hotkeyActions.Children.Add(resetHotkeysButton);
 
         saveHotkeysButton = new Button
         {
             Content = localizer["SaveHotkeys"],
             Style = (Style)FindResource("PrimaryButtonStyle"),
             MinWidth = 132,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Right,
             IsEnabled = hotkeysDirty,
-            Margin = new Thickness(0, 0, 0, 14),
         };
         saveHotkeysButton.Click += (_, _) =>
         {
@@ -445,7 +455,9 @@ internal sealed class SettingsWindow : Window
                 settings.Hotkeys = previous;
             }
         };
-        rows.Add(saveHotkeysButton);
+        Grid.SetColumn(saveHotkeysButton, 1);
+        hotkeyActions.Children.Add(saveHotkeysButton);
+        rows.Add(hotkeyActions);
 
         hotkeyConflictText = new TextBlock
         {
