@@ -629,6 +629,10 @@ internal sealed class OverlayWindow : Window
 
     private static void ConfigureUsageHover(FrameworkElement target)
     {
+        if (target.ToolTip is ToolTip tooltip)
+        {
+            tooltip.PlacementTarget = target;
+        }
         ToolTipService.SetInitialShowDelay(target, 250);
         ToolTipService.SetBetweenShowDelay(target, 0);
         ToolTipService.SetShowDuration(target, 60000);

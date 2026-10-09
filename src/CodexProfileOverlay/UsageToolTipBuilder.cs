@@ -54,7 +54,16 @@ internal static class UsageToolTipBuilder
             Template = new ControlTemplate(typeof(ToolTip)) { VisualTree = presenter },
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
-            Placement = PlacementMode.Bottom,
+            Placement = PlacementMode.Custom,
+            CustomPopupPlacementCallback = (popupSize, targetSize, offset) =>
+            [
+                new CustomPopupPlacement(
+                    new Point((targetSize.Width - popupSize.Width) / 2 + offset.X, targetSize.Height + offset.Y),
+                    PopupPrimaryAxis.Horizontal),
+                new CustomPopupPlacement(
+                    new Point((targetSize.Width - popupSize.Width) / 2 + offset.X, -popupSize.Height - offset.Y),
+                    PopupPrimaryAxis.Horizontal),
+            ],
             VerticalOffset = 4,
             HasDropShadow = false,
         };

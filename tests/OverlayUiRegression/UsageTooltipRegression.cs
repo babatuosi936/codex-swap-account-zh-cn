@@ -43,6 +43,10 @@ internal static partial class Program
                 var button = Descendants((DependencyObject)overlay.Content).OfType<System.Windows.Controls.Button>().Single(item => item.Tag is string);
                 Require(button.ToolTip is ToolTip, "The whole account button must expose the quota card.");
                 var tooltip = (ToolTip)button.ToolTip;
+                Require(ReferenceEquals(tooltip.PlacementTarget, button), "Hover card must be anchored to the account button.");
+                Require(tooltip.Placement == System.Windows.Controls.Primitives.PlacementMode.Custom && tooltip.CustomPopupPlacementCallback is not null, "Hover card must use account-centered placement.");
+                var placements = tooltip.CustomPopupPlacementCallback!(new System.Windows.Size(350, 110), new System.Windows.Size(200, 40), new System.Windows.Point(0, 4));
+                Require(placements[0].Point == new System.Windows.Point(-75, 44), "Hover card must be centered immediately below the account.");
                 var card = (Border)tooltip.Content;
                 Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == 3, "Usage hover must contain exactly three styled rows.");
                 var text = string.Join(" ", Descendants(card).OfType<TextBlock>().Select(item => item.Text));
