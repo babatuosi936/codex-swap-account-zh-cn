@@ -10,10 +10,12 @@ public sealed class CodexCliStatusUsageProvider : IUsageProvider
     public const string SourceIdentifier = "codex-cli-status";
 
     private readonly ICodexRateLimitsSource source;
+    private readonly ResetCreditsSource? resetCreditsSource;
 
     public CodexCliStatusUsageProvider()
         : this(new CodexAppServerRateLimitsSource())
     {
+        resetCreditsSource = new ResetCreditsSource();
     }
 
     public CodexCliStatusUsageProvider(ICodexRateLimitsSource source)
@@ -31,9 +33,12 @@ public sealed class CodexCliStatusUsageProvider : IUsageProvider
         }
 
         CodexRateLimitsCapture? capture = await source.CaptureRateLimitsAsync(profileDirectory, cancellationToken).ConfigureAwait(false);
-        return capture is null
+        UsageSnapshot? snapshot = capture is null
             ? null
             : CodexAppServerRateLimitsParser.Parse(capture.StatusOutput, capture.CapturedAt, capture.CodexCliVersion);
+        if (snapshot is not null && resetCreditsSource is not null)
+            await resetCreditsSource.PopulateAsync(profileDirectory, snapshot, cancellationToken).ConfigureAwait(false);
+        return snapshot;
     }
 }
 
@@ -257,7 +262,7 @@ public static class CodexAppServerRateLimitsParser
             bool isExhausted = windows.Any(window => window.RemainingPercent == 0)
                 || !string.IsNullOrWhiteSpace(reachedType);
 
-            return new UsageSnapshot
+            var snapshot = new UsageSnapshot
             {
                 Windows = windows,
                 CapturedAt = capturedAt.ToUniversalTime(),
@@ -265,6 +270,19 @@ public static class CodexAppServerRateLimitsParser
                 CodexCliVersion = string.IsNullOrWhiteSpace(codexCliVersion) ? null : codexCliVersion.Trim(),
                 IsExhausted = isExhausted,
             };
+            if (TryGetProperty(rateLimits, "credits", out JsonElement credits))
+            {
+                if (TryGetProperty(credits, "unlimited", out JsonElement unlimited) && unlimited.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                    snapshot.CreditsUnlimited = unlimited.GetBoolean();
+                string? balance = TryGetString(credits, "balance");
+                if (balance is null && TryGetProperty(credits, "balance", out JsonElement numeric) && numeric.ValueKind == JsonValueKind.Number)
+                    balance = numeric.GetRawText();
+                if (decimal.TryParse(balance, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal amount) && amount >= 0)
+                    snapshot.CreditsBalance = amount;
+                else if (TryGetProperty(credits, "hasCredits", out JsonElement has) && has.ValueKind == JsonValueKind.False)
+                    snapshot.CreditsBalance = 0;
+            }
+            return snapshot;
         }
 
         return null;

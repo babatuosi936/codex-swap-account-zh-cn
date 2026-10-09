@@ -14,6 +14,10 @@ public sealed class UsageSnapshot
     public DateTimeOffset? LongWindowResetAt { get; set; }
 
     public int? CreditsRemaining { get; set; }
+    public decimal? CreditsBalance { get; set; }
+    public bool? CreditsUnlimited { get; set; }
+    public int? ResetCreditsRemaining { get; set; }
+    public DateTimeOffset? ResetCreditsExpiresAt { get; set; }
 
     public string? PlanName { get; set; }
 

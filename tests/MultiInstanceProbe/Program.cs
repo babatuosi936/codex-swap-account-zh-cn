@@ -34,6 +34,19 @@ internal static class Program
         var assembly = typeof(CodexProfileOverlay.App).Assembly;
         var paths = AppPaths.FromEnvironment();
         var profiles = new ProfileDiscoveryService(paths.ProfilesDirectory).DiscoverProfiles();
+        if (args.Contains("--credit-query"))
+        {
+            var provider = new CodexCliStatusUsageProvider();
+            int checkedAccounts = 0;
+            foreach (var profile in profiles)
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var snapshot = provider.GetUsageAsync(Path.GetDirectoryName(profile.AuthFilePath)!, timeout.Token).GetAwaiter().GetResult();
+                Console.WriteLine(JsonSerializer.Serialize(new { account = ++checkedAccounts, quotaAvailable = snapshot is not null,
+                    balance = snapshot?.CreditsBalance, unlimited = snapshot?.CreditsUnlimited, resetCount = snapshot?.ResetCreditsRemaining, hasResetExpiry = snapshot?.ResetCreditsExpiresAt is not null }));
+            }
+            return checkedAccounts > 0 ? 0 : 1;
+        }
         string output = args.FirstOrDefault(value => value.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             ?? Path.Combine(AppContext.BaseDirectory, "multi-instance-probe.json");
         var finderType = assembly.GetType("CodexProfileOverlay.CodexWindowFinder")!;

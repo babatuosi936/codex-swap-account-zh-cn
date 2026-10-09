@@ -26,6 +26,17 @@ internal static class UsageToolTipBuilder
             rows.Children.Add(new TextBlock { Text = Text("QuotaUnknown"), FontSize = 13, Foreground = Brush("MutedTextBrush") });
         }
 
+        var details = new StackPanel { Margin = new Thickness(0, 12, 0, 0) };
+        string creditValue = snapshot?.CreditsUnlimited == true ? Text("UnlimitedCredits")
+            : snapshot?.CreditsBalance?.ToString("0.################", CultureInfo.InvariantCulture)
+                ?? snapshot?.CreditsRemaining?.ToString(CultureInfo.InvariantCulture) ?? Text("UnknownValue");
+        AddDetail(Text("RemainingQuota"), creditValue);
+        string resetValue = snapshot?.ResetCreditsRemaining?.ToString(CultureInfo.InvariantCulture) ?? Text("UnknownValue");
+        if (snapshot?.ResetCreditsRemaining > 0 && snapshot.ResetCreditsExpiresAt is DateTimeOffset expiry)
+            resetValue += " (" + Text("NextExpiry") + ": " + UsageDisplayFormatter.FormatLocal(expiry) + ")";
+        AddDetail(Text("ResetCredits"), resetValue);
+        rows.Children.Add(details);
+
         var updated = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         updated.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         updated.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -80,25 +91,39 @@ internal static class UsageToolTipBuilder
         popup.Closed += (_, _) => countdownTimer.Stop();
         return popup;
 
+        void AddDetail(string label, string value)
+        {
+            var line = new Grid { Margin = new Thickness(0, details.Children.Count == 0 ? 0 : 5, 0, 0) };
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            line.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Brush("MutedTextBrush"), Margin = new Thickness(0, 0, 16, 0) });
+            var data = new TextBlock { Text = value, FontSize = 12, Foreground = Brush("MutedTextBrush"), TextAlignment = TextAlignment.Right, TextWrapping = TextWrapping.Wrap };
+            Grid.SetColumn(data, 1); line.Children.Add(data); details.Children.Add(line);
+        }
+
         void AddQuotaRow(string label, UsageLimitWindow? window)
         {
             if (window is null) return;
-            var row = new Grid { Margin = new Thickness(0, rows.Children.Count == 0 ? 0 : 8, 0, 0) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var section = new StackPanel { Margin = new Thickness(0, rows.Children.Count == 0 ? 0 : 12, 0, 0) };
+            var row = new Grid();
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.Children.Add(new TextBlock { Text = label, FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Brush("StrongTextBrush"), MinWidth = 48, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center });
-            var percentage = new Border
-            {
-                Background = Brush("TabBackgroundBrush"),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(8, 3, 8, 3),
-                MinWidth = 48,
-                Margin = new Thickness(0, 0, 18, 0),
-                Child = new TextBlock { Text = window.RemainingPercent is int value ? value + "%" : "—", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Brush("StrongTextBrush"), HorizontalAlignment = HorizontalAlignment.Center },
-            };
+            int percent = Math.Clamp(window.RemainingPercent ?? 0, 0, 100);
+            var surface = (SolidColorBrush)Brush("Surface1Brush");
+            bool dark = surface.Color.R + surface.Color.G + surface.Color.B < 384;
+            var color = window.RemainingPercent is null ? Brush("MutedTextBrush")
+                : new SolidColorBrush((Color)ColorConverter.ConvertFromString(percent >= 70 ? dark ? "#34C759" : "#15803D" : percent >= 30 ? dark ? "#FF9500" : "#C76C00" : "#EF4444"));
+            var percentage = new TextBlock { Text = window.RemainingPercent is int ? percent + "%" : "—", FontSize = 14,
+                FontWeight = FontWeights.SemiBold, Foreground = color, HorizontalAlignment = HorizontalAlignment.Right };
             Grid.SetColumn(percentage, 1);
             row.Children.Add(percentage);
+            section.Children.Add(row);
+            var progress = new Grid { Height = 4 };
+            progress.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(percent, GridUnitType.Star) });
+            progress.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100 - percent, GridUnitType.Star) });
+            progress.Children.Add(new Border { Background = color, CornerRadius = new CornerRadius(2) });
+            section.Children.Add(new Border { Child = progress, Height = 4, Margin = new Thickness(0, 7, 0, 7), Background = Brush("TabBackgroundBrush"), CornerRadius = new CornerRadius(2), Tag = "QuotaProgress" });
             var reset = new TextBlock
             {
                 Text = FormatReset(window.ResetAt, DateTimeOffset.UtcNow, language),
@@ -108,10 +133,9 @@ internal static class UsageToolTipBuilder
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 TextAlignment = TextAlignment.Right,
             };
-            Grid.SetColumn(reset, 2);
-            row.Children.Add(reset);
+            section.Children.Add(reset);
             resetLabels.Add((reset, window.ResetAt));
-            rows.Children.Add(row);
+            rows.Children.Add(section);
         }
     }
 

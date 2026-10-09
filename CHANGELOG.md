@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.9-local - 2026-10-09
+
+- Add colored remaining-quota progress tracks to single-account details and the all-account overview, keeping reset countdowns aligned right and omitting absent quota windows.
+- Parse decimal credit balance and unlimited credits from the existing app-server response.
+- Query available reset credits and nearest expiry using the same read-only ChatGPT endpoint used by Codex Accounts Manager. No reset/redemption operation is performed.
+- Display unavailable supplementary values as unknown, preserve zero as a real value, and keep quota results usable when the optional reset-credit query fails.
+
 ## 1.1.8-local - 2026-10-09
 
 - Add a leading Overview entry to expanded and compact layouts only when at least two saved accounts exist.

@@ -48,6 +48,9 @@ internal static partial class Program
                         Source = "SOURCE-MUST-NOT-APPEAR",
                         CodexCliVersion = "CLI-MUST-NOT-APPEAR",
                         IsStale = true,
+                        CreditsBalance = 12.5m,
+                        ResetCreditsRemaining = 1,
+                        ResetCreditsExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
                     };
                 }
                 Call(overlay, "SetStatusDocument", document, null);
@@ -60,9 +63,12 @@ internal static partial class Program
                 Require(placements[0].Point == new System.Windows.Point(-75, 44), "Hover card must be centered immediately below the account.");
                 var surface = (Border)tooltip.Child;
                 var card = (Border)surface.Child;
-                int expectedRows = kind == "complete" ? 3 : 2;
+                int expectedRows = kind == "complete" ? 4 : 3;
                 Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == expectedRows, "Usage hover must omit unavailable limit rows and shrink to fit.");
                 var text = string.Join(" ", Descendants(card).OfType<TextBlock>().Select(item => item.Text));
+                Require(text.Contains(LocalizationCatalog.Text(language, "RemainingQuota")) && text.Contains(LocalizationCatalog.Text(language, "ResetCredits")), "Credit balance and reset opportunities must appear in quota details.");
+                Require(Descendants(card).OfType<Border>().Count(b => Equals(b.Tag, "QuotaProgress")) == (kind == "complete" ? 2 : kind == "weekly-only" ? 1 : 0), "Each known quota window must have one progress track.");
+                if (kind != "unknown") Require(text.Contains("12.5") && text.Contains(LocalizationCatalog.Text(language, "NextExpiry")), "Credit balance and nearest expiration must use returned data.");
                 Require(!text.Contains("MUST-NOT-APPEAR") && !text.Contains(LocalizationCatalog.Text(language, "UsageDataStale")), "Tooltip contains extra diagnostics instead of three rows.");
                 Require(text.Contains(LocalizationCatalog.Text(language, "LastUpdated")), "Last updated must remain visible.");
                 Require(text.Contains(LocalizationCatalog.Text(language, "FiveHourWindow")) == (kind == "complete"), "Absent five-hour limits must not appear in the card.");
