@@ -13,6 +13,22 @@ namespace CodexProfileOverlay;
 
 internal static class AccountsOverviewBuilder
 {
+    internal static int ResolveColumns(int count, double availableWidth)
+        => Math.Max(1, Math.Min(Math.Min(count, 3), (int)Math.Floor((availableWidth - 46) / 320)));
+
+    private static Size WorkingArea(Popup popup)
+    {
+        if (popup.PlacementTarget is Visual target && PresentationSource.FromVisual(target)?.CompositionTarget is { } composition)
+        {
+            var point = target.PointToScreen(new Point());
+            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)point.X, (int)point.Y));
+            var area = screen.WorkingArea;
+            var size = composition.TransformFromDevice.Transform(new Vector(area.Width, area.Height));
+            return new Size(size.X, size.Y);
+        }
+        return SystemParameters.WorkArea.Size;
+    }
+
     public static Popup Build(IReadOnlyList<ProfileInfo> profiles, string? active, Func<string, UsageSnapshot?> snapshotFor, LanguagePreference language)
     {
         Brush Brush(string key) => (Brush)Application.Current.FindResource(key);
@@ -23,12 +39,18 @@ internal static class AccountsOverviewBuilder
             Child = surface, AllowsTransparency = true, StaysOpen = true, Placement = PlacementMode.Custom,
             VerticalOffset = 4,
             CustomPopupPlacementCallback = (size, target, offset) =>
-            [new(new Point(offset.X, target.Height + offset.Y), PopupPrimaryAxis.Horizontal),
-             new(new Point(offset.X, -size.Height - offset.Y), PopupPrimaryAxis.Horizontal)],
+            [new(new Point((target.Width - size.Width) / 2 + offset.X, target.Height + offset.Y), PopupPrimaryAxis.Horizontal),
+             new(new Point((target.Width - size.Width) / 2 + offset.X, -size.Height - offset.Y), PopupPrimaryAxis.Horizontal)],
         };
         void Refresh()
         {
-            var list = new StackPanel();
+            var area = WorkingArea(popup);
+            int columns = ResolveColumns(profiles.Count, area.Width - 32);
+            var list = new Grid { Tag = "OverviewCards" };
+            for (int column = 0; column < columns; column++) list.ColumnDefinitions.Add(new ColumnDefinition());
+            for (int row = 0; row < (profiles.Count + columns - 1) / columns; row++)
+                list.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            int index = 0;
             foreach (var profile in profiles)
             {
                 var snapshot = snapshotFor(profile.Name);
@@ -52,16 +74,20 @@ internal static class AccountsOverviewBuilder
                 var rows = new StackPanel();
                 rows.Children.Add(heading);
                 rows.Children.Add(content);
-                list.Children.Add(new Border { Child = rows, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(9),
+                var card = new Border { Child = rows, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(9),
                     BorderThickness = new Thickness(1), BorderBrush = Brush(profile.Name == active ? "AccentHoverBrush" : "BorderBrush"),
-                    Background = Brush("Surface1Brush"), Margin = new Thickness(0, 0, 0, 8) });
+                    Background = Brush("Surface1Brush"), Margin = new Thickness(0, 0, index % columns < columns - 1 ? 10 : 0, 10) };
+                Grid.SetColumn(card, index % columns);
+                Grid.SetRow(card, index / columns);
+                list.Children.Add(card);
+                index++;
             }
             var root = new StackPanel();
             root.Children.Add(new TextBlock { Text = Text("AllAccountsOverview") + " · " + profiles.Count,
                 Foreground = Brush("StrongTextBrush"), FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(4, 0, 0, 12) });
-            root.Children.Add(new ScrollViewer { Content = list, MaxHeight = Math.Min(480, SystemParameters.WorkArea.Height * 0.65),
+            root.Children.Add(new ScrollViewer { Content = list, MaxHeight = Math.Min(480, area.Height * 0.65),
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
-            surface.Child = new Border { Child = root, Width = Math.Min(510, SystemParameters.WorkArea.Width - 32),
+            surface.Child = new Border { Child = root, Width = Math.Min(columns * 340 + 30, area.Width - 48),
                 Padding = new Thickness(14), CornerRadius = new CornerRadius(12), Background = Brush("OverlayBackgroundBrush"),
                 BorderBrush = Brush("OverlayBorderBrush"), BorderThickness = new Thickness(1),
                 Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 3, Opacity = 0.14 } };

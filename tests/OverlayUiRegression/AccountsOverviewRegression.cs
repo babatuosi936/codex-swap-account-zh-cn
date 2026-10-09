@@ -9,11 +9,20 @@ using CodexProfileOverlay.Core.Models;
 using CodexProfileOverlay.Core.Services;
 using Button = System.Windows.Controls.Button;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Point = System.Windows.Point;
+using Size = System.Windows.Size;
 
 internal static partial class Program
 {
     private static void RunAccountsOverviewScenario()
     {
+        var builder = typeof(CodexProfileOverlay.App).Assembly.GetType("CodexProfileOverlay.AccountsOverviewBuilder")!;
+        var resolve = builder.GetMethod("ResolveColumns", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+        foreach (var (width, expected) in new[] { (420d, 1), (800d, 2), (1200d, 3) })
+        {
+            Require((int)resolve.Invoke(null, new object[] { 12, width })! == expected, "Overview must wrap according to available monitor width.");
+            Evidence.Add(new { scenario = "overview-columns", width, expected });
+        }
         foreach (var theme in new[] { AppTheme.Light, AppTheme.Dark })
         foreach (var mode in new[] { OverlayDisplayMode.Expanded, OverlayDisplayMode.Compact })
         foreach (int count in new[] { 0, 1, 2, 3, 12 })
@@ -42,11 +51,22 @@ internal static partial class Program
                     var popup = (Popup)overview.ToolTip;
                     overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
                     WaitFor(() => popup.IsOpen);
-                    Require(popup.IsOpen && ReferenceEquals(popup.PlacementTarget, overview), "Overview must open beneath its own entry.");
+                    Require(popup.IsOpen && ReferenceEquals(popup.PlacementTarget, overlay.Content), "Overview must anchor to the whole floating bar.");
+                    var placements = popup.CustomPopupPlacementCallback!(new Size(1050, 300), new Size(720, 40), new Point(0, 4));
+                    Require(Math.Abs(placements[0].Point.X + 525 - 360) < 0.01 && placements[0].Point.Y == 44,
+                        "Overview and floating bar must share the horizontal center axis.");
                     var text = string.Join(" ", Descendants(popup.Child).OfType<TextBlock>().Select(t => t.Text));
                     Require(profiles.All(p => text.Contains(p.DisplayName)) && text.Contains("83%") && text.Contains("最近更新"), "Overview must include every account and quota timestamps.");
                     var scroll = Descendants(popup.Child).OfType<ScrollViewer>().Single();
                     Require(scroll.MaxHeight <= 480 && scroll.VerticalScrollBarVisibility == ScrollBarVisibility.Auto, "Large overviews must have bounded scrolling.");
+                    var cards = Descendants(popup.Child).OfType<Grid>().Single(g => Equals(g.Tag, "OverviewCards"));
+                    Require(cards.Children.Count == count && cards.ColumnDefinitions.Count <= 3,
+                        "Overview must retain all cards and use at most three horizontal columns.");
+                    Require(cards.RowDefinitions.Count == (count + cards.ColumnDefinitions.Count - 1) / cards.ColumnDefinitions.Count,
+                        "Additional accounts must wrap into vertical rows.");
+                    if (cards.ColumnDefinitions.Count > 1)
+                        Require(Grid.GetRow(cards.Children[0]) == Grid.GetRow(cards.Children[1]) && Grid.GetColumn(cards.Children[1]) == 1,
+                            "Cards must occupy neighboring horizontal columns before starting another row.");
                     if (count == 3 && mode == OverlayDisplayMode.Expanded && theme == AppTheme.Light)
                     {
                         overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseLeaveEvent });

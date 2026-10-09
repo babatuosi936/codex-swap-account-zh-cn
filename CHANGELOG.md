@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.10-local - 2026-10-09
+
+- Arrange overview account cards horizontally with vertical details inside each card, wrapping into further rows on smaller monitors or with more accounts.
+- Center the overview beneath the entire floating account bar, retaining hover traversal and bounded vertical scrolling.
+- Size the panel using the anchor monitor's working area and DPI rather than the primary monitor.
+
 ## 1.1.9-local - 2026-10-09
 
 - Add colored remaining-quota progress tracks to single-account details and the all-account overview, keeping reset countdowns aligned right and omitting absent quota windows.

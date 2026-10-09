@@ -28,9 +28,9 @@ internal sealed class UsageHoverController
         };
     }
 
-    public void Attach(FrameworkElement account, Popup card)
+    public void Attach(FrameworkElement account, Popup card, FrameworkElement? placementTarget = null)
     {
-        card.PlacementTarget = account;
+        card.PlacementTarget = placementTarget ?? account;
         card.StaysOpen = true;
         card.IsHitTestVisible = true;
         card.Focusable = false;

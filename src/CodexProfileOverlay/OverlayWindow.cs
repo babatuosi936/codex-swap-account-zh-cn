@@ -540,7 +540,7 @@ internal sealed class OverlayWindow : Window
             Cursor = Cursors.Hand, ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
                 name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language) };
         System.Windows.Automation.AutomationProperties.SetAutomationId(button, "AccountsOverview");
-        ConfigureUsageHover(button);
+        usageHover.Attach(button, (Popup)button.ToolTip, shell);
         button.MouseEnter += (_, _) => AnimateBrush(button, "TabHoverBrush");
         button.MouseLeave += (_, _) => AnimateBrush(button, "TabBackgroundBrush");
         return button;
