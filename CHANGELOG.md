@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.12-local - 2026-10-09
+
+- Toggle the clicked Overview panel closed on a second click, including when popup outside-click capture dismisses it before the button Click event.
+
 ## 1.1.11-local - 2026-10-09
 
 - Clicking Overview opens the account panel immediately and keeps it visible after the pointer leaves. Clicking outside dismisses it.

@@ -69,8 +69,18 @@ internal sealed class UsageHoverController
         account.Unloaded += (_, _) => { if (ReferenceEquals(current, card)) Close(); };
         if (openOnClick && account is Button button)
         {
+            bool dismissedOverButton = false;
+            button.MouseLeave += (_, _) => dismissedOverButton = false;
             button.Click += (_, _) =>
             {
+                // Outside-click capture can dismiss the popup before this button's
+                // Click event. Treat both events as one toggle, rather than reopen.
+                if (dismissedOverButton || (pinned && ReferenceEquals(current, card)))
+                {
+                    dismissedOverButton = false;
+                    Close();
+                    return;
+                }
                 if (!ReferenceEquals(current, card)) Close();
                 timer.Stop();
                 current = card;
@@ -80,6 +90,11 @@ internal sealed class UsageHoverController
             };
             card.Closed += (_, _) =>
             {
+                if (pinned && ReferenceEquals(current, card))
+                {
+                    var position = Mouse.GetPosition(button);
+                    dismissedOverButton = new Rect(new Size(button.ActualWidth, button.ActualHeight)).Contains(position);
+                }
                 card.StaysOpen = true;
                 if (ReferenceEquals(current, card))
                 {
@@ -101,11 +116,12 @@ internal sealed class UsageHoverController
     public void Close()
     {
         timer.Stop();
-        if (current is not null) current.IsOpen = false;
+        var closing = current;
         current = null;
         pinned = false;
         overAccount = false;
         overCard = false;
+        if (closing is not null) closing.IsOpen = false;
     }
 
     private void Schedule(bool show, int milliseconds)

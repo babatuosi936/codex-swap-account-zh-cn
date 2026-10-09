@@ -55,6 +55,11 @@ internal static partial class Program
                     popup.Child.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseLeaveEvent });
                     for (int i = 0; i < 6; i++) Pump();
                     Require(popup.IsOpen, "Clicked overview must remain open after the pointer leaves.");
+                    overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    for (int i = 0; i < 6; i++) Pump();
+                    Require(!popup.IsOpen, "A second Overview click must close it without reopening.");
+                    overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Require(popup.IsOpen, "A subsequent Overview click must open it again.");
                     popup.Child.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
                         PresentationSource.FromVisual(popup.Child), Environment.TickCount, System.Windows.Input.Key.Escape)
                         { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent });
