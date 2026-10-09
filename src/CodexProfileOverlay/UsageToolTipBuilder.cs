@@ -10,7 +10,7 @@ namespace CodexProfileOverlay;
 
 internal static class UsageToolTipBuilder
 {
-    public static ToolTip Build(UsageSnapshot? snapshot, LanguagePreference language)
+    public static Popup Build(UsageSnapshot? snapshot, LanguagePreference language)
     {
         string Text(string key) => LocalizationCatalog.Text(language, key);
         Brush Brush(string key) => (Brush)Application.Current.FindResource(key);
@@ -45,15 +45,11 @@ internal static class UsageToolTipBuilder
             MinWidth = 350,
             Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 3, Opacity = 0.14 },
         };
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-        presenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
-        presenter.SetValue(FrameworkElement.MarginProperty, new Thickness(8));
-        return new ToolTip
+        return new Popup
         {
-            Content = card,
-            Template = new ControlTemplate(typeof(ToolTip)) { VisualTree = presenter },
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
+            Child = new Border { Child = card, Padding = new Thickness(8), Background = Brushes.Transparent },
+            AllowsTransparency = true,
+            StaysOpen = true,
             Placement = PlacementMode.Custom,
             CustomPopupPlacementCallback = (popupSize, targetSize, offset) =>
             [
@@ -65,7 +61,6 @@ internal static class UsageToolTipBuilder
                     PopupPrimaryAxis.Horizontal),
             ],
             VerticalOffset = 4,
-            HasDropShadow = false,
         };
 
         void AddQuotaRow(string label, UsageLimitWindow? window)

@@ -30,6 +30,7 @@ internal sealed class OverlayWindow : Window
     private readonly Border shell = new();
     private readonly Popup compactPopup = new() { AllowsTransparency = true, StaysOpen = false, Placement = PlacementMode.Bottom };
     private readonly List<Button> profileButtons = [];
+    private readonly UsageHoverController usageHover = new();
     private HwndSource? hwndSource;
     private IReadOnlyList<ProfileInfo> profiles = [];
     private string? activeProfile;
@@ -89,6 +90,7 @@ internal sealed class OverlayWindow : Window
             {
                 FinishDrag();
                 compactPopup.IsOpen = false;
+                usageHover.Close();
             }
         };
     }
@@ -290,6 +292,7 @@ internal sealed class OverlayWindow : Window
 
     private void RebuildContent()
     {
+        usageHover.Close();
         // Quota refresh replaces the buttons. Close the native popup before detaching
         // its visual tree, then reopen against the persistent shell after layout.
         bool reopenPopup = compactPopup.IsOpen && currentMode == OverlayDisplayMode.Compact;
@@ -618,25 +621,22 @@ internal sealed class OverlayWindow : Window
         FrameworkElement icon = CreateIndicatorVisual(indicator, 13);
         icon.Margin = margin;
         icon.ToolTip = BuildUsageToolTip(profileId);
+        ConfigureUsageHover(icon);
         return icon;
     }
 
-    private ToolTip BuildUsageToolTip(string profileId)
+    private Popup BuildUsageToolTip(string profileId)
     {
         UsageSnapshot? snapshot = statusDocument?.Snapshots.GetValueOrDefault(profileId);
         return UsageToolTipBuilder.Build(snapshot, Localizer?.Language ?? settings.Language);
     }
 
-    private static void ConfigureUsageHover(FrameworkElement target)
+    private void ConfigureUsageHover(FrameworkElement target)
     {
-        if (target.ToolTip is ToolTip tooltip)
+        if (target.ToolTip is Popup tooltip)
         {
-            tooltip.PlacementTarget = target;
+            usageHover.Attach(target, tooltip);
         }
-        ToolTipService.SetInitialShowDelay(target, 250);
-        ToolTipService.SetBetweenShowDelay(target, 0);
-        ToolTipService.SetShowDuration(target, 60000);
-        ToolTipService.SetShowOnDisabled(target, true);
     }
 
     private string BuildIndicatorSignature()
