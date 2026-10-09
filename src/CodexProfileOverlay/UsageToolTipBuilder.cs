@@ -105,6 +105,8 @@ internal static class UsageToolTipBuilder
                 FontSize = 12,
                 Foreground = Brush("MutedTextBrush"),
                 VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                TextAlignment = TextAlignment.Right,
             };
             Grid.SetColumn(reset, 2);
             row.Children.Add(reset);
