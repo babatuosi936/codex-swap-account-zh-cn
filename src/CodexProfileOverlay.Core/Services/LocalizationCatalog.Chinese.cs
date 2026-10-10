@@ -15,6 +15,8 @@ public static partial class LocalizationCatalog
         ["Overview"] = "总览",
         ["AllAccountsOverview"] = "全部账号",
         ["AddProfile"] = "添加账号",
+        ["MinimizeToBall"] = "最小化",
+        ["RestoreFromBall"] = "点击还原，拖动移动",
         ["ManageProfiles"] = "管理账号",
         ["Rename"] = "重命名",
         ["OpenFolder"] = "打开文件夹",

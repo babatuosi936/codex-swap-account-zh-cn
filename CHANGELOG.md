@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2-local - 2026-10-10
+
+- Add Minimize between Add Profile and Settings. Keep a visible 32-DIP floating ball that can be dragged and clicked to restore. Ball placement is separate from normal overlay placement, so restoration returns to the original account-bar position; quota and settings updates retain the minimized state.
+
 ## 1.2.1-local - 2026-10-10
 
 - Verify account identity before writing shared authorization back into the previous saved profile. A stale active-profile marker after an external login or instance switch must not overwrite another account's credentials. Failed-switch rollback restores shared authorization only, leaving saved profiles intact.

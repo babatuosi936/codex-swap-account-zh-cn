@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--ball-only") || args.Length == 0) RunFloatingBallScenario();
+            if (args.Contains("--ball-only"))
+            {
+                Console.WriteLine("PASS: floating ball checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--reorder-only") || args.Length == 0) RunAccountReorderScenario();
             if (args.Contains("--reorder-only"))
             {

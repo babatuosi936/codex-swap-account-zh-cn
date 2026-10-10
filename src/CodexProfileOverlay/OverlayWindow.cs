@@ -39,6 +39,8 @@ internal sealed partial class OverlayWindow : Window
     private ProfileStatusDocument? statusDocument;
     private IntPtr ownerHwnd;
     private bool isDragging;
+    private bool isBallMinimized;
+    private Point ballOffset;
     private bool quotaRebuildPending;
     private bool dragPending;
     private bool isSwitching;
@@ -202,15 +204,15 @@ internal sealed partial class OverlayWindow : Window
         }
 
         var placement = layoutService.CalculatePlacement(
-            settings.PositionPreset,
+            isBallMinimized ? PositionPreset.Custom : settings.PositionPreset,
             clientBounds.Width,
             clientBounds.Height,
             ActualWidth,
             ActualHeight,
-            settings.OffsetX,
-            settings.OffsetY);
+            isBallMinimized ? ballOffset.X : settings.OffsetX,
+            isBallMinimized ? ballOffset.Y : settings.OffsetY);
 
-        if (settings.PositionPreset == PositionPreset.Custom)
+        if (!isBallMinimized && settings.PositionPreset == PositionPreset.Custom)
         {
             settings.OffsetX = placement.OffsetX;
             settings.OffsetY = placement.OffsetY;
@@ -329,6 +331,11 @@ internal sealed partial class OverlayWindow : Window
         bool reopenPopup = compactPopup.IsOpen && currentMode == OverlayDisplayMode.Compact;
         compactPopup.IsOpen = false;
         placementDirty = true;
+        if (isBallMinimized)
+        {
+            BuildFloatingBall();
+            return;
+        }
         shell.Height = HeaderHeight;
         shell.MinHeight = HeaderHeight;
         shell.Background = FindBrush("OverlayBackgroundBrush");
@@ -789,6 +796,7 @@ internal sealed partial class OverlayWindow : Window
             UseLayoutRounding = true,
         };
         menu.Items.Add(CreateMenuItem(Localizer?["AddProfile"] ?? "Add profile", () => OnManageProfiles?.Invoke()));
+        menu.Items.Add(CreateMenuItem(Localizer?["MinimizeToBall"] ?? "Minimize to ball", MinimizeToBall));
         menu.Items.Add(CreateMenuItem(Localizer?["Settings"] ?? "Settings", () => OnOpenSettings?.Invoke()));
         button.ContextMenu = menu;
         button.Click += (_, _) =>
@@ -1071,14 +1079,17 @@ internal sealed partial class OverlayWindow : Window
 
             dragPending = false;
             isDragging = true;
-            settings.PositionPreset = PositionPreset.Custom;
+            if (!isBallMinimized) settings.PositionPreset = PositionPreset.Custom;
             compactPopup.IsOpen = false;
         }
 
-        settings.OffsetX = OverlayLayoutService.Clamp(screenDip.X - clientBounds.Left - dragOffset.X, 0, Math.Max(0, clientBounds.Width - ActualWidth));
-        settings.OffsetY = OverlayLayoutService.Clamp(screenDip.Y - clientBounds.Top - dragOffset.Y, 0, Math.Max(0, clientBounds.Height - ActualHeight));
-        Left = clientBounds.Left + settings.OffsetX;
-        Top = clientBounds.Top + settings.OffsetY;
+        var offset = new Point(
+            OverlayLayoutService.Clamp(screenDip.X - clientBounds.Left - dragOffset.X, 0, Math.Max(0, clientBounds.Width - ActualWidth)),
+            OverlayLayoutService.Clamp(screenDip.Y - clientBounds.Top - dragOffset.Y, 0, Math.Max(0, clientBounds.Height - ActualHeight)));
+        if (isBallMinimized) ballOffset = offset;
+        else { settings.OffsetX = offset.X; settings.OffsetY = offset.Y; }
+        Left = clientBounds.Left + offset.X;
+        Top = clientBounds.Top + offset.Y;
         placementDirty = true;
         e.Handled = true;
     }
@@ -1100,7 +1111,9 @@ internal sealed partial class OverlayWindow : Window
             return;
         }
         bool wasDragging = isDragging;
+        bool ballClick = isBallMinimized && dragPending && !wasDragging;
         FinishDrag();
+        if (ballClick) { RestoreFromBall(); e.Handled = true; return; }
         if (wasDragging)
         {
             // Prevent releasing a drag from also opening a menu or switching accounts.
@@ -1119,7 +1132,7 @@ internal sealed partial class OverlayWindow : Window
             ReleaseMouseCapture();
         }
 
-        if (wasDragging)
+        if (wasDragging && !isBallMinimized)
         {
             TrySaveSettings();
         }
@@ -1186,7 +1199,7 @@ internal sealed partial class OverlayWindow : Window
 
     private void UpdateWidth()
     {
-        double targetWidth = Math.Max(1, Math.Min(LogicalWidth * SanitizedScale, availableClientWidth));
+        double targetWidth = Math.Max(1, Math.Min((isBallMinimized ? 32 : LogicalWidth) * SanitizedScale, availableClientWidth));
         if (!NearlyEqual(Width, targetWidth))
         {
             Width = targetWidth;
