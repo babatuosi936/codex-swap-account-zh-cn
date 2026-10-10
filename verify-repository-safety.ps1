@@ -52,7 +52,16 @@ foreach ($path in $tracked) {
 
     $text = [System.Text.Encoding]::UTF8.GetString($bytes)
     foreach ($pattern in $patterns) {
-        $count = [regex]::Matches($text, $pattern.Regex).Count
+        $scanText = $text
+        if ($pattern.Name -eq 'auth-json-shape' -and $normalized -in @(
+            'src/CodexProfileOverlay.Core/Services/InstanceAccountIdentity.cs',
+            'src/CodexProfileOverlay.Core/Services/ResetCreditsSource.cs'
+        )) {
+            # Property lookups contain field names, not a saved authorization object.
+            # Keep every other credential check and all JSON field/value matches intact.
+            $scanText = [regex]::Replace($scanText, 'TryGetProperty\("(?:access|id)_token",', 'TryGetProperty("credential-field",')
+        }
+        $count = [regex]::Matches($scanText, $pattern.Regex).Count
         if ($count -gt 0) {
             $failures.Add("$($pattern.Name): $normalized ($count match(es), value redacted)")
         }

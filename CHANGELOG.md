@@ -1,3 +1,16 @@
+# Changelog
+
+## 1.2.0 - 2026-10-10
+
+- Support independent Codex desktop instances launched by Cockpit Tools, including instance directories on another drive. Follow the foreground window and highlight its actual account; focus an already-open account without restarting other instances. Unopened accounts must first be launched in Cockpit Tools. Chat history synchronization remains the responsibility of the instance manager.
+- Restore the overlay reliably across taskbar and Alt+Tab switches, and respond to native foreground events to reduce switching delay.
+- Add an all-account overview when two or more accounts exist, centered below the overlay, with at most three cards per row. Support hover preview and click-to-toggle opening and closing.
+- Show colored remaining-quota progress bars, reset countdowns, credit balances, available reset opportunities and expiry times. Display unknown values honestly; reset opportunities are queried only, never redeemed.
+- Move individual and all-account refresh actions into quota panels and preserve open panels while updating results.
+- Long-press account tabs to reorder them with browser-style sliding animation and saved order; drag other header regions to move the whole overlay.
+- Move account-overlay visibility into General settings, align Reset Hotkeys and Save on one row, and improve auxiliary-window restoration.
+- Verify account identity before using shared credentials for quota queries, preventing another instance's quotas from appearing under the wrong account. Explicit UTF-8 protocol encoding fixes Chinese account paths causing refresh timeouts and stale data.
+
 ## 1.1.20-local - 2026-10-09
 
 - Read and write app-server quota messages explicitly as UTF-8. Prevent Windows legacy console encodings from corrupting initialization JSON for Chinese account paths and leaving quota permanently stale after refresh timeouts.
@@ -14,8 +27,6 @@
 
 - Move account-overlay visibility from floating and tray menus to the General settings toggle, with immediate application and persisted state.
 - Reveal the overlay when the settings toggle is enabled after a previous manual hide.
-
-# Changelog
 
 ## 1.1.16-local - 2026-10-09
 
