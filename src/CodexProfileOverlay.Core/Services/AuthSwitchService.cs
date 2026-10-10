@@ -58,7 +58,12 @@ public sealed class AuthSwitchService
                 if (previousProfile is not null)
                 {
                     var currentProfile = profileDiscovery.GetRequiredProfile(previousProfile);
-                    replacer.ReplaceFromSource(paths.SharedAuthFile, currentProfile.AuthFilePath);
+                    // The marker can outlive an external login or a Cockpit instance switch.
+                    // Refresh saved credentials only after proving they belong to this account.
+                    string? savedIdentity = InstanceAccountIdentity.Read(currentProfile.AuthFilePath);
+                    if (savedIdentity is not null && string.Equals(savedIdentity,
+                        InstanceAccountIdentity.Read(paths.SharedAuthFile), StringComparison.Ordinal))
+                        replacer.ReplaceFromSource(paths.SharedAuthFile, currentProfile.AuthFilePath);
                 }
                 replacer.ReplaceFromSource(targetProfile.AuthFilePath, paths.SharedAuthFile);
                 activeProfileStore.Write(targetProfile.Name);
@@ -98,11 +103,8 @@ public sealed class AuthSwitchService
         }
 
         new AtomicFileReplacer().ReplaceFromSource(backup.PreviousAuthFile, paths.SharedAuthFile);
-        if (previousProfile is not null)
-        {
-            string profileAuth = profileDiscovery.GetRequiredProfile(previousProfile).AuthFilePath;
-            new AtomicFileReplacer().ReplaceFromSource(backup.PreviousAuthFile, profileAuth);
-        }
+        // Saved credentials were either left untouched or refreshed for the same verified
+        // identity. Restoring shared credentials into a marker-selected profile is unsafe.
     }
 
     private void RestoreActiveProfile(string? previousProfile)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1-local - 2026-10-10
+
+- Verify account identity before writing shared authorization back into the previous saved profile. A stale active-profile marker after an external login or instance switch must not overwrite another account's credentials. Failed-switch rollback restores shared authorization only, leaving saved profiles intact.
+- Add matching, mismatched and unknown identity regression coverage, including failed target replacement.
+
 ## 1.2.0 - 2026-10-10
 
 - Support independent Codex desktop instances launched by Cockpit Tools, including instance directories on another drive. Follow the foreground window and highlight its actual account; focus an already-open account without restarting other instances. Unopened accounts must first be launched in Cockpit Tools. Chat history synchronization remains the responsibility of the instance manager.

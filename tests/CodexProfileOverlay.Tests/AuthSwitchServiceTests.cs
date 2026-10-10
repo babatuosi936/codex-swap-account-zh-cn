@@ -4,13 +4,15 @@ namespace CodexProfileOverlay.Tests;
 
 public sealed class AuthSwitchServiceTests
 {
+    private const string CurrentOld = """{"tokens":{"account_id":"test-current"},"revision":"old"}""";
+    private const string CurrentFresh = """{"tokens":{"account_id":"test-current"},"revision":"fresh"}""";
     [Fact]
     public async Task SwitchAsync_CopiesCurrentAuthBackAndInstallsTarget()
     {
         using var temp = new TestLayout();
-        temp.AddProfile("current", "old-profile-auth");
+        temp.AddProfile("current", CurrentOld);
         temp.AddProfile("target", "target-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.ActiveProfileStore.Write("current");
 
         var service = temp.CreateSwitchService();
@@ -19,7 +21,7 @@ public sealed class AuthSwitchServiceTests
 
         Assert.Equal("target", result.TargetProfile);
         Assert.Equal("current", result.PreviousProfile);
-        Assert.Equal("fresh-current-auth", temp.ReadProfileAuth("current"));
+        Assert.Equal(CurrentFresh, temp.ReadProfileAuth("current"));
         Assert.Equal("target-auth", temp.ReadSharedAuth());
         Assert.Equal("target", temp.ActiveProfileStore.Read());
         Assert.NotNull(result.BackupPath);
@@ -33,9 +35,9 @@ public sealed class AuthSwitchServiceTests
     public async Task SwitchAsync_PreservesSharedCodexStateForEveryProfile()
     {
         using var temp = new TestLayout();
-        temp.AddProfile("current", "old-profile-auth");
+        temp.AddProfile("current", CurrentOld);
         temp.AddProfile("target", "target-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.WriteSharedState("current-chat-state");
         temp.WriteProfileState("target", "legacy-target-chat-state");
         temp.ActiveProfileStore.Write("current");
@@ -53,16 +55,16 @@ public sealed class AuthSwitchServiceTests
     public async Task SwitchAsync_WhenReplaceFails_RestoresPreviousSharedAuth()
     {
         using var temp = new TestLayout();
-        temp.AddProfile("current", "old-profile-auth");
+        temp.AddProfile("current", CurrentOld);
         temp.AddProfile("target", "target-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.ActiveProfileStore.Write("current");
         var service = temp.CreateSwitchService(new FailSecondReplacement());
 
         await Assert.ThrowsAsync<IOException>(() => service.SwitchAsync("target"));
 
-        Assert.Equal("fresh-current-auth", temp.ReadSharedAuth());
-        Assert.Equal("fresh-current-auth", temp.ReadProfileAuth("current"));
+        Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
+        Assert.Equal(CurrentFresh, temp.ReadProfileAuth("current"));
         Assert.Equal("target-auth", temp.ReadProfileAuth("target"));
         Assert.Equal("current", temp.ActiveProfileStore.Read());
     }
@@ -71,9 +73,9 @@ public sealed class AuthSwitchServiceTests
     public async Task SwitchAsync_RollbackDoesNotModifySharedWorkspaceData()
     {
         using var temp = new TestLayout();
-        temp.AddProfile("current", "old-profile-auth");
+        temp.AddProfile("current", CurrentOld);
         temp.AddProfile("target", "target-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.WriteSharedState("keep-me");
         string attachments = Path.Combine(temp.Paths.SharedCodexDirectory, "attachments", "item.bin");
         Directory.CreateDirectory(Path.GetDirectoryName(attachments)!);
@@ -82,7 +84,7 @@ public sealed class AuthSwitchServiceTests
 
         await Assert.ThrowsAsync<IOException>(() => temp.CreateSwitchService(new FailSecondReplacement()).SwitchAsync("target"));
 
-        Assert.Equal("fresh-current-auth", temp.ReadSharedAuth());
+        Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
         Assert.Equal("current", temp.ActiveProfileStore.Read());
         Assert.Equal("shared-session-keep-me", File.ReadAllText(Path.Combine(temp.Paths.SharedCodexDirectory, "sessions", "2026", "07", "04", "rollout.jsonl")));
         Assert.Equal("shared-db-keep-me", temp.ReadSharedStateFile("state_5.sqlite"));
@@ -93,9 +95,9 @@ public sealed class AuthSwitchServiceTests
     public async Task Rollback_RestoresAuthAndActiveProfileMetadataOnly()
     {
         using var temp = new TestLayout();
-        temp.AddProfile("current", "old-current-auth");
+        temp.AddProfile("current", CurrentOld);
         temp.AddProfile("target", "target-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.WriteSharedState("untouched");
         temp.ActiveProfileStore.Write("current");
         AuthSwitchService service = temp.CreateSwitchService();
@@ -103,7 +105,7 @@ public sealed class AuthSwitchServiceTests
 
         service.Rollback(result);
 
-        Assert.Equal("fresh-current-auth", temp.ReadSharedAuth());
+        Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
         Assert.Equal("current", temp.ActiveProfileStore.Read());
         Assert.Equal("shared-index-untouched", temp.ReadSharedStateFile("session_index.jsonl"));
         Assert.Equal("shared-db-untouched", temp.ReadSharedStateFile("state_5.sqlite"));
@@ -138,13 +140,13 @@ public sealed class AuthSwitchServiceTests
     {
         using var temp = new TestLayout();
         temp.AddProfile("current", "current-auth");
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.ActiveProfileStore.Write("current");
         var service = temp.CreateSwitchService();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.SwitchAsync("current"));
 
-        Assert.Equal("fresh-current-auth", temp.ReadSharedAuth());
+        Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
         Assert.Equal("current", temp.ActiveProfileStore.Read());
     }
 
@@ -154,14 +156,51 @@ public sealed class AuthSwitchServiceTests
         using var temp = new TestLayout();
         temp.AddProfile("current", "current-auth");
         temp.AddProfile("target", string.Empty);
-        temp.WriteSharedAuth("fresh-current-auth");
+        temp.WriteSharedAuth(CurrentFresh);
         temp.ActiveProfileStore.Write("current");
         var service = temp.CreateSwitchService();
 
         await Assert.ThrowsAsync<InvalidDataException>(() => service.SwitchAsync("target"));
 
-        Assert.Equal("fresh-current-auth", temp.ReadSharedAuth());
+        Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
         Assert.Equal("current", temp.ActiveProfileStore.Read());
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task SwitchAsync_StaleMarkerNeverOverwritesDifferentOrUnknownSavedAccount(bool unknown, bool fail)
+    {
+        using var temp = new TestLayout();
+        string saved = unknown ? "unknown-saved-auth" : """{"tokens":{"account_id":"test-other"}}""";
+        temp.AddProfile("current", saved);
+        temp.AddProfile("target", "target-auth");
+        temp.WriteSharedAuth(CurrentFresh);
+        temp.ActiveProfileStore.Write("current");
+        var service = temp.CreateSwitchService(fail ? new FailFirstReplacement() : null);
+        if (fail)
+        {
+            await Assert.ThrowsAsync<IOException>(() => service.SwitchAsync("target"));
+            Assert.Equal(CurrentFresh, temp.ReadSharedAuth());
+        }
+        else
+        {
+            await service.SwitchAsync("target");
+            Assert.Equal("target-auth", temp.ReadSharedAuth());
+        }
+        Assert.Equal(saved, temp.ReadProfileAuth("current"));
+        Assert.Equal("target-auth", temp.ReadProfileAuth("target"));
+    }
+
+    private sealed class FailFirstReplacement : IAtomicFileReplacer
+    {
+        public void ReplaceFromSource(string sourceFile, string destinationFile)
+        {
+            File.WriteAllText(destinationFile, "corrupted-before-failure");
+            throw new IOException("Simulated target replacement failure.");
+        }
     }
 
     private sealed class FailSecondReplacement : IAtomicFileReplacer
