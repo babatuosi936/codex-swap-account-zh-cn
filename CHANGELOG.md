@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.3-local - 2026-10-11
+
+- Enable Windows sign-in startup by default for new settings. Existing explicit settings remain respected, and users can still disable startup in General settings.
+
 ## 1.2.2-local - 2026-10-10
 
 - Add Minimize between Add Profile and Settings. Keep a visible 32-DIP floating ball that can be dragged and clicked to restore. Ball placement is separate from normal overlay placement, so restoration returns to the original account-bar position; quota and settings updates retain the minimized state.

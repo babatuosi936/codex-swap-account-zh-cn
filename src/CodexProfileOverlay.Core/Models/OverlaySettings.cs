@@ -14,7 +14,7 @@ public sealed class OverlaySettings
 
     public bool AnimationsEnabled { get; set; } = true;
 
-    public bool StartWithWindows { get; set; }
+    public bool StartWithWindows { get; set; } = true;
 
     public bool ShowAutomaticallyWhenCodexOpens { get; set; } = true;
 
