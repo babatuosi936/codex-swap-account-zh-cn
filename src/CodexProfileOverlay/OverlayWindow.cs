@@ -212,11 +212,9 @@ internal sealed partial class OverlayWindow : Window
             isBallMinimized ? ballOffset.X : settings.OffsetX,
             isBallMinimized ? ballOffset.Y : settings.OffsetY);
 
-        if (!isBallMinimized && settings.PositionPreset == PositionPreset.Custom)
-        {
-            settings.OffsetX = placement.OffsetX;
-            settings.OffsetY = placement.OffsetY;
-        }
+        // Clamping is temporary: a smaller owner (or a transient restore/resize)
+        // must not replace the position chosen by dragging or in settings.
+        // Keep the requested offsets so a larger owner restores that position.
 
         if (!double.IsFinite(placement.OffsetX) || !double.IsFinite(placement.OffsetY))
         {

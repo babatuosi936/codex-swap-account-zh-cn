@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.4-local - 2026-10-11
+
+- Preserve the requested custom overlay position when a smaller Codex window temporarily clamps the bar to its edges. Resizing/restoring or switching back from a smaller Cockpit Tools instance restores the chosen position instead of retaining the clamped top/left coordinates.
+- Add regressions for repeated resizing, layout refresh while clamped, and switching between differently sized owners. Floating-ball and normal positions remain independent.
+
 ## 1.2.3-local - 2026-10-11
 
 - Enable Windows sign-in startup by default for new settings. Existing explicit settings remain respected, and users can still disable startup in General settings.
