@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1 - 2026-10-13
+
+This public release includes the functionality and fixes tested in local builds through 1.3.6-local. Its public version is 1.3.1.
+
+- Open accounts in separate Codex windows with separate sign-ins and desktop caches while sharing existing local history. Cockpit Tools is no longer required for multi-account windows.
+- Focus already-open account windows directly, including the original desktop, in both directions. Accounts without an open window offer opening a new independent window or switching the current account; opening an independent window is the default.
+- Display reported Plus/Pro/Free plan badges and all returned quota periods, including Free accounts' 30-day quotas. Preserve the actual percentage and reset time.
+- Minimize the overlay to a draggable floating ball and restore its previous full-size position. Enable Windows startup for new settings, and preserve dragged placement across smaller Codex windows.
+- Align Advanced import/export/reset with the current settings service; position defaults/reset use After menu at (340, 0). Place account action dialogs below the overlay.
+- Preserve account/history isolation checks and saved-account identity protection. Shared storage does not guarantee immediate message refresh between desktop windows; continue each conversation in one window.
+- Release validation: 249 core tests, 303 synthetic WPF checks and 22 isolated desktop launch-policy checks passed.
+
 ## 1.3.6-local - 2026-10-13
 
 - Clicking an account now goes directly to its already-open original desktop as well as an independent desktop. Fix asymmetric navigation where 475 to 181 showed an action dialog while 181 to 475 focused immediately.

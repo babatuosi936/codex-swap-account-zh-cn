@@ -1,10 +1,10 @@
-# 账号独立多开 · 1.3.1-local
+# 账号独立多开 · 公开版 1.3.1
 
-本地试用版，尚未发布到 GitHub。现有公开下载仍为 v1.2.0。第一次试用面向 Windows 商店版 Codex 26.1007.2314.0；已验证两个未登录合成账号目录同时打开独立官方窗口，真实登录身份与对话展示仍待验证。
+公开版 1.3.1 包含截至 1.3.6-local 的本地验证与修复。验证环境为 Windows 商店版 Codex 26.1007.2314.0；已验证两个未登录合成账号目录同时打开独立官方窗口，也只读核实了已打开的真实账号窗口身份和共享历史环境。附件显示、实时刷新与完整对话接管仍需进一步验证。
 
 ## 使用方式
 
-在“设置 → 常规”保持“默认打开独立窗口”开启，添加并登录账号后点击账号标签。程序会先聚焦配置匹配的已有独立窗口；未打开时显示“打开新的独立窗口”和“切换当前账户”，前者为默认操作。已有默认窗口和登录保持原样，无需 Cockpit Tools。
+在“设置 → 常规”保持“默认打开独立窗口”开启，添加并登录账号后点击账号标签。程序会先聚焦配置匹配的已有账号窗口，包括原始窗口与独立窗口；未打开时显示“打开新的独立窗口”和“切换当前账户”，前者为默认操作。已有默认窗口和登录保持原样，无需 Cockpit Tools。
 
 同一个对话在一个窗口中继续。共享历史无需复制后同步，但其他窗口何时重新显示最新消息仍由 Codex 客户端决定；目前没有承诺即时刷新或自动接管正在执行的对话。
 
@@ -61,10 +61,9 @@ CODEX_ELECTRON_USER_DATA_PATH = 该账号的独立桌面缓存目录
 
 探针关闭两个测试窗口后仍留下后台进程；清理时显式停止了这两个已核实的合成进程。这个结果确认独立窗口启动与目录隔离，不确认桌面程序可以通过关闭窗口正常完整退出。
 
-以下真实账号行为仍待端到端验证：
+后续只读实测核实了两个已登录窗口均能匹配已保存账号且共用历史，其中一个为原始窗口、另一个为独立窗口。双向窗口选择、最小化与未知身份拒绝也通过针对性回归。以下行为仍待完整端到端验证：
 
-- 已保存账号登录后，确认各窗口实际使用正确身份。
-- 点击实际已登录账号时，准确聚焦对应窗口。
+- 从添加新账号到打开并切换窗口的完整登录流程。
 - 已有图片附件显示、历史重新加载及窗口之间的刷新表现。
 - 同一对话的查看行为与首个窗口退出后的接管体验。
 
@@ -76,10 +75,10 @@ CODEX_ELECTRON_USER_DATA_PATH = 该账号的独立桌面缓存目录
 
 ## English summary
 
-1.3.0-local is a local trial targeting the official Windows Store Codex package 26.1007.2314.0. Public GitHub downloads still provide v1.2.0. Keep **Settings → General → Open accounts in separate windows** enabled to open or focus the selected account's window while preserving the default window.
+Public 1.3.1 includes local functionality and fixes through 1.3.6-local, checked against Windows Store Codex 26.1007.2314.0. Keep **Settings → General → Prefer a separate account window** enabled. Already-open original and independent account windows are focused directly; otherwise a separate window is the default action.
 
 Credentials/config remain account-specific; SQLite, sessions, archives, attachments, and native writer locks are shared. Electron user data is separate. Preparation refuses independent private history or attachments and incorrect links before making changes. It does not copy, merge, or reconstruct histories, and does not change saved credentials.
 
 Validation passed 192 core tests, 22 launcher-policy checks, and 205 WPF checks. Native synthetic tests verify shared storage and refusal of a second resume while another process owns the thread writer lock. A real desktop probe launched two visible signed-out official windows, verified separate processes, homes, caches, all three environment paths and package identity, and preserved existing window processes. It used no real credentials, history or inference. Cleanup stopped only the two verified synthetic processes after window closure left background processes; graceful complete desktop exit is not proven.
 
-Real signed-in identities, follower behavior, attachment display, refresh, and desktop ownership handoff still need verification. `CODEX_SQLITE_HOME` sharing is established empirically for this native runtime, not promised as a permanent official desktop interface. Existing VS Code lock directories are not repaired automatically. The General preference controls the default action; the legacy authorization-switch flow remains available as Switch current account.
+A later read-only probe confirmed two real signed-in desktops match saved account identities and shared history: one original and one independent desktop. Bidirectional lookup, minimized windows and unknown identities passed targeted regression checks. The complete new-account login flow, follower behavior, attachment display, refresh, and desktop ownership handoff still need end-to-end verification. `CODEX_SQLITE_HOME` sharing is established empirically for this native runtime, not promised as a permanent official desktop interface. Existing VS Code lock directories are not repaired automatically. The General preference controls the default action; the legacy authorization-switch flow remains available as Switch current account.

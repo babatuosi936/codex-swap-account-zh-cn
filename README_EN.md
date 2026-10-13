@@ -2,19 +2,19 @@
 
 # Codex Account Manager · Codex Swap Account
 
-**A Windows Codex account manager, account switcher, and quota monitor for multiple ChatGPT Plus accounts.**
+**A Windows Codex account manager with separate account windows, account switching, and quota monitoring.**
 
-View five-hour and weekly remaining quotas for multiple accounts in a draggable overlay beside the Codex desktop app. Switch accounts and continue using your local chats and workspaces, with automatic quota refresh, Chinese and English interfaces, and optional hotkeys.
+View account plans and returned quota periods in a draggable overlay beside Codex. Open separate account windows or switch accounts while using your local chats and workspaces, with automatic quota refresh, Chinese and English interfaces, and optional hotkeys.
 
 **English** · [简体中文](README.md)
 
-[Public release EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Public v1.2.0 release](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.2.0) · [How to use](#quick-start)
+[Public release EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Public v1.3.1 release](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.3.1) · [How to use](#quick-start)
 
 For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 
 </div>
 
-**Local trial: 1.3.4-local.** Separate account windows have independent sign-ins and shared local history without Cockpit Tools. The account action dialog appears below the account bar; existing compatible windows are focused directly. Position defaults/reset use After menu with offsets `(340, 0)`. Names in the header and overview show the reported Plus/Pro/Free or other supported account plan. Advanced import/export and reset use the current settings service; see the [Advanced controls reference](docs/ADVANCED_SETTINGS.md). Public downloads above still provide v1.2.0; local trial packages are delivered in `artifacts/`. Multi-window verification boundaries remain in the [trial guide](docs/ISOLATED_MULTI_ACCOUNT.md).
+**Public release: 1.3.1.** Includes functionality and fixes through local build 1.3.6-local. Separate sign-ins share existing local history without Cockpit Tools; already-open original and independent windows are focused directly. Reported Plus/Pro/Free plans and actual quota periods are shown, including Free accounts' 30-day limits. A draggable floating ball restores the previous overlay position. Position defaults/reset use After menu at `(340, 0)`. See the [Advanced controls reference](docs/ADVANCED_SETTINGS.md) and [multi-account implementation and validation guide](docs/ISOLATED_MULTI_ACCOUNT.md).
 
 ![Expanded overlay with sample accounts and remaining allowance](docs/images/zh-CN/expanded-mode.png)
 
@@ -26,16 +26,17 @@ If you sign in to Codex with several ChatGPT Plus accounts, this tool brings the
 
 This project provides account management, account switching, and quota monitoring for the **Codex desktop app on Windows**. It is a standalone community tool: download and run the EXE. It offers a workflow similar to a VS Code account manager without requiring a VS Code extension or a native Codex plugin.
 
-Select a saved, signed-in account from the overlay. The panel periodically refreshes the available five-hour and weekly remaining percentages; quota updates may be delayed.
+Select a saved, signed-in account from the overlay. The panel periodically refreshes returned quota periods, such as five-hour, weekly, and 30-day limits; quota updates may be delayed.
 
-**1.3.0-local enables separate account windows by default.** Selecting an account focuses an already-open window with a matching configuration, or starts that account's own window while the existing default window continues running. Sign-ins and desktop caches remain separate; the new windows use the same existing local history. Independent histories, incorrect directory links, and incompatible old account windows are rejected with the original data preserved.
+**Opening a separate account window is the default choice.** Already-open original and independent windows with matching configurations are focused directly. Otherwise choose between opening a new independent window and switching the current account. Sign-ins and desktop caches remain separate; the windows use the same existing local history. Independent histories, incorrect directory links, and incompatible old account windows are rejected with the original data preserved.
 
 Continue each conversation in one window. Instant updates in other windows, automatic follower behavior, and repair of existing VS Code writer-lock directories are not promised. **Settings → General → Prefer a separate account window** only chooses the default action; both actions remain available.
 
 | Feature | What you can do |
 | --- | --- |
-| Account management and switching | Add, name, and manage accounts. Select through the overlay, tray menu, or a custom hotkey. The local trial opens or focuses separate account windows by default and highlights the active account. |
-| Usage panel | See available five-hour and weekly remaining percentages for multiple accounts, with automatic updates and a manual refresh-all action. |
+| Account management and switching | Add, name, and manage accounts. Select through the overlay, tray menu, or a custom hotkey. Already-open accounts are focused directly; otherwise opening an independent window is the default choice. |
+| Usage panel | See reported plans and actual quota periods, including five-hour, weekly and 30-day limits, with automatic or manual refresh. |
+| Floating ball | Minimize the overlay into a draggable ball; restoring it returns to the previous full-size position. |
 | Shared local history | Account windows use the same conversation files, attachments, and databases without copying or merging them. Continue each conversation in one window. |
 | Two overlay layouts | Expanded mode sizes itself to the account and quota text. Compact mode uses a single account button and menu. Automatic mode switches to compact when the full account row will not fit, including the selected UI scale. |
 | Position and appearance | Drag the overlay, remember its position, choose a preset beside the menu or along the bottom, and adjust scaling and light or dark themes. Windows DPI scaling is supported. |
@@ -47,22 +48,22 @@ Separate account windows preserve default authorization and existing windows. Le
 
 ## Quick start
 
-Basic requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex CLI is also required for adding accounts and automatic usage queries. The account-window steps below apply to local 1.3.0-local, initially targeting Windows Store Codex 26.1007.2314.0. Two signed-out synthetic windows have been verified; real-account end-to-end verification is pending.
+Basic requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex CLI is also required for adding accounts and automatic usage queries. Separate account windows have been checked on Windows Store Codex 26.1007.2314.0; see the multi-account guide for validation limits and other installation types.
 
-1. Use the local 1.3.0-local executable or portable package delivered in `artifacts/`. For the public release, use [Public release EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe), which currently provides v1.2.0.
+1. Download the [public 1.3.1 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe).
 2. Put the EXE in a permanent folder and double-click it to run. It includes its runtime, so you do not need to install .NET separately.
 3. Open Codex. The account overlay appears once the tool detects its window. You can also show or hide the overlay from the system tray.
 4. Choose **English** under **Settings → Language**, or use the system language setting.
 5. Use **Add profile** to sign in to your accounts. Once saved, they appear in the overlay with any available usage information.
-6. Keep **Settings → General → Prefer a separate account window** enabled. Selecting an already-open compatible independent account focuses it immediately; otherwise choose between opening a new window or switching the current account, with the new window selected by default.
+6. Keep **Settings → General → Prefer a separate account window** enabled. Selecting an already-open compatible original or independent account focuses it immediately; otherwise choose between opening a new window or switching the current account, with the new window selected by default.
 
-If preparation reports independent history or an incompatible existing window, preserve the directories. Save your work and close the old account window before reviewing the trial guide. The tool does not automatically migrate, clear, or merge these histories.
+If preparation reports independent history or an incompatible existing window, preserve the directories. Save your work and close the old account window before reviewing the multi-account guide. The tool does not automatically migrate, clear, or merge these histories.
 
 Renaming the profile directory or removing an account is blocked while its process is running. Compatibility checks for existing windows are read-only and do not prepare their directories again.
 
 If you do not need hotkeys, open **Settings → Hotkeys**, clear the individual shortcuts, and click **Save**. To change the overlay position, drag it or choose a preset under **Settings → Appearance**.
 
-**The public release ZIP is optional.** To keep the illustrated guides with the public release, download the [public program and documentation ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip), extract it, and run the EXE inside. It contains the same public executable as the standalone download. These links do not yet provide 1.3.0-local.
+**The public release ZIP is optional.** To keep the illustrated guides, download the [public program and documentation ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip), extract it, and run the EXE inside. It contains the same 1.3.1 executable as the standalone download.
 
 The [release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) provides release notes and `SHA256SUMS.txt`. The checksum file helps verify your download; it is not required to run the program. Windows may show a SmartScreen prompt for an unsigned executable; check the source and published hashes before deciding whether to run it.
 
@@ -140,7 +141,7 @@ The sections above describe the complete experience in this version. The followi
 
 | Area | Improvements in this version |
 | --- | --- |
-| Separate account windows (local trial) | Independently implements account directories, shared history links and SQLite environment, and separate desktop cache startup. No Cockpit Tools dependency; independent histories and incorrect links remain untouched and are rejected. |
+| Separate account windows | Independently implements account directories, shared history links and SQLite environment, and separate desktop cache startup. No Cockpit Tools dependency; independent histories and incorrect links remain untouched and are rejected. |
 | Simplified Chinese | Adds Chinese settings, menus, account labels, usage information, and messages alongside English and Russian. |
 | Usage display and refresh | Extends status indicators with visible remaining percentages. Default query intervals change from 15 minutes for the active account and 60 minutes for others to 30 and 60 seconds respectively, with adjustable settings. |
 | Overlay and positioning | Adds dragging and position persistence, uses a default height of 44 device-independent pixels, and replaces three top presets with bottom-left, bottom-center, and bottom-right positions with margins. |
@@ -189,9 +190,9 @@ For implementation details, see the [separate-account-window design](docs/ISOLAT
 
 ## Validation scope
 
-Local 1.3.0-local uses independently written C# code and initially targets Windows Store Codex 26.1007.2314.0. Validation passed 192 core tests, 22 launcher-policy checks, and 205 WPF checks. Native CLI 0.162.0-alpha.17.2 verified shared databases and thread writer locks using two synthetic homes. An actual desktop probe launched two simultaneously visible signed-out official windows, verified distinct processes, homes, caches, all three environment paths and package identity, and confirmed that previously existing window processes remained alive.
+Separate account windows use independently written C# code, checked against Windows Store Codex 26.1007.2314.0. Initial validation passed 192 core tests, 22 launcher-policy checks, and 205 WPF checks; see the changelog for current public 1.3.1 release checks. Native CLI 0.162.0-alpha.17.2 verified shared databases and thread writer locks using two synthetic homes. An actual desktop probe launched two simultaneously visible signed-out official windows, verified distinct processes, homes, caches, all three environment paths and package identity, and confirmed that previously existing window processes remained alive.
 
-The desktop probe used no real credentials, histories, or model inference. Signed-in identities, real attachment display, cross-window refresh, and desktop conversation handoff still need verification. Closing the synthetic windows left background processes, so cleanup stopped only those two verified synthetic processes; graceful complete desktop exit is not proven. These results do not establish compatibility with every Codex version or monitor configuration.
+The synthetic desktop probe used no real credentials, histories, or model inference. A later read-only probe verified saved account identities and shared history for two signed-in desktops, and bidirectional account lookup passed targeted regression checks. The complete new-account login flow, real attachment display, cross-window refresh, and desktop conversation handoff still need end-to-end verification. Closing the synthetic windows left background processes, so cleanup stopped only those two verified synthetic processes; graceful complete desktop exit is not proven. These results do not establish compatibility with every Codex version or monitor configuration.
 
 When reporting an issue, include your Codex version, display scaling, overlay mode, and reproduction steps. Hide real email addresses and account details in screenshots.
 
