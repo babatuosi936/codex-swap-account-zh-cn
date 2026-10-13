@@ -99,9 +99,10 @@ internal static partial class Program
                 app.Shutdown();
                 return 0;
             }
-            if (args.Length == 2 && args[0] == "--docs")
+            if (args.Length is 2 or 3 && args[0] == "--docs")
             {
-                RenderDocumentation(args[1]);
+                RenderDocumentation(args[1], args.Length == 3
+                    ? Enum.Parse<LanguagePreference>(args[2]) : LanguagePreference.ChineseSimplified);
                 app.Shutdown();
                 return 0;
             }

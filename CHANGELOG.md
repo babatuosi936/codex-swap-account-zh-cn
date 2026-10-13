@@ -11,6 +11,7 @@ This public release includes the functionality and fixes tested in local builds 
 - Align Advanced import/export/reset with the current settings service; position defaults/reset use After menu at (340, 0). Place account action dialogs below the overlay.
 - Preserve account/history isolation checks and saved-account identity protection. Shared storage does not guarantee immediate message refresh between desktop windows; continue each conversation in one window.
 - Release validation: 249 core tests, 303 synthetic WPF checks and 22 isolated desktop launch-policy checks passed.
+- Documentation update: rebuild Chinese and English homepages around current workflows, regenerate synthetic screenshots from current controls, and move developer instructions to `docs/DEVELOPMENT.md`.
 
 ## 1.3.6-local - 2026-10-13
 
