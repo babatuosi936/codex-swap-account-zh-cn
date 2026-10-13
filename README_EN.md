@@ -54,7 +54,7 @@ Basic requirements: **Windows 10/11 x64 and the Codex desktop app**. A working C
 3. Open Codex. The account overlay appears once the tool detects its window. You can also show or hide the overlay from the system tray.
 4. Choose **English** under **Settings → Language**, or use the system language setting.
 5. Use **Add profile** to sign in to your accounts. Once saved, they appear in the overlay with any available usage information.
-6. Keep **Settings → General → Open accounts in separate windows** enabled and select an account to open or focus its window. The default window and its sign-in remain intact; Cockpit Tools is not required.
+6. Keep **Settings → General → Prefer a separate account window** enabled. Selecting an already-open compatible independent account focuses it immediately; otherwise choose between opening a new window or switching the current account, with the new window selected by default.
 
 If preparation reports independent history or an incompatible existing window, preserve the directories. Save your work and close the old account window before reviewing the trial guide. The tool does not automatically migrate, clear, or merge these histories.
 

@@ -56,6 +56,29 @@ internal static partial class Program
             Evidence.Add(new { stage = "independent-window-settings", settingVisible = true, saved = saves });
         }
         finally { window.Close(); Pump(); }
+
+        Type actionDialogType = assembly.GetType("CodexProfileOverlay.AccountActionDialog")!;
+        var actionDialog = (Window)actionDialogType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(new object[]
+        {
+            "使用账号“测试账号”",
+            "打开独立窗口会保留当前 Codex 窗口。",
+            "打开新的独立窗口",
+            "切换当前账户",
+            "取消",
+            true,
+        });
+        try
+        {
+            actionDialog.ShowInTaskbar = false;
+            actionDialog.Show(); Pump();
+            Button[] buttons = Descendants((System.Windows.DependencyObject)actionDialog.Content).OfType<Button>().ToArray();
+            Button open = buttons.Single(item => Equals(item.Content, "打开新的独立窗口"));
+            Button switchCurrent = buttons.Single(item => Equals(item.Content, "切换当前账户"));
+            Require(open.IsDefault && !switchCurrent.IsDefault, "Separate-window action must be the default account-click choice.");
+            Evidence.Add(new { stage = "account-action-choice", independentWindowDefault = open.IsDefault });
+        }
+        finally { actionDialog.Close(); Pump(); }
+
         Type managerType = assembly.GetType("CodexProfileOverlay.ProfileManagerWindow")!;
         var manager = (Window)managerType.GetConstructors().Single().Invoke(Arguments(managerType));
         try

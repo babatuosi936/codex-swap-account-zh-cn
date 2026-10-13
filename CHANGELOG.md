@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1-local - 2026-10-13
+
+- When selecting an account, focus a verified independent account window immediately if it is already open. Otherwise, show a choice between opening a new separate window and switching the current account. A separate window is the default choice.
+- Rename the General setting to **Prefer a separate account window**. It now controls the default choice while retaining both actions.
+
 ## 1.3.0-local - 2026-10-13
 
 - Independently implement separate account windows with shared existing local history, enabled by default. Focus a compatible existing window or launch the selected saved account without replacing default authorization or restarting the default window. No Cockpit Tools dependency or source copied from Cockpit Tools is included.

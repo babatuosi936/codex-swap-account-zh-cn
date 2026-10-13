@@ -326,14 +326,43 @@ internal sealed class OverlayController : IDisposable
             return;
         }
 
-        if (settings.UseIsolatedAccountWindows)
+        ProfileInfo? profile = profiles.FirstOrDefault(item => string.Equals(item.Name, profileName, StringComparison.OrdinalIgnoreCase));
+        if (profile is null)
+        {
+            return;
+        }
+
+        CodexWindowInfo? existingIndependentWindow = windowFinder.FindAllWindows().FirstOrDefault(window =>
+            !instanceResolver.IsDefaultHome(window.ProcessId)
+            && string.Equals(instanceResolver.FindActiveProfile(window.ProcessId, profiles), profile.Name, StringComparison.OrdinalIgnoreCase));
+        if (existingIndependentWindow is not null)
         {
             await OpenAccountWindowAsync(profileName).ConfigureAwait(true);
             return;
         }
 
-        // With independent instances, selecting an open account selects its
-        // window. Never run the legacy global auth replacement/close flow here.
+        Window? dialogOwner = overlayWindow?.IsVisible == true ? overlayWindow : null;
+        AccountAction action = AccountActionDialog.Show(
+            dialogOwner,
+            dialogOwner is null ? CurrentCodexWindowHandle() : IntPtr.Zero,
+            localizer.Format("ChooseAccountActionTitle", profile.DisplayName),
+            localizer["ChooseAccountActionPrompt"],
+            localizer["OpenIndependentWindow"],
+            localizer["SwitchCurrentAccount"],
+            localizer["Cancel"],
+            settings.UseIsolatedAccountWindows);
+        if (action == AccountAction.Cancel) return;
+        if (action == AccountAction.OpenIndependentWindow)
+        {
+            await OpenAccountWindowAsync(profileName).ConfigureAwait(true);
+            return;
+        }
+
+        await SwitchCurrentAccountAsync(profileName).ConfigureAwait(true);
+    }
+
+    private async Task SwitchCurrentAccountAsync(string profileName)
+    {
         IReadOnlyList<CodexWindowInfo> windows = windowFinder.FindAllWindows();
         CodexWindowInfo? target = windows.FirstOrDefault(window => string.Equals(
             instanceResolver.FindActiveProfile(window.ProcessId, profiles), profileName, StringComparison.OrdinalIgnoreCase));
