@@ -6,6 +6,25 @@ namespace CodexProfileOverlay.Tests;
 
 public sealed class CodexAppServerRateLimitsParserTests
 {
+    [Theory]
+    [InlineData(LanguagePreference.ChineseSimplified, "30天剩余 90%")]
+    [InlineData(LanguagePreference.English, "30 days remaining 90%")]
+    [InlineData(LanguagePreference.Russian, "30 дней: осталось 90%")]
+    public void Parse_FreeThirtyDayLimitRetainsActualPeriodAndSummary(LanguagePreference language, string expected)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var snapshot = CodexAppServerRateLimitsParser.Parse(
+            """{"id":2,"result":{"rateLimits":{"planType":"free","primary":{"usedPercent":10,"windowDurationMins":43200,"resetsAt":1794450608},"secondary":null}}}""",
+            now, null);
+        Assert.NotNull(snapshot);
+        Assert.Equal("Free", snapshot.PlanName);
+        var window = Assert.Single(snapshot.Windows);
+        Assert.Equal(TimeSpan.FromDays(30), window.Duration);
+        Assert.Equal(90, window.RemainingPercent);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1794450608), window.ResetAt);
+        Assert.Equal(expected, UsageQuotaFormatter.Summary(snapshot, language, now, TimeSpan.FromMinutes(90)));
+    }
+
     [Fact]
     public void Parse_UsesStableProtocolResponse()
     {

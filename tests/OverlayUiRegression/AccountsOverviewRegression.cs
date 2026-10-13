@@ -41,6 +41,9 @@ internal static partial class Program
                 Call(overlay, "SetProfiles", profiles, profiles.FirstOrDefault()?.Name);
                 var document = Document(profiles, 0);
                 if (count > 0) document.Snapshots[profiles[0].Name] = new UsageSnapshot { LongWindowRemainingPercent = 83, LongWindowResetAt = DateTimeOffset.UtcNow.AddDays(3), CapturedAt = DateTimeOffset.UtcNow };
+                if (count >= 2) document.Snapshots[profiles[^1].Name] = new UsageSnapshot { PlanName = "Free",
+                    Windows = [new() { Name = "720h", Duration = TimeSpan.FromDays(30), RemainingPercent = 90,
+                        ResetAt = new DateTimeOffset(2026, 11, 12, 10, 30, 8, TimeSpan.FromHours(8)) }], CapturedAt = DateTimeOffset.UtcNow };
                 Call(overlay, "SetStatusDocument", document, null);
                 overlay.Show(); Pump();
                 var overview = Descendants((DependencyObject)overlay.Content).OfType<Button>().SingleOrDefault(b => AutomationProperties.GetAutomationId(b) == "AccountsOverview");
@@ -86,6 +89,10 @@ internal static partial class Program
                     var cards = Descendants(popup.Child).OfType<Grid>().Single(g => Equals(g.Tag, "OverviewCards"));
                     Require(cards.Children.Count == count && cards.ColumnDefinitions.Count <= 3,
                         "Overview must retain all cards and use at most three horizontal columns.");
+                    var freeCardText = string.Join(" ", Descendants(cards.Children[count - 1]).OfType<TextBlock>().Select(t => t.Text));
+                    Require(freeCardText.Contains("Free") && freeCardText.Contains("30天") && freeCardText.Contains("90%")
+                        && freeCardText.Contains("11/12 10:30") && !freeCardText.Contains("额度暂不可用")
+                        && !freeCardText.Contains("5小时") && !freeCardText.Contains("每周"), "Free overview card must show the actual thirty-day quota without invented limits.");
                     Require(cards.RowDefinitions.Count == (count + cards.ColumnDefinitions.Count - 1) / cards.ColumnDefinitions.Count,
                         "Additional accounts must wrap into vertical rows.");
                     if (cards.ColumnDefinitions.Count > 1)

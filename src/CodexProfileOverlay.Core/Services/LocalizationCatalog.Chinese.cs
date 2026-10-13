@@ -166,6 +166,7 @@ public static partial class LocalizationCatalog
         ["StatusAndLimits"] = "状态与额度",
         ["FiveHourWindow"] = "5小时",
         ["WeeklyWindow"] = "每周",
+        ["ThirtyDayWindow"] = "30天",
         ["QuotaUnknown"] = "额度暂不可用",
         ["QuotaCached"] = "旧数据",
         ["RemainingQuota"] = "剩余额度",

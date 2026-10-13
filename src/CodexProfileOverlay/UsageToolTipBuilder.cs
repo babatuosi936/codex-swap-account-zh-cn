@@ -19,8 +19,10 @@ internal static class UsageToolTipBuilder
         var rows = new StackPanel();
         var resetLabels = new List<(TextBlock Label, DateTimeOffset? ResetAt)>();
         var windows = snapshot is null ? [] : UsageIntelligence.GetKnownWindows(snapshot);
-        AddQuotaRow(Text("FiveHourWindow"), windows.FirstOrDefault(window => window.Duration == TimeSpan.FromHours(5) || window.Name is "5h" or "short"));
-        AddQuotaRow(Text("WeeklyWindow"), windows.FirstOrDefault(window => window.Duration == TimeSpan.FromDays(7) || window.Name is "Weekly" or "weekly" or "7d" or "long"));
+        foreach (var window in windows)
+        {
+            AddQuotaRow(UsageQuotaFormatter.WindowName(window, language), window);
+        }
         if (rows.Children.Count == 0)
         {
             rows.Children.Add(new TextBlock { Text = Text("QuotaUnknown"), FontSize = 13, Foreground = Brush("MutedTextBrush") });

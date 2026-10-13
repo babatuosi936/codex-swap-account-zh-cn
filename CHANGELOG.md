@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.5-local - 2026-10-13
+
+- Show every returned quota window in account details and overview cards. Free accounts with a 30-day limit no longer incorrectly show quota unavailable.
+- Label the actual 30-day period consistently in headers, details and settings; retain its returned percentage and reset time without inventing five-hour or weekly limits.
+- Pass 37 quota/plan core cases using in-process xUnit assertions, 32 tooltip UI checks and 24 overview checks, including Free 30-day and other custom periods.
+
 ## 1.3.4-local - 2026-10-13
 
 - Restore the After menu position preset on position reset and for new settings, retaining offsets (340, 0). Preserve independent scale and animation preferences.

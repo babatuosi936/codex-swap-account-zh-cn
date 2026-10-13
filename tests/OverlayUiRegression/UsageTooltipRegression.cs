@@ -24,7 +24,7 @@ internal static partial class Program
         Evidence.Add(new { kind = "reset-countdown", shortWindow = "passed", weekly = "passed", boundary = "passed", languages = "passed" });
         foreach (var theme in new[] { AppTheme.Light, AppTheme.Dark })
         foreach (var language in new[] { LanguagePreference.ChineseSimplified, LanguagePreference.English, LanguagePreference.Russian })
-        foreach (var kind in new[] { "complete", "weekly-only", "unknown" })
+        foreach (var kind in new[] { "complete", "weekly-only", "free-thirty-day", "custom-window", "unknown" })
         {
             CodexProfileOverlay.App.ApplyTheme(theme);
             var settings = new OverlaySettings { ShowAutomaticLimitIndicators = true, Theme = theme, Language = language };
@@ -53,6 +53,17 @@ internal static partial class Program
                         ResetCreditsExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
                     };
                 }
+                if (kind is "free-thirty-day" or "custom-window")
+                {
+                    document.Snapshots[profiles[0].Name] = new UsageSnapshot
+                    {
+                        PlanName = "Free",
+                        Windows = [new() { Name = kind == "free-thirty-day" ? "720h" : "48h",
+                            Duration = TimeSpan.FromDays(kind == "free-thirty-day" ? 30 : 2), RemainingPercent = 90,
+                            ResetAt = new DateTimeOffset(2026, 11, 12, 10, 30, 8, TimeSpan.FromHours(8)) }],
+                        CapturedAt = DateTimeOffset.UtcNow,
+                    };
+                }
                 Call(overlay, "SetStatusDocument", document, null);
                 var button = Descendants((DependencyObject)overlay.Content).OfType<System.Windows.Controls.Button>().Single(item => item.Tag is string);
                 Require(button.ToolTip is Popup, "The whole account button must expose the quota card.");
@@ -69,12 +80,18 @@ internal static partial class Program
                 Require(card.CornerRadius.TopLeft >= 10 && ((StackPanel)card.Child).Children.Count == expectedRows, "Usage hover must omit unavailable limit rows and shrink to fit.");
                 var text = string.Join(" ", Descendants(card).OfType<TextBlock>().Select(item => item.Text));
                 Require(text.Contains(LocalizationCatalog.Text(language, "RemainingQuota")) && text.Contains(LocalizationCatalog.Text(language, "ResetCredits")), "Credit balance and reset opportunities must appear in quota details.");
-                Require(Descendants(card).OfType<Border>().Count(b => Equals(b.Tag, "QuotaProgress")) == (kind == "complete" ? 2 : kind == "weekly-only" ? 1 : 0), "Each known quota window must have one progress track.");
-                if (kind != "unknown") Require(text.Contains("12.5") && text.Contains(LocalizationCatalog.Text(language, "NextExpiry")), "Credit balance and nearest expiration must use returned data.");
+                Require(Descendants(card).OfType<Border>().Count(b => Equals(b.Tag, "QuotaProgress")) == (kind == "complete" ? 2 : kind == "unknown" ? 0 : 1), "Each known quota window must have one progress track.");
+                if (kind is "complete" or "weekly-only") Require(text.Contains("12.5") && text.Contains(LocalizationCatalog.Text(language, "NextExpiry")), "Credit balance and nearest expiration must use returned data.");
                 Require(!text.Contains("MUST-NOT-APPEAR") && !text.Contains(LocalizationCatalog.Text(language, "UsageDataStale")), "Tooltip contains extra diagnostics instead of three rows.");
                 Require(text.Contains(LocalizationCatalog.Text(language, "LastUpdated")), "Last updated must remain visible.");
                 Require(text.Contains(LocalizationCatalog.Text(language, "FiveHourWindow")) == (kind == "complete"), "Absent five-hour limits must not appear in the card.");
-                Require(text.Contains(LocalizationCatalog.Text(language, "WeeklyWindow")) == (kind != "unknown"), "Only available weekly limits should appear.");
+                Require(text.Contains(LocalizationCatalog.Text(language, "WeeklyWindow")) == (kind is "complete" or "weekly-only"), "Only available weekly limits should appear.");
+                if (kind is "free-thirty-day" or "custom-window")
+                {
+                    Require(text.Contains(kind == "free-thirty-day" ? LocalizationCatalog.Text(language, "ThirtyDayWindow") : "48h")
+                        && text.Contains("90%") && text.Contains("11/12 10:30")
+                        && !text.Contains(LocalizationCatalog.Text(language, "QuotaUnknown")), "Returned non-weekly quota must display its period, percentage and reset time.");
+                }
                 if (kind == "complete") Require(text.Contains("80%") && text.Contains("2%"), "Tooltip percentages are incorrect.");
                 if (kind == "weekly-only") Require(text.Contains("2%") && !text.Contains('—'), "Weekly-only cards must not include empty limit placeholders.");
                 if (kind == "unknown") Require(text.Contains(LocalizationCatalog.Text(language, "QuotaUnknown")) && !text.Contains("0%"), "Unknown quota must not be displayed as zero.");
@@ -88,13 +105,13 @@ internal static partial class Program
                     Require(label.ActualWidth >= natural.DesiredSize.Width - 1, "Hover card clips a quota, label or timestamp.");
                 }
                 Evidence.Add(new { kind = "usage-tooltip", theme = theme.ToString(), language = language.ToString(), data = kind, rows = expectedRows, width = surface.ActualWidth });
-                if (language == LanguagePreference.ChineseSimplified && kind == "complete")
+                if (language == LanguagePreference.ChineseSimplified && kind is "complete" or "free-thirty-day")
                 {
                     var bitmap = new RenderTargetBitmap((int)Math.Ceiling(surface.ActualWidth * 2), (int)Math.Ceiling(surface.ActualHeight * 2), 192, 192, PixelFormats.Pbgra32);
                     bitmap.Render(surface);
                     var encoder = new PngBitmapEncoder();
                     encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                    using var file = System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory, "usage-tooltip-" + theme.ToString().ToLowerInvariant() + ".png"));
+                    using var file = System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory, "usage-tooltip-" + kind + "-" + theme.ToString().ToLowerInvariant() + ".png"));
                     encoder.Save(file);
                 }
                 if (theme == AppTheme.Light && language == LanguagePreference.ChineseSimplified && kind == "complete")

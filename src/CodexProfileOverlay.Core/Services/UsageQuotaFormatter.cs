@@ -10,7 +10,9 @@ public static class UsageQuotaFormatter
             ? "FiveHourWindow"
             : window.Duration == TimeSpan.FromDays(7) || window.Name is "Weekly" or "weekly" or "7d" or "long"
                 ? "WeeklyWindow"
-                : "UsageWindow";
+                : window.Duration == TimeSpan.FromDays(30) || window.Name is "720h" or "30d"
+                    ? "ThirtyDayWindow"
+                    : "UsageWindow";
         return key == "UsageWindow" && !string.IsNullOrWhiteSpace(window.Name)
             ? window.Name : LocalizationCatalog.Text(language, key);
     }
