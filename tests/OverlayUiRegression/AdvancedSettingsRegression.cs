@@ -6,6 +6,8 @@ using System.Windows.Media;
 using CodexProfileOverlay.Core.Models;
 using CodexProfileOverlay.Core.Services;
 using Button = System.Windows.Controls.Button;
+using ComboBox = System.Windows.Controls.ComboBox;
+using TextBox = System.Windows.Controls.TextBox;
 
 internal static partial class Program
 {
@@ -72,6 +74,7 @@ internal static partial class Program
                 : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)Apply
                 : parameter.ParameterType == typeof(Func<string, Task>) ? (Func<string, Task>)(_ => Task.CompletedTask)
                 : parameter.Name == "resetSettings" ? (Action)(() => Apply(new OverlaySettings()))
+                : parameter.Name == "resetPosition" ? (Action)(() => { settings.ResetPosition(); Apply(settings); })
                 : (Action)(() => { })).ToArray();
             var result = (Window)settingsType.GetConstructors().Single().Invoke(arguments);
             result.ShowInTaskbar = false;
@@ -130,6 +133,7 @@ internal static partial class Program
                 PositionPreset = PositionPreset.Custom,
                 OffsetX = 333,
                 OffsetY = 27,
+                AnimationsEnabled = false,
                 UseIsolatedAccountWindows = false,
                 StaleDataThresholdMinutes = 45,
                 SettingsWindowWidth = 1180,
@@ -191,6 +195,34 @@ internal static partial class Program
                 && StatusText() == LocalizationCatalog.Text(settings.Language, "CouldNotImportSettings")
                 && !StatusText().Contains("private details", StringComparison.OrdinalIgnoreCase));
 
+            Page("Advanced");
+            string resetPositionLabel = LocalizationCatalog.Text(settings.Language, "ResetPosition");
+            Button resetPosition = Descendants((DependencyObject)window.Content).OfType<Button>().Single(button =>
+                Descendants(button).OfType<TextBlock>().Any(text => text.Text == resetPositionLabel));
+            resetPosition.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump();
+            OverlaySettings afterPositionReset = store.Load();
+            Check("position-reset-restores-menu-preset-live-and-persisted", settings.PositionPreset == PositionPreset.AfterMenu
+                && settings.OffsetX == 340 && settings.OffsetY == 0 && afterPositionReset.PositionPreset == PositionPreset.AfterMenu
+                && afterPositionReset.OffsetX == 340 && afterPositionReset.OffsetY == 0);
+            Check("position-reset-preserves-scale-and-animation-choice", settings.Scale == 1.2 && !settings.AnimationsEnabled
+                && afterPositionReset.Scale == 1.2 && !afterPositionReset.AnimationsEnabled);
+            Page("Appearance");
+            ComboBox positionCombo = Descendants((DependencyObject)window.Content).OfType<ComboBox>()
+                .Single(combo => combo.SelectedValue is PositionPreset);
+            string? selectedPositionLabel = positionCombo.SelectedItem?.GetType().GetProperty("Label")?.GetValue(positionCombo.SelectedItem) as string;
+            Check("position-reset-shows-menu-right-in-appearance", Equals(positionCombo.SelectedValue, PositionPreset.AfterMenu)
+                && selectedPositionLabel == "菜单右侧");
+            Check("menu-position-hides-custom-offset-editors", Descendants((DependencyObject)window.Content).OfType<TextBox>().Count() == 1
+                && !Descendants((DependencyObject)window.Content).OfType<TextBlock>().Any(text =>
+                    text.Text == LocalizationCatalog.Text(settings.Language, "OffsetX")
+                    || text.Text == LocalizationCatalog.Text(settings.Language, "OffsetY")));
+            window.Close();
+            window = null;
+            Pump();
+            Check("closing-preserves-position-reset", store.Load().PositionPreset == PositionPreset.AfterMenu
+                && store.Load().OffsetX == 340 && store.Load().OffsetY == 0 && store.Load().Scale == 1.2 && !store.Load().AnimationsEnabled);
+            window = CreateSettingsWindow();
             Page("Advanced");
             string resetLabel = LocalizationCatalog.Text(settings.Language, "ResetSettings");
             Button reset = Descendants((DependencyObject)window.Content).OfType<Button>().Single(button =>

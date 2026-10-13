@@ -2,7 +2,7 @@ namespace CodexProfileOverlay.Core.Models;
 
 public sealed class OverlaySettings
 {
-    public const PositionPreset DefaultPositionPreset = PositionPreset.Custom;
+    public const PositionPreset DefaultPositionPreset = PositionPreset.AfterMenu;
     public const double DefaultOffsetX = 340;
     public const double DefaultOffsetY = 0;
     public const double DefaultScale = 1;

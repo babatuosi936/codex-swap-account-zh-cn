@@ -6,10 +6,10 @@ namespace CodexProfileOverlay.Tests;
 public sealed class OverlayPositionDefaultsTests
 {
     [Fact]
-    public void NewSettingsUseCurrentCustomPosition()
+    public void NewSettingsUseCurrentMenuRightPosition()
     {
         var settings = new OverlaySettings();
-        Assert.Equal(PositionPreset.Custom, settings.PositionPreset);
+        Assert.Equal(PositionPreset.AfterMenu, settings.PositionPreset);
         Assert.Equal(340, settings.OffsetX);
         Assert.Equal(0, settings.OffsetY);
         Assert.Equal(1, settings.Scale);
@@ -32,7 +32,7 @@ public sealed class OverlayPositionDefaultsTests
         settings.ResetPosition();
         store.Save(settings);
         OverlaySettings loaded = store.Load();
-        Assert.Equal(PositionPreset.Custom, loaded.PositionPreset);
+        Assert.Equal(PositionPreset.AfterMenu, loaded.PositionPreset);
         Assert.Equal(340, loaded.OffsetX);
         Assert.Equal(0, loaded.OffsetY);
         Assert.Equal(1.2, loaded.Scale);

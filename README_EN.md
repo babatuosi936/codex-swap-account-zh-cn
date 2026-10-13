@@ -14,7 +14,7 @@ For everyday use, download the EXE and run it directly. No extraction or separat
 
 </div>
 
-**Local trial: 1.3.3-local.** Separate account windows have independent sign-ins and shared local history without Cockpit Tools. The account action dialog appears below the account bar; existing compatible windows are focused directly. Position defaults/reset use Custom `(340, 0)`. Names in the header and overview show the reported Plus/Pro/Free or other supported account plan. Advanced import/export and reset use the current settings service; see the [Advanced controls reference](docs/ADVANCED_SETTINGS.md). Public downloads above still provide v1.2.0; local trial packages are delivered in `artifacts/`. Multi-window verification boundaries remain in the [trial guide](docs/ISOLATED_MULTI_ACCOUNT.md).
+**Local trial: 1.3.4-local.** Separate account windows have independent sign-ins and shared local history without Cockpit Tools. The account action dialog appears below the account bar; existing compatible windows are focused directly. Position defaults/reset use After menu with offsets `(340, 0)`. Names in the header and overview show the reported Plus/Pro/Free or other supported account plan. Advanced import/export and reset use the current settings service; see the [Advanced controls reference](docs/ADVANCED_SETTINGS.md). Public downloads above still provide v1.2.0; local trial packages are delivered in `artifacts/`. Multi-window verification boundaries remain in the [trial guide](docs/ISOLATED_MULTI_ACCOUNT.md).
 
 ![Expanded overlay with sample accounts and remaining allowance](docs/images/zh-CN/expanded-mode.png)
 

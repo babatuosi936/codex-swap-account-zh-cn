@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.4-local - 2026-10-13
+
+- Restore the After menu position preset on position reset and for new settings, retaining offsets (340, 0). Preserve independent scale and animation preferences.
+- Pass 32 relevant core tests and 23 Advanced UI checks covering the reset button, selected preset label and persistence.
+
 ## 1.3.3-local - 2026-10-13
 
 - Anchor the account action dialog below the full account bar, horizontally centered with an 8-DIP gap, instead of centering over its small owner window.

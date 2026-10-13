@@ -14,7 +14,7 @@ Windows 上的 Codex 桌面版账号管理器：在一个可拖动浮层中查�
 
 </div>
 
-**本地试用版：1.3.3-local。** 账号登录分开，本机对话历史共用，无需 Cockpit Tools。账号操作选择框在账号栏正下方显示；已有兼容独立窗口直接跳转。位置默认值和重置统一为自定义 `(340, 0)`，账号名称后显示服务端返回的 Plus、Pro、Free 等套餐类型。高级设置的导入、导出和重置已适配当前功能，见 [高级设置对应表](docs/ADVANCED_SETTINGS.md)。GitHub 公开下载仍为 v1.2.0，本地试用版的交付包位于 `artifacts/`。多开验证范围见 [试用说明与实现边界](docs/ISOLATED_MULTI_ACCOUNT.md)。
+**本地试用版：1.3.4-local。** 账号登录分开，本机对话历史共用，无需 Cockpit Tools。账号操作选择框在账号栏正下方显示；已有兼容独立窗口直接跳转。位置默认值和重置使用“菜单右侧”，坐标为 `(340, 0)`；账号名称后显示服务端返回的 Plus、Pro、Free 等套餐类型。高级设置的导入、导出和重置已适配当前功能，见 [高级设置对应表](docs/ADVANCED_SETTINGS.md)。GitHub 公开下载仍为 v1.2.0，本地试用版的交付包位于 `artifacts/`。多开验证范围见 [试用说明与实现边界](docs/ISOLATED_MULTI_ACCOUNT.md)。
 
 ![中文展开浮层与剩余额度](docs/images/zh-CN/expanded-mode.png)
 
