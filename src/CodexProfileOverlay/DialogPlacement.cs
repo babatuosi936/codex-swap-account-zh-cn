@@ -8,6 +8,50 @@ namespace CodexProfileOverlay;
 
 internal static class DialogPlacement
 {
+    public static void BelowAnchor(Window dialog, Window anchor)
+    {
+        double desiredWidth = dialog.Width;
+        double desiredHeight = dialog.Height;
+        IntPtr anchorHandle = new WindowInteropHelper(anchor).EnsureHandle();
+        dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+        IntPtr dialogHandle = new WindowInteropHelper(dialog).EnsureHandle();
+        PlaceBelow();
+        RoutedEventHandler? loaded = null;
+        loaded = (_, _) =>
+        {
+            dialog.Loaded -= loaded;
+            PlaceBelow();
+        };
+        dialog.Loaded += loaded;
+
+        void PlaceBelow()
+        {
+            if (NativeMethods.IsIconic(anchorHandle) || !NativeMethods.GetWindowRect(anchorHandle, out NativeRect anchorRect))
+            {
+                Place(dialog, dialogHandle, anchorHandle);
+                return;
+            }
+
+            Forms.Screen screen = Forms.Screen.FromHandle(anchorHandle);
+            var workArea = new DialogRectangle(screen.WorkingArea.Left, screen.WorkingArea.Top, screen.WorkingArea.Width, screen.WorkingArea.Height);
+            var anchorBounds = new DialogRectangle(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height);
+            HwndSource? source = HwndSource.FromHwnd(dialogHandle);
+            Matrix toDevice = source?.CompositionTarget?.TransformToDevice ?? Matrix.Identity;
+            Matrix fromDevice = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
+            int width = Math.Max(1, (int)Math.Ceiling(desiredWidth * toDevice.M11));
+            int height = Math.Max(1, (int)Math.Ceiling(desiredHeight * toDevice.M22));
+            int gap = Math.Max(1, (int)Math.Ceiling(8 * toDevice.M22));
+            DialogRectangle placement = DialogPlacementCalculator.BelowAndClamp(workArea, anchorBounds, width, height, gap);
+            Point location = fromDevice.Transform(new Point(placement.Left, placement.Top));
+            dialog.Left = location.X;
+            dialog.Top = location.Y;
+            dialog.Width = placement.Width * fromDevice.M11;
+            dialog.Height = placement.Height * fromDevice.M22;
+            _ = NativeMethods.SetWindowPos(dialogHandle, IntPtr.Zero, placement.Left, placement.Top,
+                placement.Width, placement.Height, NativeMethods.SwpNoZOrder | NativeMethods.SwpNoActivate);
+        }
+    }
+
     public static void CenterOnOwnerScreen(Window dialog, Window? owner, IntPtr nativeOwner)
     {
         IntPtr ownerHandle = nativeOwner;

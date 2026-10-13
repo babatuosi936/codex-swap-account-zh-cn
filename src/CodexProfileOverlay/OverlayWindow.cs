@@ -410,11 +410,14 @@ internal sealed partial class OverlayWindow : Window
             Foreground = FindBrush("StrongTextBrush"),
             FontSize = 15,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(9, 0, 8, 0),
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
         var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        nameAndQuota.Children.Add(name);
+        var nameRow = AccountPlanBadgeBuilder.BesideName(name,
+            active is null ? null : statusDocument?.Snapshots.GetValueOrDefault(active.Name)?.PlanName,
+            Localizer?.Language ?? settings.Language);
+        nameRow.Margin = new Thickness(9, 0, 8, 0);
+        nameAndQuota.Children.Add(nameRow);
         if (active is not null && ShowQuota)
         {
             nameAndQuota.Children.Add(CreateQuotaText(active.Name, new Thickness(9, 1, 8, 0)));
@@ -577,7 +580,7 @@ internal sealed partial class OverlayWindow : Window
         var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         row.Children.Add(avatar);
         var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        nameAndQuota.Children.Add(new TextBlock
+        var name = new TextBlock
         {
             Text = profile.DisplayName,
             FontSize = 13.5,
@@ -585,9 +588,13 @@ internal sealed partial class OverlayWindow : Window
             TextTrimming = TextTrimming.CharacterEllipsis,
             Foreground = isActive ? FindBrush("StrongTextBrush") : FindBrush("MutedTextBrush"),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 0, 0),
             MaxWidth = 112,
-        });
+        };
+        var nameRow = AccountPlanBadgeBuilder.BesideName(name,
+            statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.PlanName,
+            Localizer?.Language ?? settings.Language);
+        nameRow.Margin = new Thickness(8, 0, 0, 0);
+        nameAndQuota.Children.Add(nameRow);
         if (ShowQuota)
         {
             nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(8, 2, 0, 0)));
@@ -623,7 +630,7 @@ internal sealed partial class OverlayWindow : Window
         {
             Content = content,
             MinWidth = 108,
-            MaxWidth = ShowQuota ? double.PositiveInfinity : 176,
+            MaxWidth = ShowQuota ? double.PositiveInfinity : 300,
             Height = HeaderButtonHeight,
             MinHeight = 0,
             Margin = new Thickness(0, 0, 6, 0),
@@ -723,7 +730,8 @@ internal sealed partial class OverlayWindow : Window
 
     private string BuildIndicatorSignature()
         => string.Join('|', profiles.Select(profile => profile.Name + ":" + GetProfileIndicator(profile.Name)
-            + ":" + (statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.CapturedAt.ToString("O") ?? string.Empty)));
+            + ":" + (statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.CapturedAt.ToString("O") ?? string.Empty)
+            + ":" + (statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.PlanName ?? string.Empty)));
 
     private bool ShowQuota => settings.ShowAutomaticLimitIndicators && settings.ShowIndicatorsInOverlay;
 
@@ -838,7 +846,9 @@ internal sealed partial class OverlayWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
         };
         var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        nameAndQuota.Children.Add(label);
+        nameAndQuota.Children.Add(AccountPlanBadgeBuilder.BesideName(label,
+            statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.PlanName,
+            Localizer?.Language ?? settings.Language));
         if (ShowQuota)
         {
             nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(0, 3, 0, 0)));

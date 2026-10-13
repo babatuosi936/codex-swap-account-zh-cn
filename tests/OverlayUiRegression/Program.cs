@@ -36,6 +36,20 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--account-placement-only") || args.Length == 0) RunAccountActionPlacementScenario();
+            if (args.Contains("--account-placement-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} account action placement checks.");
+                app.Shutdown();
+                return 0;
+            }
+            if (args.Contains("--plan-badges-only") || args.Length == 0) RunAccountPlanBadgeScenario();
+            if (args.Contains("--plan-badges-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} account plan badge checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--isolated-accounts-only") || args.Length == 0) RunIsolatedAccountsScenario();
             if (args.Contains("--advanced-only") || args.Length == 0) RunAdvancedSettingsScenario();
             if (args.Contains("--advanced-only"))

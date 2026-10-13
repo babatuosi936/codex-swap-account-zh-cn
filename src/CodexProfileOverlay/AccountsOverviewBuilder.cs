@@ -61,8 +61,10 @@ internal static class AccountsOverviewBuilder
                     FontSize = 11, Foreground = Brush("MutedTextBrush"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
                 DockPanel.SetDock(badge, Dock.Right);
                 heading.Children.Add(badge);
-                heading.Children.Add(new TextBlock { Text = profile.DisplayName, FontSize = 14, FontWeight = FontWeights.SemiBold,
-                    Foreground = Brush("StrongTextBrush"), TextTrimming = TextTrimming.CharacterEllipsis });
+                heading.Children.Add(AccountPlanBadgeBuilder.BesideName(
+                    new TextBlock { Text = profile.DisplayName, FontSize = 14, FontWeight = FontWeights.SemiBold,
+                        Foreground = Brush("StrongTextBrush"), TextTrimming = TextTrimming.CharacterEllipsis },
+                    snapshot?.PlanName, language, 10));
                 // Reuse the single-account quota layout and reset formatter, including
                 // omission of absent windows. This embedded card has no native popup.
                 Popup detail = UsageToolTipBuilder.Build(snapshot, language);

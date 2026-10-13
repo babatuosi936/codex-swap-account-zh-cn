@@ -155,8 +155,8 @@ public sealed class SettingsServiceTests
 
         var loaded = service.Load();
 
-        Assert.Equal(396, loaded.OffsetX);
-        Assert.Equal(2, loaded.OffsetY);
+        Assert.Equal(340, loaded.OffsetX);
+        Assert.Equal(0, loaded.OffsetY);
         Assert.Equal(1, loaded.Scale);
         Assert.Equal(60, loaded.GracefulCloseTimeoutSeconds);
         Assert.Equal(-1, loaded.SettingsWindowLeft);

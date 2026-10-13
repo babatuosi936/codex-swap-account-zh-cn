@@ -2,15 +2,20 @@ namespace CodexProfileOverlay.Core.Models;
 
 public sealed class OverlaySettings
 {
+    public const PositionPreset DefaultPositionPreset = PositionPreset.Custom;
+    public const double DefaultOffsetX = 340;
+    public const double DefaultOffsetY = 0;
+    public const double DefaultScale = 1;
+
     public OverlayDisplayMode DisplayMode { get; set; } = OverlayDisplayMode.Auto;
 
-    public PositionPreset PositionPreset { get; set; } = PositionPreset.AfterMenu;
+    public PositionPreset PositionPreset { get; set; } = DefaultPositionPreset;
 
-    public double OffsetX { get; set; } = 396;
+    public double OffsetX { get; set; } = DefaultOffsetX;
 
-    public double OffsetY { get; set; } = 2;
+    public double OffsetY { get; set; } = DefaultOffsetY;
 
-    public double Scale { get; set; } = 1;
+    public double Scale { get; set; } = DefaultScale;
 
     public bool AnimationsEnabled { get; set; } = true;
 
@@ -67,6 +72,13 @@ public sealed class OverlaySettings
     public int ActiveProfileRefreshIntervalSeconds { get; set; } = 30;
 
     public int InactiveProfileRefreshIntervalSeconds { get; set; } = 60;
+
+    public void ResetPosition()
+    {
+        PositionPreset = DefaultPositionPreset;
+        OffsetX = DefaultOffsetX;
+        OffsetY = DefaultOffsetY;
+    }
 
     /// <summary>Applies a complete settings replacement without invalidating the windows' shared reference.</summary>
     public void CopyFrom(OverlaySettings source)

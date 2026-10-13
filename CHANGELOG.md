@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.3-local - 2026-10-13
+
+- Anchor the account action dialog below the full account bar, horizontally centered with an 8-DIP gap, instead of centering over its small owner window.
+- Use physical screen rectangles and dialog DPI, recheck placement after loading, clamp horizontal screen edges, and prefer above the bar when there is insufficient space below.
+- Retain the default separate-window action, direct focus of an existing independent account window, and cancellation behavior.
+- Unify initial, reset and invalid-value position defaults at Custom (340, 0), with initial scale 1. Position reset retains separate scale/animation preferences.
+- Show account plan badges after names in the header, compact menu and overview. Read Plus/Pro/Free and other supported plans from the current quota response's planType; never infer Free from missing data.
+- Pass 246 core tests and 284 synthetic WPF checks, including the production dialog Show path, plan-only refresh, multiple scales and long account names.
+
 ## 1.3.2-local - 2026-10-13
 
 - Audit Advanced controls against the current multi-account implementation. Runtime source contains no original-author repository, updater or download endpoints.

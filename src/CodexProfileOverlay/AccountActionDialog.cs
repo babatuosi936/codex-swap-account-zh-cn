@@ -152,7 +152,14 @@ internal sealed class AccountActionDialog : Window
             new WindowInteropHelper(dialog).Owner = nativeOwner;
         }
 
-        DialogPlacement.CenterOnOwnerScreen(dialog, owner, nativeOwner);
+        if (owner is { IsVisible: true })
+        {
+            DialogPlacement.BelowAnchor(dialog, owner);
+        }
+        else
+        {
+            DialogPlacement.CenterOnOwnerScreen(dialog, owner, nativeOwner);
+        }
         return dialog.ShowDialog() == true ? dialog.choice : AccountAction.Cancel;
     }
 }

@@ -1151,9 +1151,7 @@ internal sealed class OverlayController : IDisposable
 
     private void ResetPosition()
     {
-        settings.PositionPreset = PositionPreset.AfterMenu;
-        settings.OffsetX = 396;
-        settings.OffsetY = 2;
+        settings.ResetPosition();
         SaveSettings(settings);
     }
 

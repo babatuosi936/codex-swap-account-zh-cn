@@ -1,5 +1,9 @@
 # Compact popup placement regression
 
+Account action placement checks use synthetic headers and the real account-action dialog. They verify physical screen bounds, no header overlap, below-centered positioning, bottom/edge handling, loading-time rechecks and the default action. Run only these with `-- --account-placement-only`.
+
+Account plan badge checks use different synthetic Plus/Pro/Free snapshots for each profile, unknown metadata, and a plan-only status update. Run only these with `-- --plan-badges-only` to verify that labels match the right profile across expanded/compact layouts and overview cards.
+
 Advanced settings checks use a custom application-data directory and a simulated persistence callback. They cover live import/export, closing/reopening without restoring old values, shared references, overlay scale, window geometry, shortcut drafts, invalid imports and unchanged account-data fixture hashes. Run just these with `-- --advanced-only`. They do not exercise actual controller startup or global shortcut registration.
 
 Run on Windows with the .NET 8 SDK:

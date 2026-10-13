@@ -259,14 +259,19 @@ public static class CodexAppServerRateLimitsParser
                 windows.Add(secondaryWindow);
             }
 
-            if (windows.Count == 0)
+            string? planName = AccountPlanFormatter.Normalize(TryGetString(rateLimits, "planType"));
+            if (planName is null && TryGetProperty(result, "rateLimits", out JsonElement legacyLimits))
+            {
+                planName = AccountPlanFormatter.Normalize(TryGetString(legacyLimits, "planType"));
+            }
+            if (windows.Count == 0 && planName is null)
             {
                 continue;
             }
 
             string? reachedType = TryGetString(rateLimits, "rateLimitReachedType");
-            bool isExhausted = windows.Any(window => window.RemainingPercent == 0)
-                || !string.IsNullOrWhiteSpace(reachedType);
+            bool? isExhausted = !string.IsNullOrWhiteSpace(reachedType) ? true
+                : windows.Count == 0 ? null : windows.Any(window => window.RemainingPercent == 0);
 
             var snapshot = new UsageSnapshot
             {
@@ -275,6 +280,7 @@ public static class CodexAppServerRateLimitsParser
                 Source = CodexCliStatusUsageProvider.SourceIdentifier,
                 CodexCliVersion = string.IsNullOrWhiteSpace(codexCliVersion) ? null : codexCliVersion.Trim(),
                 IsExhausted = isExhausted,
+                PlanName = planName,
             };
             if (TryGetProperty(rateLimits, "credits", out JsonElement credits))
             {

@@ -32,6 +32,7 @@ public static partial class LocalizationCatalog
         ["SwitchCurrentAccount"] = "切换当前账户",
         ["OpeningAccountWindow"] = "正在打开 {0}…",
         ["AccountWindowOpened"] = "已打开账号窗口：{0}",
+        ["AccountPlanUnknown"] = "未知套餐",
         ["OpenAccountWindow"] = "打开账号窗口",
         ["OpenNewAccountWindow"] = "现在打开刚添加账号的独立窗口？",
         ["CouldNotOpenAccountWindow"] = "无法打开账号窗口。",

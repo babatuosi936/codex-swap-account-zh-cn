@@ -224,8 +224,8 @@ public sealed class SettingsTransferTests
         }, destination);
 
         OverlaySettings exported = new SettingsService(destination).ReadImport(destination);
-        Assert.Equal(396, exported.OffsetX);
-        Assert.Equal(2, exported.OffsetY);
+        Assert.Equal(340, exported.OffsetX);
+        Assert.Equal(0, exported.OffsetY);
         Assert.Equal(1, exported.Scale);
         Assert.Equal(60, exported.GracefulCloseTimeoutSeconds);
         Assert.Equal(1000, exported.SettingsWindowWidth);
@@ -323,7 +323,8 @@ public sealed class SettingsTransferTests
         Assert.True(windowReference.UseIsolatedAccountWindows);
         Assert.Equal(AppTheme.Dark, windowReference.Theme);
         Assert.Equal(1, windowReference.Scale);
-        Assert.Equal(396, windowReference.OffsetX);
+        Assert.Equal(340, windowReference.OffsetX);
+        Assert.Equal(0, windowReference.OffsetY);
         Assert.NotNull(windowReference.Hotkeys.ToggleOverlay);
         Assert.Equal(9, windowReference.Hotkeys.ProfileHotkeys.Count);
     }
