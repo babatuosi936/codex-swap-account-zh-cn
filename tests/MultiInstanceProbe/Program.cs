@@ -110,7 +110,9 @@ internal static class Program
                     follows = found && foreground.Value;
                 }
                 GetWindowThreadProcessId(GetForegroundWindow(), out uint foregroundPid);
-                results.Add(new { pid, enabled = IsWindowEnabled(hwnd), iconic = IsIconic(hwnd), popup = GetLastActivePopup(hwnd).ToInt64(), hwnd = hwnd.ToInt64(), foregroundPid, resolvedHome = home is not null, accountMatched = active is not null, foreground, nativeVisible, minimized, onTop, follows });
+                bool isDefaultHome = (bool)resolverType.GetMethod("IsDefaultHome")!.Invoke(resolver, [pid])!;
+                bool sharedHistory = (bool)resolverType.GetMethod("UsesSharedHistory")!.Invoke(resolver, [pid, paths.SharedCodexDirectory])!;
+                results.Add(new { pid, enabled = IsWindowEnabled(hwnd), iconic = IsIconic(hwnd), popup = GetLastActivePopup(hwnd).ToInt64(), hwnd = hwnd.ToInt64(), foregroundPid, resolvedHome = home is not null, accountMatched = active is not null, isDefaultHome, sharedHistory, foreground, nativeVisible, minimized, onTop, follows });
                 passed &= home is not null && active is not null && follows != false;
             }
         }

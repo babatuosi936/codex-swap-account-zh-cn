@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.6-local - 2026-10-13
+
+- Clicking an account now goes directly to its already-open original desktop as well as an independent desktop. Fix asymmetric navigation where 475 to 181 showed an action dialog while 181 to 475 focused immediately.
+- Reuse the same verified account-window lookup for account clicks, opening a window and current-account switching. Keep existing history/environment validation, minimized-window restoration and the choice for accounts without an open window.
+- Verify both selection directions, reversed window order, minimized and unknown accounts; pass independent-account UI checks. A read-only local probe confirmed both current desktops resolve to saved accounts and shared history, with one original and one independent desktop.
+
 ## 1.3.5-local - 2026-10-13
 
 - Show every returned quota window in account details and overview cards. Free accounts with a 30-day limit no longer incorrectly show quota unavailable.

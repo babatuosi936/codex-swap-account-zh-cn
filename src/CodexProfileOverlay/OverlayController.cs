@@ -332,10 +332,9 @@ internal sealed class OverlayController : IDisposable
             return;
         }
 
-        CodexWindowInfo? existingIndependentWindow = windowFinder.FindAllWindows().FirstOrDefault(window =>
-            !instanceResolver.IsDefaultHome(window.ProcessId)
-            && string.Equals(instanceResolver.FindActiveProfile(window.ProcessId, profiles), profile.Name, StringComparison.OrdinalIgnoreCase));
-        if (existingIndependentWindow is not null)
+        CodexWindowInfo? existingWindow = FindExistingProfileWindow(windowFinder.FindAllWindows(), profile.Name,
+            processId => instanceResolver.FindActiveProfile(processId, profiles));
+        if (existingWindow is not null)
         {
             await OpenAccountWindowAsync(profileName).ConfigureAwait(true);
             return;
@@ -364,8 +363,8 @@ internal sealed class OverlayController : IDisposable
     private async Task SwitchCurrentAccountAsync(string profileName)
     {
         IReadOnlyList<CodexWindowInfo> windows = windowFinder.FindAllWindows();
-        CodexWindowInfo? target = windows.FirstOrDefault(window => string.Equals(
-            instanceResolver.FindActiveProfile(window.ProcessId, profiles), profileName, StringComparison.OrdinalIgnoreCase));
+        CodexWindowInfo? target = FindExistingProfileWindow(windows, profileName,
+            processId => instanceResolver.FindActiveProfile(processId, profiles));
         if (target is not null)
         {
             if (target.IsMinimized) NativeMethods.ShowWindow(target.Hwnd, NativeMethods.SwRestore);
@@ -471,8 +470,8 @@ internal sealed class OverlayController : IDisposable
         if (switching) return;
         ProfileInfo? profile = profiles.FirstOrDefault(item => string.Equals(item.Name, profileName, StringComparison.OrdinalIgnoreCase));
         if (profile is null) return;
-        CodexWindowInfo? existing = windowFinder.FindAllWindows().FirstOrDefault(window => string.Equals(
-            instanceResolver.FindActiveProfile(window.ProcessId, profiles), profile.Name, StringComparison.OrdinalIgnoreCase));
+        CodexWindowInfo? existing = FindExistingProfileWindow(windowFinder.FindAllWindows(), profile.Name,
+            processId => instanceResolver.FindActiveProfile(processId, profiles));
         if (existing is not null)
         {
             EnsureOverlay();
@@ -556,6 +555,13 @@ internal sealed class OverlayController : IDisposable
             TickSafely();
         }
     }
+
+    // The original desktop is also an open account window. Match verified account
+    // identity before showing choices; OpenAccountWindowAsync validates its history.
+    internal static CodexWindowInfo? FindExistingProfileWindow(
+        IReadOnlyList<CodexWindowInfo> windows, string profileName, Func<int, string?> resolveProfile)
+        => windows.FirstOrDefault(window => string.Equals(resolveProfile(window.ProcessId), profileName,
+            StringComparison.OrdinalIgnoreCase));
 
     private void FocusAccountWindow(CodexWindowInfo window)
     {

@@ -13,6 +13,7 @@ internal static partial class Program
 {
     private static void RunIsolatedAccountsScenario()
     {
+        RunExistingAccountWindowSelectionScenario();
         string fixture = Path.Combine(AppContext.BaseDirectory, "isolated-accounts-ui-fixture");
         Directory.CreateDirectory(fixture);
         var settings = new OverlaySettings { Language = LanguagePreference.ChineseSimplified, Theme = AppTheme.Light };
@@ -95,5 +96,34 @@ internal static partial class Program
             Evidence.Add(new { stage = "account-window-action", correctAccount = true, opens, removes });
         }
         finally { manager.Close(); Pump(); }
+    }
+
+    private static void RunExistingAccountWindowSelectionScenario()
+    {
+        var assembly = typeof(CodexProfileOverlay.App).Assembly;
+        var windowType = assembly.GetType("CodexProfileOverlay.CodexWindowInfo")!;
+        var select = assembly.GetType("CodexProfileOverlay.OverlayController")!
+            .GetMethod("FindExistingProfileWindow", BindingFlags.Static | BindingFlags.NonPublic)!;
+        object Window(int processId, bool minimized = false) => Activator.CreateInstance(windowType,
+            new object[] { new IntPtr(processId), processId, "Codex", "fixture", minimized })!;
+        object original181 = Window(181);
+        object isolated475 = Window(475, minimized: true);
+        object unknown = Window(199);
+        Func<int, string?> identity = processId => processId == 181 ? "original-181" : processId == 475 ? "isolated-475" : null;
+        foreach (bool reverse in new[] { false, true })
+        {
+            var windows = Array.CreateInstance(windowType, 3);
+            var ordered = reverse ? new[] { unknown, isolated475, original181 } : new[] { original181, unknown, isolated475 };
+            for (int index = 0; index < ordered.Length; index++) windows.SetValue(ordered[index], index);
+            Require(ReferenceEquals(select.Invoke(null, new object[] { windows, "ORIGINAL-181", identity }), original181),
+                "Switching from an isolated account to its open original desktop must bypass the action dialog.");
+            Require(ReferenceEquals(select.Invoke(null, new object[] { windows, "isolated-475", identity }), isolated475),
+                "Switching back must find the isolated desktop, including a minimized window.");
+            Require(select.Invoke(null, new object[] { windows, "unopened-account", identity }) is null,
+                "An unopened account must still show the action choice.");
+            Require(select.Invoke(null, new object[] { windows, "unknown", identity }) is null,
+                "An unreadable identity must not activate an unrelated desktop.");
+            Evidence.Add(new { stage = "existing-account-window-routing", reverse, original = "matched", isolated = "matched", unknown = "ignored" });
+        }
     }
 }
