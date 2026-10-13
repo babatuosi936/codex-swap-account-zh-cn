@@ -8,11 +8,13 @@ View five-hour and weekly remaining quotas for multiple accounts in a draggable 
 
 **English** · [简体中文](README.md)
 
-[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.2.0) · [How to use](#quick-start)
+[Public release EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) · [Public v1.2.0 release](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.2.0) · [How to use](#quick-start)
 
 For everyday use, download the EXE and run it directly. No extraction or separate .NET installation is required.
 
 </div>
+
+**Local trial: 1.3.0-local.** Adds separate account windows with independent sign-ins and shared local conversation history, without Cockpit Tools. The GitHub downloads above still provide public v1.2.0; this trial is not published remotely. On Windows Store Codex 26.1007.2314.0, two signed-out synthetic account homes have launched two simultaneously visible official windows with distinct processes, homes, and desktop caches. Real signed-in identities and history display still need verification. See the [trial guide and design boundaries](docs/ISOLATED_MULTI_ACCOUNT.md).
 
 ![Expanded overlay with sample accounts and remaining allowance](docs/images/zh-CN/expanded-mode.png)
 
@@ -24,37 +26,43 @@ If you sign in to Codex with several ChatGPT Plus accounts, this tool brings the
 
 This project provides account management, account switching, and quota monitoring for the **Codex desktop app on Windows**. It is a standalone community tool: download and run the EXE. It offers a workflow similar to a VS Code account manager without requiring a VS Code extension or a native Codex plugin.
 
-Select a saved, signed-in account from the overlay to switch. The panel periodically refreshes the available five-hour and weekly remaining percentages. Switching restarts Codex, and quota updates may be delayed.
+Select a saved, signed-in account from the overlay. The panel periodically refreshes the available five-hour and weekly remaining percentages; quota updates may be delayed.
 
-**v1.2.0 adds Cockpit Tools multi-instance compatibility.** The overlay follows the foreground Codex window and highlights its actual account, including instances stored on another drive. Selecting an already-open account focuses its window without restarting other instances. Launch unavailable accounts in Cockpit Tools first. History sharing depends on instance configuration; this tool does not synchronize independent histories.
+**1.3.0-local enables separate account windows by default.** Selecting an account focuses an already-open window with a matching configuration, or starts that account's own window while the existing default window continues running. Sign-ins and desktop caches remain separate; the new windows use the same existing local history. Independent histories, incorrect directory links, and incompatible old account windows are rejected with the original data preserved.
+
+Continue each conversation in one window. Instant updates in other windows, automatic follower behavior, and repair of existing VS Code writer-lock directories are not promised. Disable **Settings → General → Open accounts in separate windows** to return to the old single-instance authorization-switch flow.
 
 | Feature | What you can do |
 | --- | --- |
-| Account management and switching | Add, name, and manage accounts. Switch through the overlay, tray menu, or a custom hotkey. The active account is highlighted. |
+| Account management and switching | Add, name, and manage accounts. Select through the overlay, tray menu, or a custom hotkey. The local trial opens or focuses separate account windows by default and highlights the active account. |
 | Usage panel | See available five-hour and weekly remaining percentages for multiple accounts, with automatic updates and a manual refresh-all action. |
-| Shared local work | Single-instance switching preserves local chats, sessions, and workspaces. History sharing across independent Cockpit Tools instances depends on their configuration. |
+| Shared local history | Account windows use the same conversation files, attachments, and databases without copying or merging them. Continue each conversation in one window. |
 | Two overlay layouts | Expanded mode sizes itself to the account and quota text. Compact mode uses a single account button and menu. Automatic mode switches to compact when the full account row will not fit, including the selected UI scale. |
 | Position and appearance | Drag the overlay, remember its position, choose a preset beside the menu or along the bottom, and adjust scaling and light or dark themes. Windows DPI scaling is supported. |
 | Mouse or hotkeys | Use the mouse for everyday actions, or configure optional hotkeys. Leave individual hotkeys unset if you prefer. Hotkey edits take effect only after clicking **Save**. |
 | Languages and system tray | Use English, Simplified Chinese, Russian, or the system language. The tray provides access to accounts, settings, and overlay visibility. |
-| Authorization backup and recovery | Authorization is backed up before a switch. If switching fails, the tool attempts to restore the previous authorization and reports the result. |
+| Legacy single-instance mode | Disable separate account windows to use the existing authorization backup, switch, and failure-recovery flow. |
 
-Single-instance login switching closes and restarts the selected Codex process, so finish its work first. Selecting an already-open Cockpit Tools account only focuses its window. Usage values come from server queries and may take time to update.
+Separate account windows preserve default authorization and existing windows. Legacy single-instance switching closes and restarts the selected Codex process, so finish its work first. Usage values come from server queries and may take time to update.
 
 ## Quick start
 
-Requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex CLI is also required for adding accounts and automatic usage queries.
+Basic requirements: **Windows 10/11 x64 and the Codex desktop app**. A working Codex CLI is also required for adding accounts and automatic usage queries. The account-window steps below apply to local 1.3.0-local, initially targeting Windows Store Codex 26.1007.2314.0. Two signed-out synthetic windows have been verified; real-account end-to-end verification is pending.
 
-1. Click [Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe) and save `CodexProfileOverlay.exe`.
+1. Use the local 1.3.0-local executable or portable package delivered in `artifacts/`. For the public release, use [Public release EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe), which currently provides v1.2.0.
 2. Put the EXE in a permanent folder and double-click it to run. It includes its runtime, so you do not need to install .NET separately.
 3. Open Codex. The account overlay appears once the tool detects its window. You can also show or hide the overlay from the system tray.
 4. Choose **English** under **Settings → Language**, or use the system language setting.
 5. Use **Add profile** to sign in to your accounts. Once saved, they appear in the overlay with any available usage information.
-6. Select the account you want to use, confirm the switch, and wait for Codex to reopen.
+6. Keep **Settings → General → Open accounts in separate windows** enabled and select an account to open or focus its window. The default window and its sign-in remain intact; Cockpit Tools is not required.
+
+If preparation reports independent history or an incompatible existing window, preserve the directories. Save your work and close the old account window before reviewing the trial guide. The tool does not automatically migrate, clear, or merge these histories.
+
+Renaming the profile directory or removing an account is blocked while its process is running. Compatibility checks for existing windows are read-only and do not prepare their directories again.
 
 If you do not need hotkeys, open **Settings → Hotkeys**, clear the individual shortcuts, and click **Save**. To change the overlay position, drag it or choose a preset under **Settings → Appearance**.
 
-**The ZIP is optional.** To keep the illustrated English and Chinese guides with the program, download the [program and documentation ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip), extract it, and run the EXE inside. It contains the same executable as the standalone download, with identical functionality. Choose either download; you do not need both.
+**The public release ZIP is optional.** To keep the illustrated guides with the public release, download the [public program and documentation ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip), extract it, and run the EXE inside. It contains the same public executable as the standalone download. These links do not yet provide 1.3.0-local.
 
 The [release page](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest) provides release notes and `SHA256SUMS.txt`. The checksum file helps verify your download; it is not required to run the program. Windows may show a SmartScreen prompt for an unsigned executable; check the source and published hashes before deciding whether to run it.
 
@@ -120,7 +128,11 @@ No. Clear any shortcut to leave it unset and use the mouse instead. Hotkey edits
 
 **Will I keep my chats after switching?**
 
-Local Codex chats, sessions, and workspaces remain shared; the tool switches account authorization. This concerns data stored on your computer, not merging cloud chat histories from different ChatGPT accounts.
+Separate account windows use the same existing local Codex history and attachments while keeping sign-ins independent. No raw history is copied or merged. If a profile already contains independent history, preparation stops and preserves it. This concerns computer-local data, not merging cloud chats from different ChatGPT accounts.
+
+**Can several windows continue the same conversation at once?**
+
+Continue each conversation in one window. The native synthetic test confirms that a second process cannot resume a thread while the first holds its writer lock; it can resume after the first exits. Real desktop viewing, refresh, and handoff behavior still need verification. Shared files do not imply real-time synchronization.
 
 ## Improvements over the original project
 
@@ -128,6 +140,7 @@ The sections above describe the complete experience in this version. The followi
 
 | Area | Improvements in this version |
 | --- | --- |
+| Separate account windows (local trial) | Independently implements account directories, shared history links and SQLite environment, and separate desktop cache startup. No Cockpit Tools dependency; independent histories and incorrect links remain untouched and are rejected. |
 | Simplified Chinese | Adds Chinese settings, menus, account labels, usage information, and messages alongside English and Russian. |
 | Usage display and refresh | Extends status indicators with visible remaining percentages. Default query intervals change from 15 minutes for the active account and 60 minutes for others to 30 and 60 seconds respectively, with adjustable settings. |
 | Overlay and positioning | Adds dragging and position persistence, uses a default height of 44 device-independent pixels, and replaces three top presets with bottom-left, bottom-center, and bottom-right positions with margins. |
@@ -143,7 +156,7 @@ See the [upgrade record (Chinese)](CHANGELOG_ZH.md) for the full list of changes
 
 - Account authorization and switching backups remain on your computer. Do not publish `auth.json`, account directories, logs, or backups.
 - The usual settings directory is `%LOCALAPPDATA%\CodexProfileOverlay`. An existing Codex packaged-app data directory is reused when detected.
-- Switching targets authorization data, rather than copying your entire user directory or workspace. Shared local-session behavior follows the original design.
+- Separate account windows retain each profile's authorization and share existing history/databases through directory links and child-process settings, without history import, copying, or merging. Disabling this setting retains the original single-instance authorization-switch and legacy-migration behavior.
 - Usage queries communicate with the service. Network access, sign-in state, server responses, and Codex CLI compatibility affect availability.
 - This repository contains source code, documentation, and sample screenshots. Generated runtime data and credentials are excluded.
 
@@ -172,11 +185,13 @@ Regenerate the sample screenshots without reading real authorization data:
 dotnet run --project tests/OverlayUiRegression/OverlayUiRegression.csproj -c Release -p:Platform=x64 -- --docs docs/images/zh-CN
 ```
 
-For implementation details, see the [architecture documentation](docs/ARCHITECTURE.md) and [UI check guide](tests/OverlayUiRegression/README.md).
+For implementation details, see the [separate-account-window design](docs/ISOLATED_MULTI_ACCOUNT.md), [architecture documentation](docs/ARCHITECTURE.md), and [UI check guide](tests/OverlayUiRegression/README.md).
 
 ## Validation scope
 
-This version has been built and checked locally on Windows with .NET 8, including core tests and focused WPF interaction checks. Actual account switching and usage queries depend on your Codex installation and sign-in state. Isolated UI checks are not an end-to-end test of switching real accounts. Compatibility with every Codex version or monitor configuration is not claimed.
+Local 1.3.0-local uses independently written C# code and initially targets Windows Store Codex 26.1007.2314.0. Validation passed 192 core tests, 22 launcher-policy checks, and 205 WPF checks. Native CLI 0.162.0-alpha.17.2 verified shared databases and thread writer locks using two synthetic homes. An actual desktop probe launched two simultaneously visible signed-out official windows, verified distinct processes, homes, caches, all three environment paths and package identity, and confirmed that previously existing window processes remained alive.
+
+The desktop probe used no real credentials, histories, or model inference. Signed-in identities, real attachment display, cross-window refresh, and desktop conversation handoff still need verification. Closing the synthetic windows left background processes, so cleanup stopped only those two verified synthetic processes; graceful complete desktop exit is not proven. These results do not establish compatibility with every Codex version or monitor configuration.
 
 When reporting an issue, include your Codex version, display scaling, overlay mode, and reproduction steps. Hide real email addresses and account details in screenshots.
 

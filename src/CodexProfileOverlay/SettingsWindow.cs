@@ -355,6 +355,7 @@ internal sealed class SettingsWindow : Window
     {
         var stack = PageStack();
         stack.Children.Add(Card(
+            SettingCheck(localizer["IsolatedAccountWindows"], localizer["IsolatedAccountWindowsHelp"], settings.UseIsolatedAccountWindows, value => settings.UseIsolatedAccountWindows = value),
             SettingCheck(localizer["StartWithWindows"], localizer["StartWithWindowsHelp"], settings.StartWithWindows, value => settings.StartWithWindows = value),
             SettingCheck(localizer["ShowAutomatically"], localizer["ShowAutomaticallyHelp"], settings.ShowAutomaticallyWhenCodexOpens, value => settings.ShowAutomaticallyWhenCodexOpens = value),
             SettingCheck(localizer["LaunchOnStart"], localizer["LaunchOnStartHelp"], settings.LaunchCodexWhenOverlayStarts, value => settings.LaunchCodexWhenOverlayStarts = value),

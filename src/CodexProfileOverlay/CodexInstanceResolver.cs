@@ -48,9 +48,49 @@ internal sealed class CodexInstanceResolver
 
     public bool IsDefaultHome(int processId) => string.Equals(ResolveHome(processId), defaultHome, StringComparison.OrdinalIgnoreCase);
 
-    // Read only CODEX_HOME from the verified desktop process. Do not retain or log
-    // other environment entries. A failed read is unknown, never the default home.
+    public bool UsesSharedHistory(int processId, string sqliteHome)
+    {
+        if (!TryReadPathEnvironment(processId, "CODEX_SQLITE_HOME", out string? actualSqlite)) return false;
+        if (string.IsNullOrWhiteSpace(actualSqlite)) actualSqlite = ResolveHome(processId);
+        return SameAbsolutePath(actualSqlite, sqliteHome);
+    }
+
+    public bool MatchesSharedEnvironment(int processId, string sqliteHome, string electronUserDataDirectory)
+    {
+        try
+        {
+            return TryReadPathEnvironment(processId, "CODEX_SQLITE_HOME", out string? actualSqlite)
+            && TryReadPathEnvironment(processId, "CODEX_ELECTRON_USER_DATA_PATH", out string? actualDesktop)
+            && SameAbsolutePath(actualSqlite, sqliteHome)
+            && SameAbsolutePath(actualDesktop, electronUserDataDirectory);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or IOException)
+        {
+            return false;
+        }
+    }
+
+    private static bool SameAbsolutePath(string? first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(first) || !Path.IsPathFullyQualified(first)
+            || !Path.IsPathFullyQualified(second)) return false;
+        try
+        {
+            return string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(first)),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(second)), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or IOException)
+        {
+            return false;
+        }
+    }
+
+    // Read only the requested isolation path from the verified desktop process.
+    // Do not retain or log other entries. A failed read never implies a default.
     internal static bool TryReadHome(int processId, out string? home)
+        => TryReadPathEnvironment(processId, "CODEX_HOME", out home);
+
+    internal static bool TryReadPathEnvironment(int processId, string name, out string? home)
     {
         home = null;
         if (!Environment.Is64BitProcess) return false;
@@ -75,8 +115,9 @@ internal sealed class CodexInstanceResolver
                 int end = entries.IndexOf("\0\0", StringComparison.Ordinal);
                 if (end >= 0)
                 {
-                    string? entry = entries[..end].Split('\0').FirstOrDefault(value => value.StartsWith("CODEX_HOME=", StringComparison.OrdinalIgnoreCase));
-                    home = entry?["CODEX_HOME=".Length..];
+                    string prefix = name + "=";
+                    string? entry = entries[..end].Split('\0').FirstOrDefault(value => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                    home = entry?[prefix.Length..];
                     return true;
                 }
                 if (!read) return false;

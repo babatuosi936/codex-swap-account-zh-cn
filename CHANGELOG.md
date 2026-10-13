@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0-local - 2026-10-13
+
+- Independently implement separate account windows with shared existing local history, enabled by default. Focus a compatible existing window or launch the selected saved account without replacing default authorization or restarting the default window. No Cockpit Tools dependency or source copied from Cockpit Tools is included.
+- Keep `CODEX_HOME` account-specific, set child-process `CODEX_SQLITE_HOME` to the canonical default directory, link sessions, archived sessions, attachments, and native thread-writer locks, and isolate Electron user data per account.
+- Inspect all locations before preparation. Preserve and refuse nonempty private history/attachment directories, links to other targets, escaped or linked account roots, unknown account identities, and incompatible existing windows. Do not copy, import, or merge histories or account credentials in this flow.
+- Keep existing-window configuration checks read-only, and block profile-directory renaming or account removal while a verified process is using it.
+- Add **Open accounts in separate windows** to General settings. Disabling it retains the explicit legacy single-instance authorization-switch behavior.
+- Validate preparation with focused tests and native CLI 0.162.0-alpha.17.2 using two synthetic account homes sharing six SQLite databases. A second resume is rejected while the first native process owns the shared writer lock and succeeds after it exits.
+- Pass 192 core tests, 22 launcher-policy checks, and 205 WPF checks. On Windows Store Codex 26.1007.2314.0, launch two simultaneously visible signed-out official windows using synthetic homes, verify distinct processes/homes/caches, all three environment paths and package identity, and confirm existing window processes stay alive. No real credentials, history, or model inference were used.
+- Real signed-in identity, attachment display, cross-window refresh and desktop ownership handoff remain pending. Synthetic window cleanup required stopping only the two verified test processes after closing their windows left background processes; graceful complete desktop exit is not proven. Automatic follower behavior and repair of old VS Code writer-lock directories are not claimed.
+- Deliver locally only. Public GitHub download links still point to public v1.2.0; 1.3.0-local has not been published remotely.
+
 ## 1.2.4-local - 2026-10-11
 
 - Preserve the requested custom overlay position when a smaller Codex window temporarily clamps the bar to its edges. Resizing/restoring or switching back from a smaller Cockpit Tools instance restores the chosen position instead of retaining the clamped top/left coordinates.

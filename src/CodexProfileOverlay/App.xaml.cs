@@ -79,6 +79,16 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (IsolatedDesktopLauncher.TryHandleHelper(e.Args, out int helperExitCode))
+        {
+            Shutdown(helperExitCode);
+            return;
+        }
+        if (DesktopLaunchValidation.TryHandle(e.Args, out int validationExitCode))
+        {
+            Shutdown(validationExitCode);
+            return;
+        }
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 

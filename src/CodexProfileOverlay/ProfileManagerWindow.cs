@@ -18,6 +18,7 @@ internal sealed class ProfileManagerWindow : Window
     private readonly Action<IReadOnlyList<string>> reorder;
     private readonly Action<ProfileInfo> openProfileFolder;
     private readonly Action refreshProfiles;
+    private readonly Action<ProfileInfo>? openAccountWindow;
     private IReadOnlyList<ProfileInfo> profiles;
     private string? activeProfile;
     private Point dragStart;
@@ -34,7 +35,8 @@ internal sealed class ProfileManagerWindow : Window
         Action<ProfileInfo> removeProfile,
         Action<IReadOnlyList<string>> reorder,
         Action<ProfileInfo> openProfileFolder,
-        Action refreshProfiles)
+        Action refreshProfiles,
+        Action<ProfileInfo>? openAccountWindow = null)
     {
         this.profiles = profiles;
         this.activeProfile = activeProfile;
@@ -44,6 +46,7 @@ internal sealed class ProfileManagerWindow : Window
         this.reorder = reorder;
         this.openProfileFolder = openProfileFolder;
         this.refreshProfiles = refreshProfiles;
+        this.openAccountWindow = openAccountWindow;
 
         Title = localizer["ManageProfiles"];
         Icon = AppIcons.WindowIcon;
@@ -212,6 +215,11 @@ internal sealed class ProfileManagerWindow : Window
             BorderBrush = Brush("BorderBrush"),
             Foreground = Brush("StrongTextBrush"),
         };
+        if (openAccountWindow is not null)
+        {
+            menu.Items.Add(MenuItem(localizer["OpenAccountWindow"], () => openAccountWindow(profile)));
+            menu.Items.Add(new Separator());
+        }
         menu.Items.Add(MenuItem(localizer["Rename"], () => renameDisplayName(profile)));
         menu.Items.Add(MenuItem(localizer["OpenFolder"], () => openProfileFolder(profile)));
         var remove = MenuItem(localizer["Remove"], () => removeProfile(profile));

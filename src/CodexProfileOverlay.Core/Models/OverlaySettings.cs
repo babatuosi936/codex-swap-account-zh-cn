@@ -22,6 +22,8 @@ public sealed class OverlaySettings
 
     public bool LaunchCodexAfterSwitching { get; set; } = true;
 
+    public bool UseIsolatedAccountWindows { get; set; } = true;
+
     public int GracefulCloseTimeoutSeconds { get; set; } = 5;
 
     public bool ForceCloseFallback { get; set; } = true;

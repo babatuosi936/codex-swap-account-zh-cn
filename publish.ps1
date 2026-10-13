@@ -19,6 +19,11 @@ if (-not $dotnet) {
 if ([string]::IsNullOrWhiteSpace($Output)) {
     $Output = Join-Path $repo "artifacts\publish"
 }
+$Output = [IO.Path]::GetFullPath($Output)
+$artifactRoot = [IO.Path]::GetFullPath((Join-Path $repo "artifacts"))
+if (-not $Output.StartsWith($artifactRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Publish output must be a child directory of the repository artifacts directory."
+}
 
 if (Test-Path -LiteralPath $Output) {
     Remove-Item -LiteralPath $Output -Recurse -Force

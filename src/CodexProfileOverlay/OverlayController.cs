@@ -31,6 +31,8 @@ internal sealed class OverlayController : IDisposable
     private readonly ProfileStatusStore statusStore;
     private readonly ProfileStatusService statusService;
     private readonly SharedCodexStateMigrationService stateMigrationService;
+    private readonly SharedDesktopProfileService sharedDesktopProfiles;
+    private readonly IsolatedDesktopLauncher isolatedDesktopLauncher;
     private OverlaySettings settings;
     private Localizer localizer;
     private TrayIconService? trayIcon;
@@ -75,6 +77,8 @@ internal sealed class OverlayController : IDisposable
         statusStore = new ProfileStatusStore(paths.ProfileStatusFile);
         statusService = new ProfileStatusService(statusStore, new CodexCliStatusUsageProvider(), logger);
         stateMigrationService = new SharedCodexStateMigrationService(paths);
+        sharedDesktopProfiles = new SharedDesktopProfileService(paths, new WindowsSharedDirectoryLinker());
+        isolatedDesktopLauncher = new IsolatedDesktopLauncher(logger);
         statusService.SetStaleThreshold(TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes));
         if (statusService.ProviderCapability != UsageProviderCapability.Supported && settings.ShowAutomaticLimitIndicators)
         {
@@ -322,6 +326,12 @@ internal sealed class OverlayController : IDisposable
             return;
         }
 
+        if (settings.UseIsolatedAccountWindows)
+        {
+            await OpenAccountWindowAsync(profileName).ConfigureAwait(true);
+            return;
+        }
+
         // With independent instances, selecting an open account selects its
         // window. Never run the legacy global auth replacement/close flow here.
         IReadOnlyList<CodexWindowInfo> windows = windowFinder.FindAllWindows();
@@ -427,6 +437,108 @@ internal sealed class OverlayController : IDisposable
         }
     }
 
+    private async Task OpenAccountWindowAsync(string profileName)
+    {
+        if (switching) return;
+        ProfileInfo? profile = profiles.FirstOrDefault(item => string.Equals(item.Name, profileName, StringComparison.OrdinalIgnoreCase));
+        if (profile is null) return;
+        CodexWindowInfo? existing = windowFinder.FindAllWindows().FirstOrDefault(window => string.Equals(
+            instanceResolver.FindActiveProfile(window.ProcessId, profiles), profile.Name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            EnsureOverlay();
+            if (!instanceResolver.UsesSharedHistory(existing.ProcessId, paths.SharedCodexDirectory))
+            {
+                overlayWindow!.ShowError(localizer["LegacyAccountWindowOpen"]);
+                return;
+            }
+            if (!instanceResolver.IsDefaultHome(existing.ProcessId))
+            {
+                string? existingHome = instanceResolver.ResolveHome(existing.ProcessId);
+                if (!string.Equals(existingHome, profile.DirectoryPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    EnsureOverlay();
+                    overlayWindow!.ShowError(localizer["LegacyAccountWindowOpen"]);
+                    return;
+                }
+                try
+                {
+                    PreparedDesktopProfile existingProfile = sharedDesktopProfiles.Inspect(profile);
+                    if (!instanceResolver.MatchesSharedEnvironment(existing.ProcessId,
+                        existingProfile.SharedSqliteHome, existingProfile.ElectronUserDataDirectory))
+                    {
+                        overlayWindow?.ShowError(localizer["LegacyAccountWindowOpen"]);
+                        return;
+                    }
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+                {
+                    logger.Error("Existing account window does not use the shared history environment.", exception);
+                    overlayWindow?.ShowError(localizer["LegacyAccountWindowOpen"]);
+                    return;
+                }
+            }
+            FocusAccountWindow(existing);
+            return;
+        }
+
+        switching = true;
+        EnsureOverlay();
+        overlayWindow!.SetSwitching(true);
+        try
+        {
+            overlayWindow.ShowNotification(localizer.Format("OpeningAccountWindow", profile.DisplayName));
+            PreparedDesktopProfile prepared = await Task.Run(() => sharedDesktopProfiles.Prepare(profile),
+                disposalTokenSource.Token).ConfigureAwait(true);
+            IsolatedDesktopLaunchResult launch = await isolatedDesktopLauncher.LaunchAsync(
+                prepared.CodexHome, prepared.SharedSqliteHome, prepared.ElectronUserDataDirectory,
+                disposalTokenSource.Token).ConfigureAwait(true);
+            DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(25);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                disposalTokenSource.Token.ThrowIfCancellationRequested();
+                CodexWindowInfo? opened = windowFinder.FindAllWindows().FirstOrDefault(window =>
+                    (launch.ProcessId is null || window.ProcessId == launch.ProcessId)
+                    && string.Equals(instanceResolver.ResolveHome(window.ProcessId), prepared.CodexHome, StringComparison.OrdinalIgnoreCase)
+                    && instanceResolver.MatchesSharedEnvironment(window.ProcessId, prepared.SharedSqliteHome, prepared.ElectronUserDataDirectory)
+                    && string.Equals(instanceResolver.FindActiveProfile(window.ProcessId, profiles), profile.Name, StringComparison.OrdinalIgnoreCase));
+                if (opened is not null)
+                {
+                    FocusAccountWindow(opened);
+                    overlayWindow.ShowNotification(localizer.Format("AccountWindowOpened", profile.DisplayName));
+                    logger.Info($"Opened isolated account window for '{profile.Name}', process {opened.ProcessId}.");
+                    return;
+                }
+                await Task.Delay(250, disposalTokenSource.Token).ConfigureAwait(true);
+            }
+            throw new InvalidOperationException(localizer["AccountWindowUnconfirmed"]);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.Error("Isolated account window launch failed.", exception);
+            string message = localizer["CouldNotOpenAccountWindow"] + " " + exception.Message;
+            overlayWindow?.ShowError(message);
+            trayIcon?.ShowBalloon("Codex Profile Overlay", message);
+        }
+        finally
+        {
+            switching = false;
+            overlayWindow?.SetSwitching(false);
+            TickSafely();
+        }
+    }
+
+    private void FocusAccountWindow(CodexWindowInfo window)
+    {
+        if (window.IsMinimized) NativeMethods.ShowWindow(window.Hwnd, NativeMethods.SwRestore);
+        NativeMethods.SetForegroundWindow(window.Hwnd);
+        attachedWindow = window;
+        EnsureOverlay();
+        overlayWindow!.AttachTo(window.Hwnd);
+        UpdateInstanceProfile(window);
+        TickSafely();
+    }
+
     private void MigrateLegacyProfileStateSafely()
     {
         try
@@ -482,7 +594,7 @@ internal sealed class OverlayController : IDisposable
                 dialogOwner,
                 dialogOwner is null ? CurrentCodexWindowHandle() : IntPtr.Zero,
                 localizer["ConfirmSwitchTitle"],
-                localizer["SwitchNewProfile"],
+                localizer[settings.UseIsolatedAccountWindows ? "OpenNewAccountWindow" : "SwitchNewProfile"],
                 localizer["ConfirmSwitchPrimary"],
                 localizer["Cancel"]);
             if (switchNewProfile)
@@ -629,7 +741,8 @@ internal sealed class OverlayController : IDisposable
             RemoveProfile,
             ReorderProfiles,
             profile => OpenFolder(profile.DirectoryPath),
-            RefreshProfiles);
+            RefreshProfiles,
+            profile => _ = OpenAccountWindowAsync(profile.Name));
         profileManagerWindow.Closed += (_, _) => profileManagerWindow = null;
         ShowCodexOwnedWindow(profileManagerWindow);
     }
@@ -649,6 +762,7 @@ internal sealed class OverlayController : IDisposable
 
     private void RenameDirectory(ProfileInfo profile)
     {
+        if (HasRunningProfileWindow(profile)) return;
         if (string.Equals(profile.Name, activeProfileStore.Read(), StringComparison.OrdinalIgnoreCase))
         {
             overlayWindow?.ShowError(localizer["ActiveProfileCannotRemove"]);
@@ -668,6 +782,7 @@ internal sealed class OverlayController : IDisposable
 
     private void RemoveProfile(ProfileInfo profile)
     {
+        if (HasRunningProfileWindow(profile)) return;
         if (string.Equals(profile.Name, activeProfileStore.Read(), StringComparison.OrdinalIgnoreCase))
         {
             overlayWindow?.ShowError(localizer["ActiveProfileCannotRename"]);
@@ -689,6 +804,15 @@ internal sealed class OverlayController : IDisposable
         profileManager.RemoveProfile(profile.Name, activeProfileStore.Read());
         RefreshProfiles();
         overlayWindow?.ShowNotification(localizer["ProfileRemoved"]);
+    }
+
+    private bool HasRunningProfileWindow(ProfileInfo profile)
+    {
+        if (!windowFinder.FindAllWindows().Any(window =>
+            string.Equals(instanceResolver.ResolveHome(window.ProcessId), profile.DirectoryPath, StringComparison.OrdinalIgnoreCase))) return false;
+        EnsureOverlay();
+        overlayWindow!.ShowError(localizer["CloseAccountWindowFirst"]);
+        return true;
     }
 
     private void ReorderProfiles(IReadOnlyList<string> orderedNames)

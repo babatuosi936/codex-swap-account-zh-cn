@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--isolated-accounts-only") || args.Length == 0) RunIsolatedAccountsScenario();
+            if (args.Contains("--isolated-accounts-only"))
+            {
+                Console.WriteLine("PASS: isolated account settings and account-window action.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--ball-only") || args.Length == 0) RunFloatingBallScenario();
             if (args.Contains("--ball-only"))
             {

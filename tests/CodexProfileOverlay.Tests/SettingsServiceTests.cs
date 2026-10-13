@@ -71,7 +71,17 @@ public sealed class SettingsServiceTests
         Assert.NotNull(loaded.Hotkeys.ProfileHotkeys);
         Assert.False(loaded.ShowAutomaticLimitIndicators);
         Assert.False(loaded.ShowManualProfileEmojiInOverlay);
+        Assert.True(loaded.UseIsolatedAccountWindows);
         Assert.Equal(90, loaded.StaleDataThresholdMinutes);
+    }
+
+    [Fact]
+    public void SaveAndLoad_PreservesExplicitLegacyWindowMode()
+    {
+        using var temp = new TempDirectory();
+        var service = new SettingsService(Path.Combine(temp.Path, "settings.json"));
+        service.Save(new OverlaySettings { UseIsolatedAccountWindows = false });
+        Assert.False(service.Load().UseIsolatedAccountWindows);
     }
 
     [Fact]
