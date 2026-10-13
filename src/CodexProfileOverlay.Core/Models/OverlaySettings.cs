@@ -67,4 +67,49 @@ public sealed class OverlaySettings
     public int ActiveProfileRefreshIntervalSeconds { get; set; } = 30;
 
     public int InactiveProfileRefreshIntervalSeconds { get; set; } = 60;
+
+    /// <summary>Applies a complete settings replacement without invalidating the windows' shared reference.</summary>
+    public void CopyFrom(OverlaySettings source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (ReferenceEquals(this, source)) return;
+
+        DisplayMode = source.DisplayMode;
+        PositionPreset = source.PositionPreset;
+        OffsetX = source.OffsetX;
+        OffsetY = source.OffsetY;
+        Scale = source.Scale;
+        AnimationsEnabled = source.AnimationsEnabled;
+        StartWithWindows = source.StartWithWindows;
+        ShowAutomaticallyWhenCodexOpens = source.ShowAutomaticallyWhenCodexOpens;
+        LaunchCodexWhenOverlayStarts = source.LaunchCodexWhenOverlayStarts;
+        LaunchCodexAfterSwitching = source.LaunchCodexAfterSwitching;
+        UseIsolatedAccountWindows = source.UseIsolatedAccountWindows;
+        GracefulCloseTimeoutSeconds = source.GracefulCloseTimeoutSeconds;
+        ForceCloseFallback = source.ForceCloseFallback;
+        ConfirmBeforeForceClose = source.ConfirmBeforeForceClose;
+        Hotkeys = new HotkeySettings
+        {
+            ToggleOverlay = source.Hotkeys.ToggleOverlay,
+            ProfileHotkeys = [.. source.Hotkeys.ProfileHotkeys],
+        };
+        Language = source.Language;
+        Theme = source.Theme;
+        SettingsWindowLeft = source.SettingsWindowLeft;
+        SettingsWindowTop = source.SettingsWindowTop;
+        SettingsWindowWidth = source.SettingsWindowWidth;
+        SettingsWindowHeight = source.SettingsWindowHeight;
+        ShowAutomaticLimitIndicators = source.ShowAutomaticLimitIndicators;
+        GreenThresholdPercent = source.GreenThresholdPercent;
+        YellowThresholdPercent = source.YellowThresholdPercent;
+        StaleDataThresholdMinutes = source.StaleDataThresholdMinutes;
+        LowWarningThresholdPercent = source.LowWarningThresholdPercent;
+        ShowIndicatorsInOverlay = source.ShowIndicatorsInOverlay;
+        ShowManualProfileEmojiInOverlay = source.ShowManualProfileEmojiInOverlay;
+        WarnWhenNearlyExhausted = source.WarnWhenNearlyExhausted;
+        ActiveProfileRefreshIntervalMinutes = source.ActiveProfileRefreshIntervalMinutes;
+        InactiveProfileRefreshIntervalMinutes = source.InactiveProfileRefreshIntervalMinutes;
+        ActiveProfileRefreshIntervalSeconds = source.ActiveProfileRefreshIntervalSeconds;
+        InactiveProfileRefreshIntervalSeconds = source.InactiveProfileRefreshIntervalSeconds;
+    }
 }

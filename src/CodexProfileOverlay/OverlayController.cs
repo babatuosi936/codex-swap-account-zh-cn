@@ -33,7 +33,7 @@ internal sealed class OverlayController : IDisposable
     private readonly SharedCodexStateMigrationService stateMigrationService;
     private readonly SharedDesktopProfileService sharedDesktopProfiles;
     private readonly IsolatedDesktopLauncher isolatedDesktopLauncher;
-    private OverlaySettings settings;
+    private readonly OverlaySettings settings;
     private Localizer localizer;
     private TrayIconService? trayIcon;
     private OverlayWindow? overlayWindow;
@@ -735,6 +735,7 @@ internal sealed class OverlayController : IDisposable
             localizer,
             statusService,
             backupMaintenance,
+            settingsService,
             updatedSettings => SaveSettings(updatedSettings, propagateError: true),
             RefreshStatusIndicators,
             RefreshUsageForProfileAsync,
@@ -970,12 +971,15 @@ internal sealed class OverlayController : IDisposable
     {
         try
         {
-            settings = updatedSettings;
+            bool replacement = !ReferenceEquals(settings, updatedSettings);
             if (statusService.ProviderCapability != UsageProviderCapability.Supported)
             {
-                settings.ShowAutomaticLimitIndicators = false;
+                updatedSettings.ShowAutomaticLimitIndicators = false;
             }
 
+            settingsService.Save(updatedSettings);
+            settings.CopyFrom(updatedSettings);
+            if (replacement) settingsWindow?.RefreshSettings();
             statusService.SetStaleThreshold(TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes));
             localizer.SetLanguage(settings.Language);
             if (settings.ShowAutomaticallyWhenCodexOpens && !visibilityState.AutomaticDisplayEnabled)
@@ -983,7 +987,6 @@ internal sealed class OverlayController : IDisposable
                 visibilityState.RevealManually();
             }
             visibilityState.AutomaticDisplayEnabled = settings.ShowAutomaticallyWhenCodexOpens;
-            settingsService.Save(settings);
             ApplySettings();
             Tick();
             RefreshStatusIndicators();
@@ -1156,13 +1159,10 @@ internal sealed class OverlayController : IDisposable
 
     private void ResetSettings()
     {
-        settings = new OverlaySettings();
-        settingsService.Save(settings);
-        App.ApplyTheme(settings.Theme);
-        overlayWindow?.ApplySettings();
-        settingsWindow?.RefreshTheme();
-        profileManagerWindow?.RefreshTheme();
-        RefreshProfiles();
+        if (!ConfirmDialog.Show(PromptOwner(), CurrentCodexWindowHandle(), localizer["ResetSettings"],
+            localizer["ResetSettingsPrompt"], localizer["ResetSettings"], localizer["Cancel"])) return;
+
+        SaveSettings(new OverlaySettings());
     }
 
     private bool ConfirmProfileSwitch(string profileName)

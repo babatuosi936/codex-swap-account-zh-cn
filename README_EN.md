@@ -14,7 +14,7 @@ For everyday use, download the EXE and run it directly. No extraction or separat
 
 </div>
 
-**Local trial: 1.3.0-local.** Adds separate account windows with independent sign-ins and shared local conversation history, without Cockpit Tools. The GitHub downloads above still provide public v1.2.0; this trial is not published remotely. On Windows Store Codex 26.1007.2314.0, two signed-out synthetic account homes have launched two simultaneously visible official windows with distinct processes, homes, and desktop caches. Real signed-in identities and history display still need verification. See the [trial guide and design boundaries](docs/ISOLATED_MULTI_ACCOUNT.md).
+**Local trial: 1.3.2-local.** Separate account windows have independent sign-ins and shared local conversation history, without Cockpit Tools. Selecting a compatible open independent account focuses it immediately; other accounts offer a choice, with a separate window selected by default. Advanced settings have been audited, with import/export and reset wiring repaired; see the [Advanced controls reference](docs/ADVANCED_SETTINGS.md). GitHub public downloads above still provide v1.2.0. On Windows Store Codex 26.1007.2314.0, two signed-out synthetic account homes have launched two simultaneously visible official windows with distinct processes, homes, and desktop caches. Real signed-in identities and history display still need verification. See the [trial guide and design boundaries](docs/ISOLATED_MULTI_ACCOUNT.md).
 
 ![Expanded overlay with sample accounts and remaining allowance](docs/images/zh-CN/expanded-mode.png)
 
@@ -30,7 +30,7 @@ Select a saved, signed-in account from the overlay. The panel periodically refre
 
 **1.3.0-local enables separate account windows by default.** Selecting an account focuses an already-open window with a matching configuration, or starts that account's own window while the existing default window continues running. Sign-ins and desktop caches remain separate; the new windows use the same existing local history. Independent histories, incorrect directory links, and incompatible old account windows are rejected with the original data preserved.
 
-Continue each conversation in one window. Instant updates in other windows, automatic follower behavior, and repair of existing VS Code writer-lock directories are not promised. Disable **Settings → General → Open accounts in separate windows** to return to the old single-instance authorization-switch flow.
+Continue each conversation in one window. Instant updates in other windows, automatic follower behavior, and repair of existing VS Code writer-lock directories are not promised. **Settings → General → Prefer a separate account window** only chooses the default action; both actions remain available.
 
 | Feature | What you can do |
 | --- | --- |
@@ -41,7 +41,7 @@ Continue each conversation in one window. Instant updates in other windows, auto
 | Position and appearance | Drag the overlay, remember its position, choose a preset beside the menu or along the bottom, and adjust scaling and light or dark themes. Windows DPI scaling is supported. |
 | Mouse or hotkeys | Use the mouse for everyday actions, or configure optional hotkeys. Leave individual hotkeys unset if you prefer. Hotkey edits take effect only after clicking **Save**. |
 | Languages and system tray | Use English, Simplified Chinese, Russian, or the system language. The tray provides access to accounts, settings, and overlay visibility. |
-| Legacy single-instance mode | Disable separate account windows to use the existing authorization backup, switch, and failure-recovery flow. |
+| Switch current account | Choose this action to use the existing authorization backup, switch and failure-recovery flow; Advanced controls its shutdown behavior. |
 
 Separate account windows preserve default authorization and existing windows. Legacy single-instance switching closes and restarts the selected Codex process, so finish its work first. Usage values come from server queries and may take time to update.
 
@@ -156,7 +156,7 @@ See the [upgrade record (Chinese)](CHANGELOG_ZH.md) for the full list of changes
 
 - Account authorization and switching backups remain on your computer. Do not publish `auth.json`, account directories, logs, or backups.
 - The usual settings directory is `%LOCALAPPDATA%\CodexProfileOverlay`. An existing Codex packaged-app data directory is reused when detected.
-- Separate account windows retain each profile's authorization and share existing history/databases through directory links and child-process settings, without history import, copying, or merging. Disabling this setting retains the original single-instance authorization-switch and legacy-migration behavior.
+- Separate account windows retain each profile's authorization and share existing history/databases through directory links and child-process settings, without history import, copying or merging. Choosing Switch current account uses the original authorization-switch and legacy-migration behavior.
 - Usage queries communicate with the service. Network access, sign-in state, server responses, and Codex CLI compatibility affect availability.
 - This repository contains source code, documentation, and sample screenshots. Generated runtime data and credentials are excluded.
 

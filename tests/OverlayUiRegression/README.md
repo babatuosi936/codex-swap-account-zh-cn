@@ -1,5 +1,7 @@
 # Compact popup placement regression
 
+Advanced settings checks use a custom application-data directory and a simulated persistence callback. They cover live import/export, closing/reopening without restoring old values, shared references, overlay scale, window geometry, shortcut drafts, invalid imports and unchanged account-data fixture hashes. Run just these with `-- --advanced-only`. They do not exercise actual controller startup or global shortcut registration.
+
 Run on Windows with the .NET 8 SDK:
 
 ```powershell

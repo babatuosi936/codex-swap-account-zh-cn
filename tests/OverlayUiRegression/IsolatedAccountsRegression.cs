@@ -30,6 +30,7 @@ internal static partial class Program
             : parameter.ParameterType == localizerType ? localizer
             : parameter.ParameterType == typeof(ProfileStatusService) ? status
             : parameter.ParameterType == typeof(BackupMaintenanceService) ? new BackupMaintenanceService(new AppPaths(fixture, fixture))
+            : parameter.ParameterType == typeof(SettingsService) ? new SettingsService(Path.Combine(fixture, "settings.json"))
             : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)(_ => saves++)
             : parameter.ParameterType == typeof(Func<string, Task>) ? (Func<string, Task>)(_ => Task.CompletedTask)
             : parameter.ParameterType == typeof(Action<IReadOnlyList<string>>) ? (Action<IReadOnlyList<string>>)(_ => { })

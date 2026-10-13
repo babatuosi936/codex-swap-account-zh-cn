@@ -20,6 +20,7 @@ internal sealed class SettingsWindow : Window
     private readonly Func<string, Task> refreshUsage;
     private readonly ProfileStatusService statusService;
     private readonly BackupMaintenanceService backupMaintenance;
+    private readonly SettingsService settingsService;
     private readonly Action addProfile;
     private readonly Action manageProfiles;
     private readonly Action openProfilesFolder;
@@ -54,6 +55,7 @@ internal sealed class SettingsWindow : Window
         Localizer localizer,
         ProfileStatusService statusService,
         BackupMaintenanceService backupMaintenance,
+        SettingsService settingsService,
         Action<OverlaySettings> save,
         Action statusChanged,
         Func<string, Task> refreshUsage,
@@ -73,6 +75,7 @@ internal sealed class SettingsWindow : Window
         this.localizer = localizer;
         this.statusService = statusService;
         this.backupMaintenance = backupMaintenance;
+        this.settingsService = settingsService;
         this.save = save;
         this.statusChanged = statusChanged;
         this.refreshUsage = refreshUsage;
@@ -143,6 +146,14 @@ internal sealed class SettingsWindow : Window
         }
 
         Rebuild();
+    }
+
+    public void RefreshSettings()
+    {
+        hotkeyDraft = null;
+        hotkeysDirty = false;
+        ApplySavedGeometry();
+        RefreshTheme();
     }
 
     private UIElement BuildShell()
@@ -1006,8 +1017,27 @@ internal sealed class SettingsWindow : Window
             Foreground = Brush("MutedTextBrush"),
             TextWrapping = TextWrapping.Wrap,
             LineHeight = 22,
+        }, new TextBlock
+        {
+            Text = localizer["BackupScopeHelp"],
+            Foreground = Brush("MutedTextBrush"),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 10, 0, 0),
         }));
         stack.Children.Add(Card(
+            new TextBlock
+            {
+                Text = localizer["CurrentAccountSwitchSettings"],
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 0, 8),
+            },
+            new TextBlock
+            {
+                Text = localizer["CurrentAccountSwitchSettingsHelp"],
+                Foreground = Brush("MutedTextBrush"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 16),
+            },
             NumberInput(localizer["GracefulTimeout"], localizer["GracefulTimeoutHelp"], settings.GracefulCloseTimeoutSeconds, value => settings.GracefulCloseTimeoutSeconds = (int)value, 1, 1, 60),
             SettingCheck(localizer["ForceCloseFallback"], localizer["ForceCloseFallbackHelp"], settings.ForceCloseFallback, value => settings.ForceCloseFallback = value),
             SettingCheck(localizer["ConfirmForceClose"], localizer["ConfirmForceCloseHelp"], settings.ConfirmBeforeForceClose, value => settings.ConfirmBeforeForceClose = value)));
@@ -1617,7 +1647,7 @@ internal sealed class SettingsWindow : Window
         Microsoft.Win32.SaveFileDialog dialog = new() { Filter = "JSON files (*.json)|*.json", FileName = "codex-profile-overlay-settings.json" };
         if (dialog.ShowDialog(this) == true)
         {
-            File.Copy(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexProfileOverlay", "settings.json"), dialog.FileName, overwrite: true);
+            ExportSettingsToFile(dialog.FileName);
         }
     }
 
@@ -1626,10 +1656,42 @@ internal sealed class SettingsWindow : Window
         Microsoft.Win32.OpenFileDialog dialog = new() { Filter = "JSON files (*.json)|*.json" };
         if (dialog.ShowDialog(this) == true)
         {
-            string target = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexProfileOverlay", "settings.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(dialog.FileName, target, overwrite: true);
-            Close();
+            ImportSettingsFromFile(dialog.FileName);
+        }
+    }
+
+    private bool ExportSettingsToFile(string destinationFile)
+    {
+        try
+        {
+            settingsService.ExportTo(settings, destinationFile);
+            statusText.Foreground = Brush("SuccessBrush");
+            statusText.Text = localizer["SettingsExported"];
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
+        {
+            statusText.Foreground = Brush("ErrorBrush");
+            statusText.Text = localizer["CouldNotExportSettings"];
+            return false;
+        }
+    }
+
+    private bool ImportSettingsFromFile(string sourceFile)
+    {
+        try
+        {
+            OverlaySettings imported = settingsService.ReadImport(sourceFile);
+            save(imported);
+            statusText.Foreground = Brush("SuccessBrush");
+            statusText.Text = localizer["SettingsImported"];
+            return true;
+        }
+        catch (Exception)
+        {
+            statusText.Foreground = Brush("ErrorBrush");
+            statusText.Text = localizer["CouldNotImportSettings"];
+            return false;
         }
     }
 

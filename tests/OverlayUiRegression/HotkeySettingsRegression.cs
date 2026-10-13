@@ -34,6 +34,7 @@ internal static partial class Program
                 : parameter.ParameterType == localizerType ? localizer
                 : parameter.ParameterType == typeof(ProfileStatusService) ? status
                 : parameter.ParameterType == typeof(BackupMaintenanceService) ? new BackupMaintenanceService(new AppPaths(root, root))
+                : parameter.ParameterType == typeof(SettingsService) ? store
                 : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)(updated =>
                 {
                     if (failSave) throw new System.IO.IOException("Synthetic save failure");

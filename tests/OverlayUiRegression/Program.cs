@@ -37,6 +37,13 @@ internal static partial class Program
         try
         {
             if (args.Contains("--isolated-accounts-only") || args.Length == 0) RunIsolatedAccountsScenario();
+            if (args.Contains("--advanced-only") || args.Length == 0) RunAdvancedSettingsScenario();
+            if (args.Contains("--advanced-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} advanced settings checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--isolated-accounts-only"))
             {
                 Console.WriteLine("PASS: isolated account settings and account-window action.");
@@ -311,6 +318,7 @@ internal static partial class Program
             : parameter.ParameterType == localizerType ? localizer
             : parameter.ParameterType == typeof(ProfileStatusService) ? service
             : parameter.ParameterType == typeof(BackupMaintenanceService) ? new BackupMaintenanceService(paths)
+            : parameter.ParameterType == typeof(SettingsService) ? new SettingsService(paths.SettingsFile)
             : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)(_ => { })
             : parameter.ParameterType == typeof(Func<string, Task>) ? (Func<string, Task>)(_ => Task.CompletedTask)
             : parameter.ParameterType == typeof(Action<ProfileInfo>) ? (Action<ProfileInfo>)(_ => { })

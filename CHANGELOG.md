@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2-local - 2026-10-13
+
+- Audit Advanced controls against the current multi-account implementation. Runtime source contains no original-author repository, updater or download endpoints.
+- Route settings import/export through the configured settings service. Validate imports and apply them immediately; export effective settings instead of copying a file from a hardcoded application directory.
+- Retain the settings object shared by all windows on reset/import and use the normal application path for language, theme, shortcuts, startup, visibility and quota thresholds. Clear obsolete shortcut drafts only for complete settings replacements.
+- Scope shutdown controls to single-window current-account switching. Distinguish sign-in rollback/legacy state backups from old application-build archives. Mark bundled upstream Russian documentation as historical.
+- Pass 213 core tests and 224 synthetic WPF checks. Actual system startup and global-shortcut registration paths were source-reviewed; no user account reset, import or backup cleanup was performed.
+
 ## 1.3.1-local - 2026-10-13
 
 - When selecting an account, focus a verified independent account window immediately if it is already open. Otherwise, show a choice between opening a new separate window and switching the current account. A separate window is the default choice.

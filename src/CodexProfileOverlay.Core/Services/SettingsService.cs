@@ -13,6 +13,12 @@ public sealed class SettingsService
         Converters = { new JsonStringEnumConverter() },
     };
 
+    private static readonly JsonSerializerOptions ImportOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(allowIntegerValues: false) },
+    };
+
     private readonly string settingsFile;
 
     public SettingsService(string settingsFile)
@@ -44,23 +50,62 @@ public sealed class SettingsService
 
     public void Save(OverlaySettings settings)
     {
+        WriteSettings(settings, settingsFile);
+    }
+
+    public void ExportTo(OverlaySettings settings, string destinationFile)
+    {
+        WriteSettings(settings, Path.GetFullPath(destinationFile));
+    }
+
+    public OverlaySettings ReadImport(string sourceFile)
+    {
+        using FileStream stream = File.OpenRead(Path.GetFullPath(sourceFile));
+        if (stream.Length > 1024 * 1024)
+        {
+            throw new InvalidDataException("Settings file exceeds the supported size.");
+        }
+
+        OverlaySettings imported = JsonSerializer.Deserialize<OverlaySettings>(stream, ImportOptions)
+            ?? throw new InvalidDataException("Settings file must contain a settings object.");
+        if (!Enum.IsDefined(imported.DisplayMode) || !Enum.IsDefined(imported.PositionPreset)
+            || !Enum.IsDefined(imported.Language) || !Enum.IsDefined(imported.Theme))
+        {
+            throw new InvalidDataException("Settings file contains unsupported option values.");
+        }
+
+        Normalize(imported);
+        const HotkeyModifiers allowedModifiers = HotkeyModifiers.Alt | HotkeyModifiers.Control | HotkeyModifiers.Shift | HotkeyModifiers.Windows;
+        foreach (HotkeyGesture? gesture in imported.Hotkeys.ProfileHotkeys.Prepend(imported.Hotkeys.ToggleOverlay))
+        {
+            if (gesture is not null && ((gesture.Modifiers & ~allowedModifiers) != 0 || gesture.Key is < 0 or > 255))
+            {
+                throw new InvalidDataException("Settings file contains unsupported hotkey values.");
+            }
+        }
+
+        return imported;
+    }
+
+    private static void WriteSettings(OverlaySettings settings, string destinationFile)
+    {
         ArgumentNullException.ThrowIfNull(settings);
         Normalize(settings);
-        Directory.CreateDirectory(Path.GetDirectoryName(settingsFile)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile)!);
 
-        string temp = settingsFile + ".tmp";
+        string temp = destinationFile + ".tmp";
         using (FileStream stream = new(temp, FileMode.Create, FileAccess.Write, FileShare.None))
         {
             JsonSerializer.Serialize(stream, settings, SerializerOptions);
         }
 
-        if (File.Exists(settingsFile))
+        if (File.Exists(destinationFile))
         {
-            File.Replace(temp, settingsFile, null);
+            File.Replace(temp, destinationFile, null);
         }
         else
         {
-            File.Move(temp, settingsFile);
+            File.Move(temp, destinationFile);
         }
     }
 

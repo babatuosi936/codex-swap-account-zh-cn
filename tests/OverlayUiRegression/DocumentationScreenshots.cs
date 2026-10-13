@@ -68,6 +68,7 @@ internal static partial class Program
             : parameter.ParameterType == localizerType ? localizer
             : parameter.ParameterType == typeof(ProfileStatusService) ? service
             : parameter.ParameterType == typeof(BackupMaintenanceService) ? new BackupMaintenanceService(new AppPaths(root, root))
+            : parameter.ParameterType == typeof(SettingsService) ? new SettingsService(System.IO.Path.Combine(root, "settings.json"))
             : parameter.ParameterType == typeof(Action<OverlaySettings>) ? (Action<OverlaySettings>)(_ => { })
             : parameter.ParameterType == typeof(Func<string, Task>) ? (Func<string, Task>)(_ => Task.CompletedTask)
             : (Action)(() => { })).ToArray();
