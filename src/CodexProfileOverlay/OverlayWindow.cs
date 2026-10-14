@@ -46,6 +46,10 @@ internal sealed partial class OverlayWindow : Window
     private bool isSwitching;
     private Point dragOffset;
     private Point dragStartScreen;
+    private double dragFixedWidth;
+    private double? draggedLogicalWidth;
+    private double draggedScale;
+    private OverlayDisplayMode draggedConfiguredMode;
     private OverlayDisplayMode resolvedAutoMode = OverlayDisplayMode.Expanded;
     private OverlayDisplayMode currentMode = OverlayDisplayMode.Expanded;
     private Rect lastClientBounds = Rect.Empty;
@@ -196,11 +200,15 @@ internal sealed partial class OverlayWindow : Window
         }
 
         var captionButtons = GetCaptionButtonsBounds(codexHwnd, clientBounds);
+        if (!lastClientBounds.IsEmpty && (!NearlyEqual(clientBounds.Width, lastClientBounds.Width)
+            || !NearlyEqual(clientBounds.Height, lastClientBounds.Height))) draggedLogicalWidth = null;
+        ClearChangedDragWidthLock();
         var row = CalculateRowLayout(clientBounds, captionButtons,
             settings.DisplayMode == OverlayDisplayMode.Auto ? expandedLogicalWidth : null);
         modeAvailableWidth = row.AvailableWidth;
         availableClientWidth = row.AvailableWidth;
-        OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
+        OverlayDisplayMode nextMode = draggedLogicalWidth is not null ? currentMode
+            : layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
         if (settings.DisplayMode == OverlayDisplayMode.Auto)
         {
             resolvedAutoMode = nextMode;
@@ -367,10 +375,13 @@ internal sealed partial class OverlayWindow : Window
         UIElement expandedContent = BuildExpandedContent();
         expandedContent.Measure(new System.Windows.Size(double.PositiveInfinity, HeaderButtonHeight));
         // Border/padding plus two DIPs for per-control device-pixel rounding.
-        expandedLogicalWidth = Math.Max(1, Math.Ceiling(expandedContent.DesiredSize.Width + 14));
+        double measuredWidth = Math.Max(1, Math.Ceiling(expandedContent.DesiredSize.Width + 14));
+        if (!NearlyEqual(measuredWidth, expandedLogicalWidth)) draggedLogicalWidth = null;
+        expandedLogicalWidth = measuredWidth;
+        ClearChangedDragWidthLock();
         expandedMinimumWidth = Math.Ceiling(((Grid)expandedContent).Children.OfType<FrameworkElement>()
             .Where(child => Grid.GetColumn(child) != 1).Sum(child => child.DesiredSize.Width) + 12 + 48);
-        if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(modeAvailableWidth))
+        if (draggedLogicalWidth is null && settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(modeAvailableWidth))
         {
             currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
             resolvedAutoMode = currentMode;
@@ -1124,27 +1135,41 @@ internal sealed partial class OverlayWindow : Window
                 return;
             }
 
-            dragPending = false;
-            isDragging = true;
-            if (!isBallMinimized) settings.PositionPreset = PositionPreset.Custom;
-            compactPopup.IsOpen = false;
+            BeginHeaderDrag();
         }
 
         var captionButtons = GetCaptionButtonsBounds(ownerHwnd, clientBounds);
-        var row = layoutService.ConstrainRow(PositionPreset.Custom,
-            clientBounds.Width, clientBounds.Height, (isBallMinimized ? 32 : LogicalWidth) * SanitizedScale, ActualHeight,
-            screenDip.X - clientBounds.Left - dragOffset.X, screenDip.Y - clientBounds.Top - dragOffset.Y,
-            captionButtons, MinimumRowWidth * SanitizedScale);
+        MoveHeaderDrag(clientBounds, new Point(screenDip.X - clientBounds.Left - dragOffset.X,
+            screenDip.Y - clientBounds.Top - dragOffset.Y), captionButtons);
+        e.Handled = true;
+    }
+
+    private void BeginHeaderDrag()
+    {
+        dragPending = false;
+        isDragging = true;
+        dragFixedWidth = ActualWidth;
+        if (!isBallMinimized)
+        {
+            settings.PositionPreset = PositionPreset.Custom;
+            draggedLogicalWidth = dragFixedWidth / SanitizedScale;
+            draggedScale = SanitizedScale;
+            draggedConfiguredMode = settings.DisplayMode;
+        }
+        compactPopup.IsOpen = false;
+    }
+
+    private void MoveHeaderDrag(Rect clientBounds, Point requestedOffset, OverlayCaptionBounds? captionButtons)
+    {
+        var row = layoutService.ConstrainFixedRow(clientBounds.Width, clientBounds.Height,
+            dragFixedWidth, ActualHeight, requestedOffset.X, requestedOffset.Y, captionButtons);
         if (!row.Fits) return;
-        availableClientWidth = row.AvailableWidth;
-        UpdateWidth();
         var offset = new Point(row.OffsetX, row.OffsetY);
         if (isBallMinimized) ballOffset = offset;
         else { settings.OffsetX = offset.X; settings.OffsetY = offset.Y; }
         Left = clientBounds.Left + offset.X;
         Top = clientBounds.Top + offset.Y;
         placementDirty = true;
-        e.Handled = true;
     }
 
     private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -1272,7 +1297,13 @@ internal sealed partial class OverlayWindow : Window
 
     private double SanitizedScale => double.IsFinite(settings.Scale) ? Math.Clamp(settings.Scale, 0.8, 1.4) : 1;
 
-    private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : expandedLogicalWidth;
+    private double LogicalWidth => Math.Min(draggedLogicalWidth ?? double.PositiveInfinity,
+        currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : expandedLogicalWidth);
+    private void ClearChangedDragWidthLock()
+    {
+        if (draggedLogicalWidth is not null && (!NearlyEqual(draggedScale, SanitizedScale)
+            || draggedConfiguredMode != settings.DisplayMode)) draggedLogicalWidth = null;
+    }
     private double MinimumRowWidth => isBallMinimized ? 32 : currentMode == OverlayDisplayMode.Expanded ? expandedMinimumWidth : profiles.Count >= 2 ? 190 : 110;
 
     private OverlayRowLayout CalculateRowLayout(Rect clientBounds, OverlayCaptionBounds? captionButtons, double? desiredWidth = null)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.11-local - 2026-10-14
+
+- Dragging Overview or other whole-bar surfaces moves the overlay at its existing width. Clamp the position at menu/caption boundaries instead of enlarging or shrinking the row; reject movement into a region that cannot fit the full dragged width.
+- Retain that width after release, settings save and timestamp-only quota refresh. Resume automatic sizing when owner dimensions, measured account content, display mode or overlay scale change. Floating-ball dragging retains its own size.
+- Validate fixed-width movement and release at scales 0.8/1/1.4 in Expanded and Auto modes, including moving between the title row and ordinary positions, and owner-resize adaptation. Public release remains 1.3.1.
+
 ## 1.3.10-local - 2026-10-14
 
 - Keep the top account bar at or to the right of X=340 relative to the Codex client. Shrink its width between that menu boundary and the caption buttons instead of shifting left or forcing it down. The boundary does not scale with overlay content.

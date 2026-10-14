@@ -146,6 +146,13 @@ public sealed class OverlayLayoutService
             && placement.OffsetY < buttons.Top + buttons.Height + CaptionSafetyGap - 0.01
             && placement.OffsetY + height > buttons.Top - CaptionSafetyGap + 0.01;
 
+    public OverlayRowLayout ConstrainFixedRow(double clientWidth, double clientHeight, double width, double height,
+        double x, double y, OverlayCaptionBounds? captionButtons)
+    {
+        var row = ConstrainRow(PositionPreset.Custom, clientWidth, clientHeight, width, height, x, y, captionButtons, width);
+        return row with { Fits = row.Fits && Math.Abs(row.Width - width) < 0.01 };
+    }
+
     public static double Clamp(double value, double minimum, double maximum)
     {
         if (!double.IsFinite(value))

@@ -6,6 +6,36 @@ namespace CodexProfileOverlay.Tests;
 public sealed class OverlayLayoutServiceTests
 {
     [Theory]
+    [InlineData(100, 340)]
+    [InlineData(400, 400)]
+    [InlineData(1000, 440)]
+    public void FixedRowDrag_ClampsPositionWithoutResizing(double requestedX, double expectedX)
+    {
+        var row = new OverlayLayoutService().ConstrainFixedRow(1000, 800, 392, 44, requestedX, 0, new(840, 0, 160, 48));
+        Assert.True(row.Fits);
+        Assert.Equal(expectedX, row.OffsetX);
+        Assert.Equal(0, row.OffsetY);
+        Assert.Equal(392, row.Width);
+    }
+
+    [Fact]
+    public void FixedRowDrag_DoesNotEnterARegionThatRequiresShrinking()
+    {
+        var row = new OverlayLayoutService().ConstrainFixedRow(1000, 800, 900, 44, 340, 0, new(840, 0, 160, 48));
+        Assert.False(row.Fits);
+    }
+
+    [Fact]
+    public void FixedRowDrag_OrdinaryPositionKeepsTheSameWidth()
+    {
+        var row = new OverlayLayoutService().ConstrainFixedRow(1000, 800, 392, 44, 1000, 100, new(840, 0, 160, 48));
+        Assert.True(row.Fits);
+        Assert.Equal(608, row.OffsetX);
+        Assert.Equal(100, row.OffsetY);
+        Assert.Equal(392, row.Width);
+    }
+
+    [Theory]
     [InlineData(PositionPreset.AfterMenu, 340)]
     [InlineData(PositionPreset.Custom, 0)]
     [InlineData(PositionPreset.Custom, 120)]

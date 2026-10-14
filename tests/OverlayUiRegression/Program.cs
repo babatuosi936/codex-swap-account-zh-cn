@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--fixed-drag-only") || args.Length == 0) RunFixedDragWidthScenario();
+            if (args.Contains("--fixed-drag-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} fixed drag width scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--bounded-row-only") || args.Length == 0) RunBoundedAccountRowScenario();
             if (args.Contains("--bounded-row-only"))
             {
