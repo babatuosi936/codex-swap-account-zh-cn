@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1 update - 2026-10-14
+
+Public version stays 1.3.1. Tag `v1.3.1-update.20261014` includes the local changes through 1.3.14-local; the original `v1.3.1` tag and downloads remain available.
+
+- Close the last window of a verified account desktop to stop its remaining desktop workers after normal-exit grace time. Retain other accounts, minimized windows, VS Code and unrelated CLI processes; cancel cleanup if the window reopens. Monitoring requires the manager to remain running.
+- Fit the account bar to its content, with no empty space reserved after removing accounts. At the top, protect the menu boundary at client X=340 and the caption buttons by shortening the row. Keep Overview and the final menu fixed while the mouse wheel scrolls the account area without a scrollbar.
+- Keep width fixed while dragging within a region. Drag below the title row to expand all accounts and return to the top to fit the available space. Preserve scrolling when the full content exceeds the owner window.
+- Add Appearance > Show account plan, enabled by default. Hide plan badges across the bar, compact account list and overview without hiding quotas or changing reported subscription data. Persist/import/export the choice; old settings remain compatible.
+- Synchronize Chinese/English homepages, screenshots, settings documentation and portable package. Pass 282 core tests, 334 synthetic WPF checks, the format check and Release compilation. Actual account windows were not closed as part of this release validation.
+
 ## 1.3.14-local - 2026-10-14
 
 - Add Appearance > Show account plan, enabled by default. Disable it to hide Free/Plus/Pro and unknown-plan badges from expanded/compact headers, the compact account list and overview cards, while retaining quota information and reported plan data.

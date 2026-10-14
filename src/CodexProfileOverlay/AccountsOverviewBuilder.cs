@@ -38,7 +38,10 @@ internal static class AccountsOverviewBuilder
         var refreshState = new QuotaRefreshButtonBuilder.State();
         var popup = new Popup
         {
-            Child = surface, AllowsTransparency = true, StaysOpen = true, Placement = PlacementMode.Custom,
+            Child = surface,
+            AllowsTransparency = true,
+            StaysOpen = true,
+            Placement = PlacementMode.Custom,
             VerticalOffset = 4,
             CustomPopupPlacementCallback = (size, target, offset) =>
             [new(new Point((target.Width - size.Width) / 2 + offset.X, target.Height + offset.Y), PopupPrimaryAxis.Horizontal),
@@ -57,13 +60,25 @@ internal static class AccountsOverviewBuilder
             {
                 var snapshot = snapshotFor(profile.Name);
                 var heading = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-                var badge = new TextBlock { Text = profile.Name == active ? Text("Active") : snapshot?.IsStale == true ? Text("UsageDataStale") : "",
-                    FontSize = 11, Foreground = Brush("MutedTextBrush"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+                var badge = new TextBlock
+                {
+                    Text = profile.Name == active ? Text("Active") : snapshot?.IsStale == true ? Text("UsageDataStale") : "",
+                    FontSize = 11,
+                    Foreground = Brush("MutedTextBrush"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(12, 0, 0, 0)
+                };
                 DockPanel.SetDock(badge, Dock.Right);
                 heading.Children.Add(badge);
                 heading.Children.Add(AccountPlanBadgeBuilder.BesideName(
-                    new TextBlock { Text = profile.DisplayName, FontSize = 14, FontWeight = FontWeights.SemiBold,
-                        Foreground = Brush("StrongTextBrush"), TextTrimming = TextTrimming.CharacterEllipsis },
+                    new TextBlock
+                    {
+                        Text = profile.DisplayName,
+                        FontSize = 14,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = Brush("StrongTextBrush"),
+                        TextTrimming = TextTrimming.CharacterEllipsis
+                    },
                     snapshot?.PlanName, language, 10, showPlan));
                 // Reuse the single-account quota layout and reset formatter, including
                 // omission of absent windows. This embedded card has no native popup.
@@ -78,9 +93,16 @@ internal static class AccountsOverviewBuilder
                 var rows = new StackPanel();
                 rows.Children.Add(heading);
                 rows.Children.Add(content);
-                var card = new Border { Child = rows, Padding = new Thickness(14, 12, 14, 12), CornerRadius = new CornerRadius(9),
-                    BorderThickness = new Thickness(1), BorderBrush = Brush(profile.Name == active ? "AccentHoverBrush" : "BorderBrush"),
-                    Background = Brush("Surface1Brush"), Margin = new Thickness(0, 0, index % columns < columns - 1 ? 10 : 0, 10) };
+                var card = new Border
+                {
+                    Child = rows,
+                    Padding = new Thickness(14, 12, 14, 12),
+                    CornerRadius = new CornerRadius(9),
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = Brush(profile.Name == active ? "AccentHoverBrush" : "BorderBrush"),
+                    Background = Brush("Surface1Brush"),
+                    Margin = new Thickness(0, 0, index % columns < columns - 1 ? 10 : 0, 10)
+                };
                 Grid.SetColumn(card, index % columns);
                 Grid.SetRow(card, index / columns);
                 list.Children.Add(card);
@@ -91,15 +113,33 @@ internal static class AccountsOverviewBuilder
             var refreshButton = QuotaRefreshButtonBuilder.Build("RefreshAllQuota", language, refreshAll, Refresh, refreshState);
             DockPanel.SetDock(refreshButton, Dock.Right);
             header.Children.Add(refreshButton);
-            header.Children.Add(new TextBlock { Text = Text("AllAccountsOverview") + " · " + profiles.Count,
-                Foreground = Brush("StrongTextBrush"), FontSize = 15, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            header.Children.Add(new TextBlock
+            {
+                Text = Text("AllAccountsOverview") + " · " + profiles.Count,
+                Foreground = Brush("StrongTextBrush"),
+                FontSize = 15,
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
+            });
             root.Children.Add(header);
-            root.Children.Add(new ScrollViewer { Content = list, MaxHeight = Math.Min(480, area.Height * 0.65),
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
-            surface.Child = new Border { Child = root, Width = Math.Min(columns * 340 + 30, area.Width - 48),
-                Padding = new Thickness(14), CornerRadius = new CornerRadius(12), Background = Brush("OverlayBackgroundBrush"),
-                BorderBrush = Brush("OverlayBorderBrush"), BorderThickness = new Thickness(1),
-                Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 3, Opacity = 0.14 } };
+            root.Children.Add(new ScrollViewer
+            {
+                Content = list,
+                MaxHeight = Math.Min(480, area.Height * 0.65),
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+            });
+            surface.Child = new Border
+            {
+                Child = root,
+                Width = Math.Min(columns * 340 + 30, area.Width - 48),
+                Padding = new Thickness(14),
+                CornerRadius = new CornerRadius(12),
+                Background = Brush("OverlayBackgroundBrush"),
+                BorderBrush = Brush("OverlayBorderBrush"),
+                BorderThickness = new Thickness(1),
+                Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 3, Opacity = 0.14 }
+            };
         }
         Refresh();
         popup.Tag = (Action)Refresh;

@@ -1,6 +1,6 @@
 # 账号独立多开 · 公开版 1.3.1
 
-公开版 1.3.1 包含截至 1.3.6-local 的本地验证与修复。验证环境为 Windows 商店版 Codex 26.1007.2314.0；已验证两个未登录合成账号目录同时打开独立官方窗口，也只读核实了已打开的真实账号窗口身份和共享历史环境。附件显示、实时刷新与完整对话接管仍需进一步验证。
+2026-10-14 的公开版 1.3.1 更新包含截至 1.3.14-local 的本地验证与修复，标签为 `v1.3.1-update.20261014`。验证环境为 Windows 商店版 Codex 26.1007.2314.0；已验证两个未登录合成账号目录同时打开独立官方窗口，也只读核实了已打开的真实账号窗口身份和共享历史环境。附件显示、实时刷新与完整对话接管仍需进一步验证。
 
 ## 使用方式
 
@@ -71,11 +71,19 @@ CODEX_ELECTRON_USER_DATA_PATH = 该账号的独立桌面缓存目录
 
 ## 实现与许可
 
+### 关闭账号窗口后的后台清理
+
+管理器运行期间观察已核验的账号桌面窗口。关闭某账号最后一个窗口后，短暂防抖并按正常关闭等待时间允许后台退出，再停止该账号的已记住进程。使用进程 ID 与启动时间核对身份，避免进程 ID 复用导致误处理。最小化、其他虚拟桌面、同账号还有窗口或重新打开窗口时保留后台。其他账号、VS Code 和无关 CLI 不属于清理范围。
+
+此项通过核心状态机测试和六项合成原生窗口检查验证。此次没有实际关闭用户账号窗口验证清理效果；不清理未观察过的既有后台，也不取消已提交的服务端任务。
+
 账号多开、目录准备与包启动代码为本项目独立编写的 C# 实现，没有复制 Cockpit Tools 受许可限制的源码，也不需要其程序或服务。原项目的 MIT 许可证与版权信息继续保留。历史版本中对 Cockpit Tools 的兼容说明保留在旧版升级记录中，不代表当前新流程依赖它。
 
 ## English summary
 
-Public 1.3.1 includes local functionality and fixes through 1.3.6-local, checked against Windows Store Codex 26.1007.2314.0. Keep **Settings → General → Prefer a separate account window** enabled. Already-open original and independent account windows are focused directly; otherwise a separate window is the default action.
+The 2026-10-14 public 1.3.1 update includes local functionality and fixes through 1.3.14-local under tag `v1.3.1-update.20261014`. The multi-account implementation was checked against Windows Store Codex 26.1007.2314.0. Keep **Settings → General → Prefer a separate account window** enabled. Already-open original and independent account windows are focused directly; otherwise a separate window is the default action.
+
+While the manager runs, closing an account's last verified desktop window allows normal exit before stopping its remembered residual processes, checked by process ID and start time. Other accounts, minimized windows, VS Code and unrelated CLI workers remain. Reopening cancels cleanup. The update passes 282 core tests and 334 synthetic WPF checks, including six native window-lifetime checks; actual user account windows were not closed during validation. Previously unseen background workers and server-side tasks are outside this cleanup.
 
 Credentials/config remain account-specific; SQLite, sessions, archives, attachments, and native writer locks are shared. Electron user data is separate. Preparation refuses independent private history or attachments and incorrect links before making changes. It does not copy, merge, or reconstruct histories, and does not change saved credentials.
 

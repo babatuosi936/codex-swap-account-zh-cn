@@ -116,8 +116,14 @@ internal static class UsageToolTipBuilder
             bool dark = surface.Color.R + surface.Color.G + surface.Color.B < 384;
             var color = window.RemainingPercent is null ? Brush("MutedTextBrush")
                 : new SolidColorBrush((Color)ColorConverter.ConvertFromString(percent >= 70 ? dark ? "#34C759" : "#15803D" : percent >= 30 ? dark ? "#FF9500" : "#C76C00" : "#EF4444"));
-            var percentage = new TextBlock { Text = window.RemainingPercent is int ? percent + "%" : "—", FontSize = 14,
-                FontWeight = FontWeights.SemiBold, Foreground = color, HorizontalAlignment = HorizontalAlignment.Right };
+            var percentage = new TextBlock
+            {
+                Text = window.RemainingPercent is int ? percent + "%" : "—",
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = color,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
             Grid.SetColumn(percentage, 1);
             row.Children.Add(percentage);
             section.Children.Add(row);

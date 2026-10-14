@@ -47,9 +47,14 @@ internal sealed partial class OverlayWindow
             var group = new TransformGroup();
             group.Children.Add(original);
             group.Children.Add(shift);
-            accountDragVisuals[button] = new AccountDragVisual { Original = original, Shift = shift,
+            accountDragVisuals[button] = new AccountDragVisual
+            {
+                Original = original,
+                Shift = shift,
                 Slot = button.TranslatePoint(new Point(), (UIElement)System.Windows.Media.VisualTreeHelper.GetParent(button)).X,
-                Span = button.ActualWidth + button.Margin.Left + button.Margin.Right, ZIndex = Panel.GetZIndex(button) };
+                Span = button.ActualWidth + button.Margin.Left + button.Margin.Right,
+                ZIndex = Panel.GetZIndex(button)
+            };
             button.RenderTransform = group;
         }
         accountPointerOffset = accountHoldPoint.X - source.TransformToAncestor(this).Transform(new Point()).X;
@@ -117,7 +122,7 @@ internal sealed partial class OverlayWindow
             button.RenderTransform = group;
             accountSettleVisuals[button] = (group, original);
             var animation = new DoubleAnimation(offset, 0, TimeSpan.FromMilliseconds(160))
-                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }, FillBehavior = FillBehavior.Stop };
+            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }, FillBehavior = FillBehavior.Stop };
             animation.Completed += (_, _) =>
             {
                 if (ReferenceEquals(button.RenderTransform, group)) button.RenderTransform = original;

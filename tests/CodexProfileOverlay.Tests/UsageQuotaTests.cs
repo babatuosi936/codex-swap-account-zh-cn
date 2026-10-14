@@ -9,10 +9,14 @@ public sealed class UsageQuotaTests
     public void Summary_ShowsBothRemainingWindowsAndZeroWithoutInventingUnknown()
     {
         var now = DateTimeOffset.UtcNow;
-        var snapshot = new UsageSnapshot { CapturedAt = now, Windows = [
+        var snapshot = new UsageSnapshot
+        {
+            CapturedAt = now,
+            Windows = [
             new() { Name = "primary", Duration = TimeSpan.FromHours(5), RemainingPercent = 72 },
             new() { Name = "secondary", Duration = TimeSpan.FromDays(7), RemainingPercent = 0 },
-            new() { Name = "unknown", RemainingPercent = null }] };
+            new() { Name = "unknown", RemainingPercent = null }]
+        };
         Assert.Equal("5小时剩余 72% · 每周剩余 0%", UsageQuotaFormatter.Summary(snapshot, LanguagePreference.ChineseSimplified, now, TimeSpan.FromMinutes(90)));
         Assert.Equal("额度暂不可用", UsageQuotaFormatter.Summary(null, LanguagePreference.ChineseSimplified, now, TimeSpan.FromMinutes(90)));
         Assert.Equal("额度暂不可用", UsageQuotaFormatter.Summary(new UsageSnapshot(), LanguagePreference.ChineseSimplified, now, TimeSpan.FromMinutes(90)));
@@ -24,8 +28,12 @@ public sealed class UsageQuotaTests
     public void Summary_LabelsFailedOrExpiredDataAsCached(bool failed, int minutesAgo)
     {
         var now = DateTimeOffset.UtcNow;
-        var snapshot = new UsageSnapshot { CapturedAt = now.AddMinutes(-minutesAgo), IsStale = failed,
-            Windows = [new() { Name = "5h", RemainingPercent = 44 }] };
+        var snapshot = new UsageSnapshot
+        {
+            CapturedAt = now.AddMinutes(-minutesAgo),
+            IsStale = failed,
+            Windows = [new() { Name = "5h", RemainingPercent = 44 }]
+        };
         Assert.Equal("5小时剩余 44% · 旧数据", UsageQuotaFormatter.Summary(snapshot, LanguagePreference.ChineseSimplified, now, TimeSpan.FromMinutes(90)));
     }
 

@@ -543,7 +543,9 @@ internal sealed class SettingsWindow : Window
         stack.Children.Add(new TextBlock
         {
             Text = localizer.Format("QuotaPollingHelp", settings.ActiveProfileRefreshIntervalSeconds, settings.InactiveProfileRefreshIntervalSeconds),
-            TextWrapping = TextWrapping.Wrap, Foreground = Brush("MutedTextBrush"), Margin = new Thickness(0, 8, 0, 10),
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brush("MutedTextBrush"),
+            Margin = new Thickness(0, 8, 0, 10),
         });
         stack.Children.Add(refresh);
         foreach (ProfileInfo profile in profiles)

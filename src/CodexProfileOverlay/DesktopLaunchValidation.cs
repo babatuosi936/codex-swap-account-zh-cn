@@ -33,8 +33,12 @@ internal static class DesktopLaunchValidation
         {
             File.WriteAllText(Path.Combine(fixture, "result.json"), JsonSerializer.Serialize(new
             {
-                passed = false, failure = exception.GetType().Name, message = exception.Message,
-                fixture, realAccountDataRead = false, modelTurnStarted = false,
+                passed = false,
+                failure = exception.GetType().Name,
+                message = exception.Message,
+                fixture,
+                realAccountDataRead = false,
+                modelTurnStarted = false,
             }, new JsonSerializerOptions { WriteIndented = true }));
             exitCode = 1;
         }
@@ -60,42 +64,42 @@ internal static class DesktopLaunchValidation
         bool existingWindowsPreserved = false;
         try
         {
-        for (int index = 0; index < 2; index++)
-        {
-            string home = Path.Combine(fixture, "account-" + index);
-            string desktop = Path.Combine(fixture, "desktop-" + index);
-            Directory.CreateDirectory(home);
-            Directory.CreateDirectory(desktop);
-            File.WriteAllText(Path.Combine(home, "config.toml"), "cli_auth_credentials_store = \"file\"\n[analytics]\nenabled = false\n");
-            foreach (string folder in new[] { "sessions", "archived_sessions", "attachments", "thread-writer-locks" })
-                linker.CreateDirectoryLink(Path.Combine(home, folder), Path.Combine(shared, folder));
-            DateTimeOffset started = DateTimeOffset.UtcNow;
-            IsolatedDesktopLaunchResult launch = await launcher.LaunchAsync(home, shared, desktop, timeout.Token).ConfigureAwait(false);
-            DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(25);
-            CodexWindowInfo? window = null;
-            while (DateTimeOffset.UtcNow < deadline && !timeout.IsCancellationRequested)
+            for (int index = 0; index < 2; index++)
             {
-                window = finder.FindAllWindows().FirstOrDefault(candidate =>
-                    (launch.ProcessId is null || candidate.ProcessId == launch.ProcessId)
-                    && string.Equals(resolver.ResolveHome(candidate.ProcessId), home, StringComparison.OrdinalIgnoreCase)
-                    && resolver.MatchesSharedEnvironment(candidate.ProcessId, shared, desktop));
-                if (window is not null) break;
-                await Task.Delay(250, timeout.Token).ConfigureAwait(false);
+                string home = Path.Combine(fixture, "account-" + index);
+                string desktop = Path.Combine(fixture, "desktop-" + index);
+                Directory.CreateDirectory(home);
+                Directory.CreateDirectory(desktop);
+                File.WriteAllText(Path.Combine(home, "config.toml"), "cli_auth_credentials_store = \"file\"\n[analytics]\nenabled = false\n");
+                foreach (string folder in new[] { "sessions", "archived_sessions", "attachments", "thread-writer-locks" })
+                    linker.CreateDirectoryLink(Path.Combine(home, folder), Path.Combine(shared, folder));
+                DateTimeOffset started = DateTimeOffset.UtcNow;
+                IsolatedDesktopLaunchResult launch = await launcher.LaunchAsync(home, shared, desktop, timeout.Token).ConfigureAwait(false);
+                DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(25);
+                CodexWindowInfo? window = null;
+                while (DateTimeOffset.UtcNow < deadline && !timeout.IsCancellationRequested)
+                {
+                    window = finder.FindAllWindows().FirstOrDefault(candidate =>
+                        (launch.ProcessId is null || candidate.ProcessId == launch.ProcessId)
+                        && string.Equals(resolver.ResolveHome(candidate.ProcessId), home, StringComparison.OrdinalIgnoreCase)
+                        && resolver.MatchesSharedEnvironment(candidate.ProcessId, shared, desktop));
+                    if (window is not null) break;
+                    await Task.Delay(250, timeout.Token).ConfigureAwait(false);
+                }
+                bool valid = window is not null && launch.PackageIdentityVerified
+                    && !File.Exists(Path.Combine(home, "auth.json"));
+                passed &= valid;
+                results.Add(new LaunchCheck(index, valid, window?.ProcessId ?? launch.ProcessId,
+                    launch.PackageIdentityVerified, launch.ActivationUncertain, window is not null,
+                    home, shared, desktop, (DateTimeOffset.UtcNow - started).TotalSeconds));
+                if (!valid) break;
             }
-            bool valid = window is not null && launch.PackageIdentityVerified
-                && !File.Exists(Path.Combine(home, "auth.json"));
-            passed &= valid;
-            results.Add(new LaunchCheck(index, valid, window?.ProcessId ?? launch.ProcessId,
-                launch.PackageIdentityVerified, launch.ActivationUncertain, window is not null,
-                home, shared, desktop, (DateTimeOffset.UtcNow - started).TotalSeconds));
-            if (!valid) break;
-        }
-        var open = finder.FindAllWindows();
-        simultaneouslyOpen = results.Count == 2 && results.Select(result => result.ProcessId).Distinct().Count() == 2
-            && results.All(result => open.Any(window => window.ProcessId == result.ProcessId
-                && string.Equals(resolver.ResolveHome(window.ProcessId), result.Home, StringComparison.OrdinalIgnoreCase)
-                && resolver.MatchesSharedEnvironment(window.ProcessId, result.Shared, result.Desktop)));
-        existingWindowsPreserved = existingProcesses.All(processId => open.Any(window => window.ProcessId == processId));
+            var open = finder.FindAllWindows();
+            simultaneouslyOpen = results.Count == 2 && results.Select(result => result.ProcessId).Distinct().Count() == 2
+                && results.All(result => open.Any(window => window.ProcessId == result.ProcessId
+                    && string.Equals(resolver.ResolveHome(window.ProcessId), result.Home, StringComparison.OrdinalIgnoreCase)
+                    && resolver.MatchesSharedEnvironment(window.ProcessId, result.Shared, result.Desktop)));
+            existingWindowsPreserved = existingProcesses.All(processId => open.Any(window => window.ProcessId == processId));
         }
         finally
         {
@@ -131,8 +135,12 @@ internal static class DesktopLaunchValidation
             passed &= simultaneouslyOpen && existingWindowsPreserved && results.All(result => result.SyntheticWindowClosed);
             File.WriteAllText(Path.Combine(fixture, "result.json"), JsonSerializer.Serialize(new
             {
-                passed, simultaneouslyOpen, existingWindowsPreserved, results,
-                realAccountDataRead = false, modelTurnStarted = false,
+                passed,
+                simultaneouslyOpen,
+                existingWindowsPreserved,
+                results,
+                realAccountDataRead = false,
+                modelTurnStarted = false,
             }, new JsonSerializerOptions { WriteIndented = true }));
         }
         return passed;

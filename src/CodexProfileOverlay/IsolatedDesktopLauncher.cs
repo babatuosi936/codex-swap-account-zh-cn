@@ -312,7 +312,8 @@ internal sealed class IsolatedDesktopLauncher
                 && value.ToString().Equals(package.FamilyName, StringComparison.OrdinalIgnoreCase);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or Win32Exception
-            or UnauthorizedAccessException or IOException) { return false; }
+            or UnauthorizedAccessException or IOException)
+        { return false; }
     }
 
     private static string CurrentPackageValue(bool family)

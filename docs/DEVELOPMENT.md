@@ -12,6 +12,8 @@ dotnet test CodexProfileOverlay.sln -c Release -p:Platform=x64
 
 `publish.ps1` 生成自带运行时的 EXE、包含文档的便携 ZIP，以及 `SHA256SUMS.txt`，输出位于 `artifacts/`。不将构建输出提交到源码仓库。
 
+2026-10-14 的公开更新仍显示 1.3.1，源码标签为 `v1.3.1-update.20261014`。原 `v1.3.1` 发布保留，便于区分两次构建。
+
 Windows CI 会构建、运行核心测试、扫描仓库文件并生成下载附件，见 [Windows CI](../.github/workflows/windows-ci.yml)。
 
 ## 界面检查
@@ -41,7 +43,7 @@ dotnet run --project tests/OverlayUiRegression/OverlayUiRegression.csproj -c Rel
 
 ## 验证与数据边界
 
-公开版 1.3.1 发布前通过了 249 项核心测试、303 项合成 WPF 检查和 22 项桌面启动策略检查。真实账号窗口的只读核验、合成多开探针与尚未验证的行为分别记录在[多开实现与验证范围](ISOLATED_MULTI_ACCOUNT.md)。
+2026-10-14 的公开版 1.3.1 更新通过了 282 项核心测试、334 项合成 WPF 检查、格式核验及 Release 编译。此前独立多开的 22 项桌面启动策略检查、真实账号窗口的只读核验、合成多开探针与尚未验证的行为分别记录在[多开实现与验证范围](ISOLATED_MULTI_ACCOUNT.md)。
 
 - 独立窗口流程不复制、导入、合并或重建对话历史，不更换默认账号授权。
 - 额度查询会与服务端通信，结果受网络、登录状态和 CLI 兼容性影响。

@@ -33,6 +33,7 @@ public static class InstanceAccountIdentity
             return null;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
-            or JsonException or FormatException or ArgumentException) { return null; }
+            or JsonException or FormatException or ArgumentException)
+        { return null; }
     }
 }

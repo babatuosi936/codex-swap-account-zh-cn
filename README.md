@@ -6,7 +6,7 @@
 
 一条可拖动的账号栏，管理多个 Codex 桌面窗口。
 
-**[下载 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe)** · [下载便携包](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [v1.3.1 更新说明](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.3.1) · [English](README_EN.md)
+**[下载 EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe)** · [下载便携包](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [v1.3.1 更新说明](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.3.1-update.20261014) · [English](README_EN.md)
 
 Windows 10/11 x64 · 独立桌面工具 · 无需安装 .NET
 
@@ -23,6 +23,7 @@ Windows 10/11 x64 · 独立桌面工具 · 无需安装 .NET
 | 窗口已经打开 | 直接跳转到该账号窗口；原始窗口和独立窗口都支持。 |
 | 窗口尚未打开 | 选择“打开新的独立窗口”或“切换当前账户”，默认选中新窗口。 |
 | 窗口已最小化 | 还原并跳转到该窗口。 |
+| 关闭该账号最后一个窗口 | 先等待正常退出，再清理已核验属于该账号的残留桌面后台；其他账号继续运行。 |
 
 独立窗口保留各自的登录资料和桌面缓存，共用已有本机 Codex 历史。其他账号窗口可以继续运行，**无需 Cockpit Tools**。
 
@@ -31,6 +32,8 @@ Windows 10/11 x64 · 独立桌面工具 · 无需安装 .NET
 ## 账号、套餐、额度，一眼看清
 
 账号栏显示当前账号、服务端返回的 **Plus / Pro / Free** 等套餐，以及实际可查询到的剩余额度。
+
+套餐标记默认显示。在 **设置 → 外观 → 显示账号套餐** 中可以隐藏；账号栏、紧凑列表和总览同步更新，额度仍然显示。
 
 点击或悬停“总览”可查看所有账号，每行最多三个，更多账号自动换行。详情显示剩余百分比、重置倒计时、更新时间，以及可查询到的积分余额和重置机会。
 
@@ -53,6 +56,10 @@ Windows 10/11 x64 · 独立桌面工具 · 无需安装 .NET
 <img src="docs/images/zh-CN/action-menu.png" alt="添加账号、最小化和设置菜单" width="210"> &nbsp; <img src="docs/images/zh-CN/floating-ball.png" alt="最小化后仍可拖动的悬浮球" width="48">
 
 紧凑布局适合较窄的窗口；自动布局会根据可用宽度切换。位置重置使用“菜单右侧”，新配置默认开启 Windows 自启动；已有设置可以在设置页调整。
+
+顶部账号栏从 Codex 客户区横向 **340** 的位置起摆放，避开左侧菜单和右侧最小化、最大化、关闭按钮。空间不足时缩短账号栏，**总览和末尾菜单固定在两端**，鼠标滚轮左右浏览中间账号，不显示滚动条。账号减少时也会收紧长度。
+
+拖到标题栏下方后展开全部账号；拖回顶部重新适配可用空间。同一区域内拖动保持长度，只有跨区域或窗口、内容、缩放变化时重新适配。全部账号比窗口本身还宽时保留滚动。
 
 ## 开始使用
 

@@ -33,7 +33,8 @@ internal sealed class CodexInstanceResolver
             return home;
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException
-            or System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException) { return null; }
+            or System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
+        { return null; }
     }
 
     public string? FindActiveProfile(int processId, IReadOnlyList<ProfileInfo> profiles)

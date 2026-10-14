@@ -607,13 +607,29 @@ internal sealed partial class OverlayWindow : Window
     private Button CreateOverviewButton()
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        row.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M0,0 H6 V6 H0 Z M9,0 H15 V6 H9 Z M0,9 H6 V15 H0 Z M9,9 H15 V15 H9 Z"),
-            Fill = FindBrush("AccentBrush"), Width = 15, Height = 15, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 7, 0) });
+        row.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M0,0 H6 V6 H0 Z M9,0 H15 V6 H9 Z M0,9 H6 V15 H0 Z M9,9 H15 V15 H9 Z"),
+            Fill = FindBrush("AccentBrush"),
+            Width = 15,
+            Height = 15,
+            Stretch = Stretch.Uniform,
+            Margin = new Thickness(0, 0, 7, 0)
+        });
         row.Children.Add(new TextBlock { Text = Localizer?["Overview"] ?? "Overview", FontSize = 12, Foreground = FindBrush("StrongTextBrush"), VerticalAlignment = VerticalAlignment.Center });
-        var button = new Button { Content = row, Height = HeaderButtonHeight, MinHeight = 0, Padding = new Thickness(10, 0, 10, 0),
-            Margin = new Thickness(0, 0, 6, 0), Background = FindBrush("TabBackgroundBrush"), BorderThickness = new Thickness(0),
-            Cursor = Cursors.Hand, ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
-                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language, OnRefreshAllQuotas, settings.ShowAccountPlanBadges) };
+        var button = new Button
+        {
+            Content = row,
+            Height = HeaderButtonHeight,
+            MinHeight = 0,
+            Padding = new Thickness(10, 0, 10, 0),
+            Margin = new Thickness(0, 0, 6, 0),
+            Background = FindBrush("TabBackgroundBrush"),
+            BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand,
+            ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
+                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language, OnRefreshAllQuotas, settings.ShowAccountPlanBadges)
+        };
         System.Windows.Automation.AutomationProperties.SetAutomationId(button, "AccountsOverview");
         usageHover.Attach(button, (Popup)button.ToolTip, shell, openOnClick: true);
         button.MouseEnter += (_, _) => AnimateBrush(button, "TabHoverBrush");

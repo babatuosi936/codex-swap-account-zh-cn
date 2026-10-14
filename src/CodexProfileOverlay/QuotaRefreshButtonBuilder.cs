@@ -15,11 +15,18 @@ internal static class QuotaRefreshButtonBuilder
     internal static Button Build(string labelKey, LanguagePreference language, Func<Task>? refresh, Action updated, State state)
     {
         string Text(string key) => LocalizationCatalog.Text(language, key);
-        var button = new Button { Content = Text(state.Busy ? "QuotaRefreshing" : labelKey), HorizontalAlignment = HorizontalAlignment.Right,
-            Padding = new Thickness(10, 4, 10, 4), FontSize = 12, IsEnabled = refresh is not null && !state.Busy,
+        var button = new Button
+        {
+            Content = Text(state.Busy ? "QuotaRefreshing" : labelKey),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Padding = new Thickness(10, 4, 10, 4),
+            FontSize = 12,
+            IsEnabled = refresh is not null && !state.Busy,
             ToolTip = state.Failed ? Text("QuotaRefreshFailed") : null,
             Background = (Brush)Application.Current.FindResource("TabBackgroundBrush"),
-            Foreground = (Brush)Application.Current.FindResource("StrongTextBrush"), BorderThickness = new Thickness(0) };
+            Foreground = (Brush)Application.Current.FindResource("StrongTextBrush"),
+            BorderThickness = new Thickness(0)
+        };
         AutomationProperties.SetAutomationId(button, labelKey);
         button.Click += async (_, _) =>
         {

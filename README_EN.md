@@ -6,7 +6,7 @@
 
 One draggable account bar for multiple Codex desktop windows.
 
-**[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe)** · [Portable ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [v1.3.1 release](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.3.1) · [简体中文](README.md)
+**[Download EXE](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay.exe)** · [Portable ZIP](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/latest/download/CodexProfileOverlay-win-x64-portable.zip) · [v1.3.1 release](https://github.com/babatuosi936/codex-swap-account-zh-cn/releases/tag/v1.3.1-update.20261014) · [简体中文](README.md)
 
 Windows 10/11 x64 · Standalone desktop tool · No separate .NET installation
 
@@ -23,12 +23,15 @@ Add your accounts to the bar, then select the account you want to use:
 | Window already open | Focus that account's window directly, including the original desktop window. |
 | Window not open | Choose **Open a new independent window** or **Switch current account**. The new window is selected by default. |
 | Window minimized | Restore and focus the window. |
+| Last window of the account closed | Allow normal exit, then stop verified residual desktop workers for that account; other accounts remain running. |
 
 Each independent window keeps its own sign-in and desktop cache while using the existing local Codex history. Other account windows can stay open. **Cockpit Tools is not required.**
 
 ## Accounts, plans and remaining quotas
 
 The bar highlights the current account and shows reported **Plus / Pro / Free** plans and available remaining quotas.
+
+Plan badges are visible by default. Disable **Settings → Appearance → Show account plan** to hide them across the bar, compact list and overview while retaining quota information.
 
 Click or hover over **Overview** to inspect all accounts. Cards wrap after three columns. Details show remaining percentages, reset countdowns, last update times, and returned credit balances or reset opportunities.
 
@@ -51,6 +54,10 @@ Click or hover over **Overview** to inspect all accounts. Cards wrap after three
 <img src="docs/images/en/action-menu.png" alt="Add account, minimize and settings menu" width="230"> &nbsp; <img src="docs/images/en/floating-ball.png" alt="Draggable minimized ball" width="48">
 
 Compact layout fits narrower windows; automatic layout adapts to available width. Position reset uses **After menu**. New settings enable Windows startup by default; existing preferences can be changed in settings.
+
+The top bar starts at horizontal **340** relative to the Codex client, protecting the left menus and right minimize, maximize and close controls. When space is limited, shorten the bar and keep **Overview and the final menu fixed at its ends**. Use the mouse wheel to browse accounts in the middle without a visible scrollbar. Removing accounts also shrinks the bar.
+
+Dragging below the title row expands the full account row; returning to the top fits the available space again. Movement within either region keeps the same width. Region changes, window resizing, content changes and scaling can resize it. Scrolling remains available if the full row exceeds the window itself.
 
 ## Get started
 
