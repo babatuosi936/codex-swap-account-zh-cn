@@ -390,6 +390,7 @@ internal sealed class SettingsWindow : Window
         }
 
         rows.Add(NumberInput(localizer["UiScale"], localizer["UiScaleHelp"], settings.Scale, value => settings.Scale = value, 0.01, 0.8, 1.4));
+        rows.Add(SettingCheck(localizer["ShowAccountPlanBadges"], localizer["ShowAccountPlanBadgesHelp"], settings.ShowAccountPlanBadges, value => settings.ShowAccountPlanBadges = value));
         rows.Add(SettingCheck(localizer["Animations"], localizer["AnimationsHelp"], settings.AnimationsEnabled, value => settings.AnimationsEnabled = value));
         stack.Children.Add(Card(rows.ToArray()));
         return stack;

@@ -60,6 +60,7 @@ public sealed class OverlaySettings
     public int LowWarningThresholdPercent { get; set; } = 20;
 
     public bool ShowIndicatorsInOverlay { get; set; } = true;
+    public bool ShowAccountPlanBadges { get; set; } = true;
 
     public bool ShowManualProfileEmojiInOverlay { get; set; }
 
@@ -117,6 +118,7 @@ public sealed class OverlaySettings
         StaleDataThresholdMinutes = source.StaleDataThresholdMinutes;
         LowWarningThresholdPercent = source.LowWarningThresholdPercent;
         ShowIndicatorsInOverlay = source.ShowIndicatorsInOverlay;
+        ShowAccountPlanBadges = source.ShowAccountPlanBadges;
         ShowManualProfileEmojiInOverlay = source.ShowManualProfileEmojiInOverlay;
         WarnWhenNearlyExhausted = source.WarnWhenNearlyExhausted;
         ActiveProfileRefreshIntervalMinutes = source.ActiveProfileRefreshIntervalMinutes;

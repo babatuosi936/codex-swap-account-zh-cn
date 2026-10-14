@@ -6,6 +6,24 @@ namespace CodexProfileOverlay.Tests;
 public sealed class SettingsServiceTests
 {
     [Fact]
+    public void PlanVisibility_DefaultsOnForOldSettingsAndPersistsOff()
+    {
+        using var temp = new TempDirectory();
+        var path = Path.Combine(temp.Path, "settings.json");
+        File.WriteAllText(path, "{}");
+        var service = new SettingsService(path);
+        Assert.True(service.Load().ShowAccountPlanBadges);
+        service.Save(new OverlaySettings { ShowAccountPlanBadges = false });
+        var loaded = service.Load();
+        Assert.False(loaded.ShowAccountPlanBadges);
+        var live = new OverlaySettings();
+        live.CopyFrom(loaded);
+        Assert.False(live.ShowAccountPlanBadges);
+        live.CopyFrom(new OverlaySettings());
+        Assert.True(live.ShowAccountPlanBadges);
+    }
+
+    [Fact]
     public void SaveAndLoad_RoundTripsSettings()
     {
         using var temp = new TempDirectory();

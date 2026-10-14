@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--plan-visibility-only") || args.Length == 0) RunPlanVisibilityScenario();
+            if (args.Contains("--plan-visibility-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} plan visibility settings scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--return-top-only") || args.Length == 0) RunReturnToTopScenario();
             if (args.Contains("--return-top-only"))
             {

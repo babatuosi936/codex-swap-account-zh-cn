@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.14-local - 2026-10-14
+
+- Add Appearance > Show account plan, enabled by default. Disable it to hide Free/Plus/Pro and unknown-plan badges from expanded/compact headers, the compact account list and overview cards, while retaining quota information and reported plan data.
+- Persist the choice and include it in settings replacement/import/export; old settings without the field keep plan badges visible. Resetting settings restores the visible default.
+- Validate the real settings checkbox in Expanded and Compact layouts, default/hidden/visible transitions, overview/list updates, quota retention, and stored-setting compatibility. Public release remains 1.3.1.
+
 ## 1.3.13-local - 2026-10-14
 
 - Dragging the bar below the title row restores the full expanded account row and resets horizontal scrolling to the beginning. Auto mode also leaves its compact button and displays all accounts there.

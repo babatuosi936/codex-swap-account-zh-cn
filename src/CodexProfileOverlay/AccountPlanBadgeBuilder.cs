@@ -38,12 +38,13 @@ internal static class AccountPlanBadgeBuilder
 
     // A finite name column yields to the badge; the natural width keeps the badge
     // beside short names instead of sending it to the opposite edge of the card.
-    internal static Grid BesideName(TextBlock name, string? planName, LanguagePreference language, double fontSize = 9)
+    internal static Grid BesideName(TextBlock name, string? planName, LanguagePreference language, double fontSize = 9, bool showPlan = true)
     {
         var row = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.Children.Add(name);
+        if (!showPlan) return row;
         var badge = Build(planName, language, fontSize);
         badge.Margin = new Thickness(6, 0, 0, 0);
         Grid.SetColumn(badge, 1);

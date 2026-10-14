@@ -7,6 +7,8 @@ public static partial class LocalizationCatalog
 {
     private static readonly IReadOnlyDictionary<string, string> English = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["ShowAccountPlanBadges"] = "Show account plan",
+        ["ShowAccountPlanBadgesHelp"] = "Show Free, Plus, Pro and other reported plan labels beside accounts and in the overview.",
         ["AccountBackgroundCloseFailed"] = "The closed account's background could not be stopped. Check the application log.",
         ["OpenCodex"] = "Open Codex",
         ["ShowSwitcher"] = "Show switcher",
@@ -263,6 +265,8 @@ public static partial class LocalizationCatalog
 
     private static readonly IReadOnlyDictionary<string, string> Russian = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["ShowAccountPlanBadges"] = "Показывать тариф аккаунта",
+        ["ShowAccountPlanBadgesHelp"] = "Показывать Free, Plus, Pro и другие тарифы рядом с аккаунтами и в обзоре.",
         ["AccountBackgroundCloseFailed"] = "Не удалось остановить фоновые процессы закрытого аккаунта. Проверьте журнал приложения.",
         ["OpenCodex"] = "Открыть Codex",
         ["ShowSwitcher"] = "Показать переключатель",

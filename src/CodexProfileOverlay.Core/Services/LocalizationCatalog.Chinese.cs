@@ -4,6 +4,8 @@ public static partial class LocalizationCatalog
 {
     private static readonly IReadOnlyDictionary<string, string> ChineseSimplified = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["ShowAccountPlanBadges"] = "显示账号套餐",
+        ["ShowAccountPlanBadgesHelp"] = "在账号栏、账号列表和总览中显示 Free、Plus、Pro 等套餐标记。",
         ["AccountBackgroundCloseFailed"] = "未能结束已关闭账号的后台，请查看应用日志。",
         ["OpenCodex"] = "打开 Codex",
         ["ShowSwitcher"] = "显示账号浮层",

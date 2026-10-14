@@ -452,7 +452,7 @@ internal sealed partial class OverlayWindow : Window
         var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var nameRow = AccountPlanBadgeBuilder.BesideName(name,
             active is null ? null : statusDocument?.Snapshots.GetValueOrDefault(active.Name)?.PlanName,
-            Localizer?.Language ?? settings.Language);
+            Localizer?.Language ?? settings.Language, showPlan: settings.ShowAccountPlanBadges);
         nameRow.Margin = new Thickness(9, 0, 8, 0);
         nameAndQuota.Children.Add(nameRow);
         if (active is not null && ShowQuota)
@@ -613,7 +613,7 @@ internal sealed partial class OverlayWindow : Window
         var button = new Button { Content = row, Height = HeaderButtonHeight, MinHeight = 0, Padding = new Thickness(10, 0, 10, 0),
             Margin = new Thickness(0, 0, 6, 0), Background = FindBrush("TabBackgroundBrush"), BorderThickness = new Thickness(0),
             Cursor = Cursors.Hand, ToolTip = AccountsOverviewBuilder.Build(profiles, activeProfile,
-                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language, OnRefreshAllQuotas) };
+                name => statusDocument?.Snapshots.GetValueOrDefault(name), Localizer?.Language ?? settings.Language, OnRefreshAllQuotas, settings.ShowAccountPlanBadges) };
         System.Windows.Automation.AutomationProperties.SetAutomationId(button, "AccountsOverview");
         usageHover.Attach(button, (Popup)button.ToolTip, shell, openOnClick: true);
         button.MouseEnter += (_, _) => AnimateBrush(button, "TabHoverBrush");
@@ -642,7 +642,7 @@ internal sealed partial class OverlayWindow : Window
         };
         var nameRow = AccountPlanBadgeBuilder.BesideName(name,
             statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.PlanName,
-            Localizer?.Language ?? settings.Language);
+            Localizer?.Language ?? settings.Language, showPlan: settings.ShowAccountPlanBadges);
         nameRow.Margin = new Thickness(8, 0, 0, 0);
         nameAndQuota.Children.Add(nameRow);
         if (ShowQuota)
@@ -898,7 +898,7 @@ internal sealed partial class OverlayWindow : Window
         var nameAndQuota = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         nameAndQuota.Children.Add(AccountPlanBadgeBuilder.BesideName(label,
             statusDocument?.Snapshots.GetValueOrDefault(profile.Name)?.PlanName,
-            Localizer?.Language ?? settings.Language));
+            Localizer?.Language ?? settings.Language, showPlan: settings.ShowAccountPlanBadges));
         if (ShowQuota)
         {
             nameAndQuota.Children.Add(CreateQuotaText(profile.Name, new Thickness(0, 3, 0, 0)));

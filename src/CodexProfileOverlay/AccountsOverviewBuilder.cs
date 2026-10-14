@@ -30,7 +30,7 @@ internal static class AccountsOverviewBuilder
         return SystemParameters.WorkArea.Size;
     }
 
-    public static Popup Build(IReadOnlyList<ProfileInfo> profiles, string? active, Func<string, UsageSnapshot?> snapshotFor, LanguagePreference language, Func<Task>? refreshAll = null)
+    public static Popup Build(IReadOnlyList<ProfileInfo> profiles, string? active, Func<string, UsageSnapshot?> snapshotFor, LanguagePreference language, Func<Task>? refreshAll = null, bool showPlan = true)
     {
         Brush Brush(string key) => (Brush)Application.Current.FindResource(key);
         string Text(string key) => LocalizationCatalog.Text(language, key);
@@ -64,7 +64,7 @@ internal static class AccountsOverviewBuilder
                 heading.Children.Add(AccountPlanBadgeBuilder.BesideName(
                     new TextBlock { Text = profile.DisplayName, FontSize = 14, FontWeight = FontWeights.SemiBold,
                         Foreground = Brush("StrongTextBrush"), TextTrimming = TextTrimming.CharacterEllipsis },
-                    snapshot?.PlanName, language, 10));
+                    snapshot?.PlanName, language, 10, showPlan));
                 // Reuse the single-account quota layout and reset formatter, including
                 // omission of absent windows. This embedded card has no native popup.
                 Popup detail = UsageToolTipBuilder.Build(snapshot, language);
