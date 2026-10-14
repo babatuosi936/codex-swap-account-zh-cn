@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.9-local - 2026-10-14
+
+- Closing the last window of a verified account desktop now stops that desktop and its remembered Codex workers. Observe all open account windows, allow normal exit first, then terminate residual identity-checked workers after the configured graceful timeout.
+- Retain minimized windows, windows on other virtual desktops, and other windows in the same desktop process. Cancel cleanup if a window reopens. Keep other accounts, VS Code, unrelated CLI workers, and the overlay alive.
+- Match process ID plus start time, remember workers before their parent exits, and skip cleanup if window/process identity cannot be verified. This applies while the account manager is running; it does not sweep previously unseen background processes or cancel server-side work.
+- Validation: 269 core tests, six native simulated window-lifetime checks, and the existing independent-account action fixture passed. No real account windows were closed during validation. The public release remains 1.3.1.
+
 ## 1.3.8-local - 2026-10-14
 
 - Size the expanded account bar to its measured content instead of reserving a fixed 620/560-DIP minimum. Removing accounts or shortening quota summaries immediately shrinks the bar, while adding accounts or receiving longer summaries expands it.

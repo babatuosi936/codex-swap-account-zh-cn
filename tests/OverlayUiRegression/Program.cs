@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--account-lifetime-only") || args.Length == 0) RunAccountWindowLifetimeScenario();
+            if (args.Contains("--account-lifetime-only"))
+            {
+                Console.WriteLine("PASS: 6 native account window lifetime checks.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--content-width-only") || args.Length == 0) RunContentWidthScenario();
             if (args.Contains("--content-width-only"))
             {

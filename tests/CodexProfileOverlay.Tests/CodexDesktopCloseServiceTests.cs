@@ -6,6 +6,54 @@ namespace CodexProfileOverlay.Tests;
 public sealed class CodexDesktopCloseServiceTests
 {
     [Fact]
+    public async Task CloseRememberedAsync_StopsOnlyClosedAccountEvenAfterItsRootExited()
+    {
+        var root = Process(1, 0, "ChatGPT", true);
+        var worker = Process(2, 1, "codex") with { Depth = 1 };
+        var runtime = new FakeRuntime(worker, Process(10, 0, "ChatGPT", true), Process(11, 10, "codex"), Process(20, 0, "Code"), Process(21, 20, "codex"));
+        await new CodexDesktopCloseService(runtime, 99).CloseRememberedAsync(root, [root, worker], 1, CancellationToken.None, () => true);
+        Assert.Equal(new[] { 2 }, runtime.Terminated);
+        Assert.Equal(new[] { 10, 11, 20, 21 }, runtime.Running.Select(process => process.Id));
+    }
+
+    [Fact]
+    public async Task CloseRememberedAsync_AbortsIfAccountReopensDuringGracePeriod()
+    {
+        var root = Process(1, 0, "ChatGPT", true);
+        var runtime = new FakeRuntime(root);
+        bool reopened = false;
+        runtime.OnRequest = _ => reopened = true;
+        await new CodexDesktopCloseService(runtime, 99).CloseRememberedAsync(root, [root], 1, CancellationToken.None, () => !reopened);
+        Assert.Empty(runtime.Terminated);
+        Assert.Single(runtime.Running);
+    }
+
+    [Fact]
+    public async Task CloseRememberedAsync_RejectsReusedPidAndNeverFallsBackToOtherDesktops()
+    {
+        var oldRoot = Process(1, 0, "ChatGPT", true);
+        var replacement = oldRoot with { StartTimeUtc = oldRoot.StartTimeUtc!.Value.AddHours(1) };
+        var runtime = new FakeRuntime(replacement, Process(10, 0, "ChatGPT", true));
+        await new CodexDesktopCloseService(runtime, 99).CloseRememberedAsync(oldRoot, [oldRoot], 1, CancellationToken.None, () => true);
+        Assert.Empty(runtime.Requested);
+        Assert.Empty(runtime.Terminated);
+        Assert.Equal(2, runtime.Running.Count);
+    }
+
+    [Fact]
+    public async Task CloseRememberedAsync_CancellationPreservesAllProcesses()
+    {
+        var root = Process(1, 0, "ChatGPT", true);
+        var runtime = new FakeRuntime(root);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new CodexDesktopCloseService(runtime, 99)
+            .CloseRememberedAsync(root, [root], 1, cancellation.Token, () => true));
+        Assert.Empty(runtime.Requested);
+        Assert.Empty(runtime.Terminated);
+    }
+
+    [Fact]
     public async Task CloseAsync_GracefulExitDoesNotForceTerminateOrTouchUnrelatedCli()
     {
         var runtime = new FakeRuntime(Process(1, 0, "ChatGPT", desktop: true), Process(2, 0, "codex")) { ExitOnRequest = true };

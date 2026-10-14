@@ -29,7 +29,21 @@ public sealed class CodexDesktopCloseService
             selectedRoot = runtime.Snapshot().FirstOrDefault(process => process.Id == id && process.IsDesktopExecutable)
                 ?? throw new InvalidOperationException("The selected Codex instance is no longer available.");
         }
-        var tracked = new Dictionary<(int Id, DateTime? Started), DesktopProcessInfo>();
+        await CloseSelectedAsync(selectedRoot, [], gracefulTimeoutSeconds, allowForceClose, cancellationToken, null).ConfigureAwait(false);
+    }
+
+    public Task CloseRememberedAsync(DesktopProcessInfo root, IReadOnlyList<DesktopProcessInfo> remembered,
+        int gracefulTimeoutSeconds, CancellationToken cancellationToken, Func<bool> shouldContinue)
+    {
+        if (!root.IsDesktopExecutable || root.StartTimeUtc is null)
+            throw new InvalidOperationException("Cannot verify the closed account desktop identity.");
+        return CloseSelectedAsync(root, remembered, gracefulTimeoutSeconds, true, cancellationToken, shouldContinue);
+    }
+
+    private async Task CloseSelectedAsync(DesktopProcessInfo? selectedRoot, IReadOnlyList<DesktopProcessInfo> remembered,
+        int gracefulTimeoutSeconds, bool allowForceClose, CancellationToken cancellationToken, Func<bool>? shouldContinue)
+    {
+        var tracked = remembered.ToDictionary(process => (process.Id, process.StartTimeUtc));
         var requested = new HashSet<(int Id, DateTime? Started)>();
 
         IReadOnlyList<DesktopProcessInfo> Refresh()
@@ -49,6 +63,7 @@ public sealed class CodexDesktopCloseService
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (shouldContinue?.Invoke() == false) return;
             IReadOnlyList<DesktopProcessInfo> running = Refresh();
             if (running.Count == 0)
             {
@@ -56,6 +71,7 @@ public sealed class CodexDesktopCloseService
             }
             foreach (DesktopProcessInfo process in running)
             {
+                if (shouldContinue?.Invoke() == false) return;
                 if (requested.Add((process.Id, process.StartTimeUtc)))
                 {
                     runtime.RequestClose(process);
@@ -77,6 +93,7 @@ public sealed class CodexDesktopCloseService
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (shouldContinue?.Invoke() == false) return;
             IReadOnlyList<DesktopProcessInfo> running = Refresh();
             if (running.Count == 0)
             {
@@ -90,6 +107,7 @@ public sealed class CodexDesktopCloseService
             // Killing an entire tree would bypass the protected editor/helper boundaries.
             foreach (DesktopProcessInfo process in running)
             {
+                if (shouldContinue?.Invoke() == false) return;
                 runtime.Terminate(process);
             }
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);

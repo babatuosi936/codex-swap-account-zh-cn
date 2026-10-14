@@ -21,12 +21,12 @@ internal sealed class CodexWindowFinder
 
     public CodexWindowInfo? FindForegroundWindow() => TryCreateWindowInfo(NativeMethods.GetForegroundWindow());
 
-    public IReadOnlyList<CodexWindowInfo> FindAllWindows()
+    public IReadOnlyList<CodexWindowInfo> FindAllWindows(bool includeCloaked = false)
     {
         var matches = new List<CodexWindowInfo>();
-        NativeMethods.EnumWindows((hwnd, _) =>
+        bool enumerated = NativeMethods.EnumWindows((hwnd, _) =>
         {
-            var info = TryCreateWindowInfo(hwnd);
+            var info = TryCreateWindowInfo(hwnd, includeCloaked);
             if (info is not null)
             {
                 matches.Add(info);
@@ -35,6 +35,8 @@ internal sealed class CodexWindowFinder
             return true;
         }, IntPtr.Zero);
 
+        if (!enumerated && includeCloaked)
+            throw new InvalidOperationException("Could not verify all account windows; background cleanup was skipped.");
         return matches;
     }
 
@@ -65,7 +67,24 @@ internal sealed class CodexWindowFinder
         };
     }
 
-    private CodexWindowInfo? TryCreateWindowInfo(IntPtr hwnd)
+    internal static bool HasOpenWindow(int processId)
+    {
+        bool found = false;
+        bool enumerated = NativeMethods.EnumWindows((hwnd, _) =>
+        {
+            NativeMethods.GetWindowThreadProcessId(hwnd, out uint ownerId);
+            if (ownerId != processId || !NativeMethods.IsWindowVisible(hwnd)) return true;
+            long style = NativeMethods.GetWindowLongPtr(hwnd, NativeMethods.GwlStyle).ToInt64();
+            long extended = NativeMethods.GetWindowLongPtr(hwnd, NativeMethods.GwlExStyle).ToInt64();
+            if ((style & NativeMethods.WsChild) != 0 || (extended & NativeMethods.WsExToolWindow) != 0) return true;
+            // Cloaked windows on another virtual desktop are still open.
+            found = true;
+            return false;
+        }, IntPtr.Zero);
+        return found || !enumerated;
+    }
+
+    private CodexWindowInfo? TryCreateWindowInfo(IntPtr hwnd, bool includeCloaked = false)
     {
         if (!NativeMethods.IsWindowVisible(hwnd))
         {
@@ -86,7 +105,7 @@ internal sealed class CodexWindowFinder
             return null;
         }
 
-        if (IsCloaked(hwnd))
+        if (!includeCloaked && IsCloaked(hwnd))
         {
             return null;
         }

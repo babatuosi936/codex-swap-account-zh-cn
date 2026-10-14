@@ -7,6 +7,7 @@ public static partial class LocalizationCatalog
 {
     private static readonly IReadOnlyDictionary<string, string> English = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["AccountBackgroundCloseFailed"] = "The closed account's background could not be stopped. Check the application log.",
         ["OpenCodex"] = "Open Codex",
         ["ShowSwitcher"] = "Show switcher",
         ["HideSwitcher"] = "Hide switcher",
@@ -262,6 +263,7 @@ public static partial class LocalizationCatalog
 
     private static readonly IReadOnlyDictionary<string, string> Russian = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["AccountBackgroundCloseFailed"] = "Не удалось остановить фоновые процессы закрытого аккаунта. Проверьте журнал приложения.",
         ["OpenCodex"] = "Открыть Codex",
         ["ShowSwitcher"] = "Показать переключатель",
         ["HideSwitcher"] = "Скрыть переключатель",

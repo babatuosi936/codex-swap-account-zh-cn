@@ -33,6 +33,7 @@ internal sealed class OverlayController : IDisposable
     private readonly SharedCodexStateMigrationService stateMigrationService;
     private readonly SharedDesktopProfileService sharedDesktopProfiles;
     private readonly IsolatedDesktopLauncher isolatedDesktopLauncher;
+    private readonly AccountDesktopLifetimeMonitor accountLifetime;
     private readonly OverlaySettings settings;
     private Localizer localizer;
     private TrayIconService? trayIcon;
@@ -79,6 +80,8 @@ internal sealed class OverlayController : IDisposable
         stateMigrationService = new SharedCodexStateMigrationService(paths);
         sharedDesktopProfiles = new SharedDesktopProfileService(paths, new WindowsSharedDirectoryLinker());
         isolatedDesktopLauncher = new IsolatedDesktopLauncher(logger);
+        accountLifetime = new AccountDesktopLifetimeMonitor(logger,
+            _ => trayIcon?.ShowBalloon("Codex Profile Overlay", localizer["AccountBackgroundCloseFailed"]));
         statusService.SetStaleThreshold(TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes));
         if (statusService.ProviderCapability != UsageProviderCapability.Supported && settings.ShowAutomaticLimitIndicators)
         {
@@ -100,12 +103,13 @@ internal sealed class OverlayController : IDisposable
             _ = LaunchCodexAndWaitAsync(disposalTokenSource.Token);
         }
 
-        Tick();
+        TickSafely();
     }
 
     public void Dispose()
     {
         foregroundMonitor.Dispose();
+        accountLifetime.Dispose();
         disposalTokenSource.Cancel();
         timer.Stop();
         statusService.Dispose();
@@ -244,6 +248,10 @@ internal sealed class OverlayController : IDisposable
     {
         try
         {
+            if (!switching)
+                accountLifetime.Observe(windowFinder.FindAllWindows(includeCloaked: true),
+                    processId => instanceResolver.FindActiveProfile(processId, profiles) is not null,
+                    settings.GracefulCloseTimeoutSeconds);
             BeginAutomaticUsageRefreshIfDue();
             Tick();
         }

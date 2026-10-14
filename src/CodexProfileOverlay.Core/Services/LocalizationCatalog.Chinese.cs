@@ -4,6 +4,7 @@ public static partial class LocalizationCatalog
 {
     private static readonly IReadOnlyDictionary<string, string> ChineseSimplified = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["AccountBackgroundCloseFailed"] = "未能结束已关闭账号的后台，请查看应用日志。",
         ["OpenCodex"] = "打开 Codex",
         ["ShowSwitcher"] = "显示账号浮层",
         ["HideSwitcher"] = "隐藏账号浮层",
