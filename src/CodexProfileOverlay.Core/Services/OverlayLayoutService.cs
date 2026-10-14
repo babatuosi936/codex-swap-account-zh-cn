@@ -5,6 +5,8 @@ namespace CodexProfileOverlay.Core.Services;
 public sealed class OverlayLayoutService
 {
     public const double CaptionSafetyGap = 8;
+    public const double TopRowMinimumX = 340;
+    public const double ProtectedTopRowHeight = 48;
     private const double CompactThreshold = 760;
     private const double ExpandedThreshold = 840;
     private const double AfterMenuX = OverlaySettings.DefaultOffsetX;
@@ -102,6 +104,40 @@ public sealed class OverlayLayoutService
         return Math.Max(0, clientWidth - Math.Max(right, preset == PositionPreset.AfterMenu ? placement.OffsetX : 0));
     }
 
+    public OverlayRowLayout ConstrainRow(PositionPreset preset, double clientWidth, double clientHeight,
+        double desiredWidth, double height, double offsetX, double offsetY,
+        OverlayCaptionBounds? captionButtons, double minimumWidth)
+    {
+        double width = Math.Min(Math.Max(1, desiredWidth), Math.Max(1, clientWidth));
+        // Top/custom anchors must not shift left merely because the row is long.
+        var requested = CalculatePlacement(preset, clientWidth, clientHeight,
+            preset is PositionPreset.AfterMenu or PositionPreset.Custom ? 0 : width, height, offsetX, offsetY);
+        bool topRow = requested.OffsetY < ProtectedTopRowHeight;
+        bool captionRow = captionButtons is { IsValid: true }
+            && requested.OffsetY < captionButtons.Top + captionButtons.Height + CaptionSafetyGap
+            && requested.OffsetY + height > captionButtons.Top - CaptionSafetyGap;
+        if (!topRow && !captionRow)
+        {
+            var ordinary = CalculatePlacement(preset, clientWidth, clientHeight, width, height, offsetX, offsetY);
+            return new(ordinary.OffsetX, ordinary.OffsetY, width, clientWidth, height <= clientHeight);
+        }
+        double left = topRow ? Math.Min(TopRowMinimumX, clientWidth) : 0;
+        double right = clientWidth;
+        if (captionRow)
+        {
+            if (captionButtons!.Left >= clientWidth / 2)
+                right = Clamp(captionButtons.Left - CaptionSafetyGap, 0, clientWidth);
+            else
+                left = Math.Max(left, Clamp(captionButtons.Left + captionButtons.Width + CaptionSafetyGap, 0, clientWidth));
+        }
+        double span = Math.Max(0, right - left);
+        double minimum = Math.Min(width, Math.Max(1, minimumWidth));
+        bool fits = span >= minimum && height <= clientHeight;
+        double x = Clamp(requested.OffsetX, left, Math.Max(left, right - minimum));
+        double available = Math.Max(0, right - x);
+        return new(x, requested.OffsetY, Math.Max(1, Math.Min(width, available)), available, fits);
+    }
+
     public static bool OverlapsCaption(OverlayPlacement placement, double width, double height, OverlayCaptionBounds? buttons)
         => buttons is { IsValid: true }
             // DIP/device conversion can round a boundary by a fraction of a pixel.
@@ -132,6 +168,7 @@ public sealed class OverlayLayoutService
 }
 
 public sealed record OverlayPlacement(double OffsetX, double OffsetY);
+public sealed record OverlayRowLayout(double OffsetX, double OffsetY, double Width, double AvailableWidth, bool Fits);
 
 public sealed record OverlayCaptionBounds(double Left, double Top, double Width, double Height)
 {

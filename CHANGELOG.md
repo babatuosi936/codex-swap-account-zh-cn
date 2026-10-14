@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.10-local - 2026-10-14
+
+- Keep the top account bar at or to the right of X=340 relative to the Codex client. Shrink its width between that menu boundary and the caption buttons instead of shifting left or forcing it down. The boundary does not scale with overlay content.
+- Keep Overview and the final menu button fixed at the two ends. Scroll only the middle account viewport horizontally with the normal mouse wheel, using pixel offsets and no visible scrollbar. Preserve its scroll position through quota refresh.
+- Retain content-sized width on wider windows, independent floating-ball placement, and the saved preset/offsets. Temporarily hide when even the fixed controls cannot fit safely.
+- Add seven core boundary cases and six native UI scenarios covering 0.8/1/1.4 scales, menu/custom placement, wheel direction, fixed endpoints and refresh persistence. Update caption protection checks to require shrinking in place. Public release remains 1.3.1.
+
 ## 1.3.9-local - 2026-10-14
 
 - Closing the last window of a verified account desktop now stops that desktop and its remembered Codex workers. Observe all open account windows, allow normal exit first, then terminate residual identity-checked workers after the configured graceful timeout.

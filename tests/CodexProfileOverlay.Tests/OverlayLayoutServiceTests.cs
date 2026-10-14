@@ -6,6 +6,57 @@ namespace CodexProfileOverlay.Tests;
 public sealed class OverlayLayoutServiceTests
 {
     [Theory]
+    [InlineData(PositionPreset.AfterMenu, 340)]
+    [InlineData(PositionPreset.Custom, 0)]
+    [InlineData(PositionPreset.Custom, 120)]
+    public void TopRow_ShrinksAtCaptionBoundaryWithoutMovingLeftOrDown(PositionPreset preset, double requestedX)
+    {
+        var row = new OverlayLayoutService().ConstrainRow(preset, 1400, 800, 1500, 44, requestedX, 0, new(1240, 0, 160, 48), 190);
+        Assert.True(row.Fits);
+        Assert.Equal(340, row.OffsetX);
+        Assert.Equal(0, row.OffsetY);
+        Assert.Equal(892, row.Width);
+        Assert.False(OverlayLayoutService.OverlapsCaption(new(row.OffsetX, row.OffsetY), row.Width, 44, new(1240, 0, 160, 48)));
+    }
+
+    [Fact]
+    public void TopRow_PreservesLargerAnchorWhileWindowShrinks()
+    {
+        var row = new OverlayLayoutService().ConstrainRow(PositionPreset.Custom, 1000, 800, 950, 44, 440, 0, new(840, 0, 160, 48), 190);
+        Assert.Equal(440, row.OffsetX);
+        Assert.Equal(392, row.Width);
+        Assert.Equal(0, row.OffsetY);
+    }
+
+    [Fact]
+    public void TopRow_DoesNotScaleThe340BoundaryWithAccountContent()
+    {
+        var row = new OverlayLayoutService().ConstrainRow(PositionPreset.AfterMenu, 1400, 800, 1500 * 1.4, 44 * 1.4, 340, 0, new(1240, 0, 160, 48), 190 * 1.4);
+        Assert.True(row.Fits);
+        Assert.Equal(340, row.OffsetX);
+        Assert.Equal(892, row.Width);
+    }
+
+    [Fact]
+    public void TopRow_HidesWhenFixedEndpointsCannotFitInsteadOfInvadingOrMovingDown()
+    {
+        var row = new OverlayLayoutService().ConstrainRow(PositionPreset.AfterMenu, 600, 800, 950, 44, 340, 0, new(440, 0, 160, 48), 190);
+        Assert.False(row.Fits);
+        Assert.Equal(340, row.OffsetX);
+        Assert.Equal(0, row.OffsetY);
+    }
+
+    [Fact]
+    public void LowerCustomRows_CanStillUseTheLeftSide()
+    {
+        var row = new OverlayLayoutService().ConstrainRow(PositionPreset.Custom, 1400, 800, 700, 44, 20, 100, new(1240, 0, 160, 48), 190);
+        Assert.True(row.Fits);
+        Assert.Equal(20, row.OffsetX);
+        Assert.Equal(100, row.OffsetY);
+        Assert.Equal(700, row.Width);
+    }
+
+    [Theory]
     [InlineData(1400, 340, 56)]
     [InlineData(1800, 340, 0)]
     public void MenuRow_PreservesAnchorAndMovesBelowButtonsOnlyWhenNecessary(double width, double x, double y)

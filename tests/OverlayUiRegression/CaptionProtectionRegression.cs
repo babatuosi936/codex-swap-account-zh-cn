@@ -34,8 +34,9 @@ internal static partial class Program
                 var client = CaptionFixtureClient(overlay, owner);
                 if (mode == OverlayDisplayMode.Expanded)
                 {
-                    Require(overlay.Top - client.Top >= 48, "An expanded row that reaches caption buttons must move below them.");
-                    AssertExpandedProfilesFit(overlay);
+                    Require(Math.Abs(overlay.Top - client.Top) < 1 && Math.Abs(overlay.Left - client.Left - 340) < 1,
+                        "An expanded row must stay at the menu anchor and shorten instead of moving left or down.");
+                    Require(overlay.ActualWidth < expandedWidth - 10, "An expanded row must shorten at the caption boundary.");
                 }
                 else
                 {

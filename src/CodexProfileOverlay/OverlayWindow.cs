@@ -56,6 +56,9 @@ internal sealed partial class OverlayWindow : Window
     private double modeAvailableWidth = double.PositiveInfinity;
     private string indicatorSignature = string.Empty;
     private double expandedLogicalWidth = 1;
+    private double expandedMinimumWidth = 190;
+    private double accountScrollOffset;
+    private ScrollViewer? accountScroller;
     private double availableClientWidth = double.PositiveInfinity;
 
     public OverlayWindow(OverlaySettings settings, SafeLogger logger)
@@ -193,13 +196,10 @@ internal sealed partial class OverlayWindow : Window
         }
 
         var captionButtons = GetCaptionButtonsBounds(codexHwnd, clientBounds);
-        modeAvailableWidth = layoutService.AvailableDisplayWidth(
-            isBallMinimized ? PositionPreset.Custom : settings.PositionPreset, clientBounds.Width, clientBounds.Height,
-            (isBallMinimized ? 32 : HeaderHeight) * SanitizedScale,
-            isBallMinimized ? ballOffset.X : settings.OffsetX, isBallMinimized ? ballOffset.Y : settings.OffsetY, captionButtons);
-        // A compact bar that cannot fit in the title row is placed below it.
-        availableClientWidth = settings.DisplayMode == OverlayDisplayMode.Auto && !isBallMinimized
-            && modeAvailableWidth >= (ShowQuota ? 350 : 286) * SanitizedScale ? modeAvailableWidth : clientBounds.Width;
+        var row = CalculateRowLayout(clientBounds, captionButtons,
+            settings.DisplayMode == OverlayDisplayMode.Auto ? expandedLogicalWidth : null);
+        modeAvailableWidth = row.AvailableWidth;
+        availableClientWidth = row.AvailableWidth;
         OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
         if (settings.DisplayMode == OverlayDisplayMode.Auto)
         {
@@ -212,6 +212,9 @@ internal sealed partial class OverlayWindow : Window
             RebuildContent();
         }
 
+        row = CalculateRowLayout(clientBounds, captionButtons);
+        availableClientWidth = row.AvailableWidth;
+
         UpdateWidth();
 
         bool geometryChanged = placementDirty || !NearlyEqual(clientBounds, lastClientBounds);
@@ -220,15 +223,7 @@ internal sealed partial class OverlayWindow : Window
             UpdateLayout();
         }
 
-        var placement = layoutService.CalculatePlacement(
-            isBallMinimized ? PositionPreset.Custom : settings.PositionPreset,
-            clientBounds.Width,
-            clientBounds.Height,
-            ActualWidth,
-            ActualHeight,
-            isBallMinimized ? ballOffset.X : settings.OffsetX,
-            isBallMinimized ? ballOffset.Y : settings.OffsetY,
-            captionButtons);
+        var placement = new OverlayPlacement(row.OffsetX, row.OffsetY);
 
         // Clamping is temporary: a smaller owner (or a transient restore/resize)
         // must not replace the position chosen by dragging or in settings.
@@ -238,7 +233,7 @@ internal sealed partial class OverlayWindow : Window
         {
             return;
         }
-        if (OverlayLayoutService.OverlapsCaption(placement, ActualWidth, ActualHeight, captionButtons))
+        if (!row.Fits || OverlayLayoutService.OverlapsCaption(placement, ActualWidth, ActualHeight, captionButtons))
         {
             Hide();
             compactPopup.IsOpen = false;
@@ -345,6 +340,8 @@ internal sealed partial class OverlayWindow : Window
 
     private void RebuildContent()
     {
+        if (accountScroller is not null) accountScrollOffset = accountScroller.HorizontalOffset;
+        accountScroller = null;
         quotaRebuildPending = false;
         FinishAccountReorder(commit: false);
         usageHover.Close();
@@ -369,7 +366,10 @@ internal sealed partial class OverlayWindow : Window
         // can decide whether all accounts will fit when the owner grows.
         UIElement expandedContent = BuildExpandedContent();
         expandedContent.Measure(new System.Windows.Size(double.PositiveInfinity, HeaderButtonHeight));
-        expandedLogicalWidth = Math.Max(1, Math.Ceiling(expandedContent.DesiredSize.Width + 12));
+        // Border/padding plus two DIPs for per-control device-pixel rounding.
+        expandedLogicalWidth = Math.Max(1, Math.Ceiling(expandedContent.DesiredSize.Width + 14));
+        expandedMinimumWidth = Math.Ceiling(((Grid)expandedContent).Children.OfType<FrameworkElement>()
+            .Where(child => Grid.GetColumn(child) != 1).Sum(child => child.DesiredSize.Width) + 12 + 48);
         if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(modeAvailableWidth))
         {
             currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
@@ -377,6 +377,7 @@ internal sealed partial class OverlayWindow : Window
         }
         shell.Padding = new Thickness(currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1, currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1);
         shell.Child = currentMode == OverlayDisplayMode.Compact ? BuildCompactContent() : expandedContent;
+        if (currentMode == OverlayDisplayMode.Compact) accountScroller = null;
         UpdateWidth();
         compactPopup.Child = BuildCompactPopup();
         compactPopup.PlacementTarget = shell;
@@ -526,9 +527,22 @@ internal sealed partial class OverlayWindow : Window
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            CanContentScroll = true,
+            CanContentScroll = false,
+            ClipToBounds = true,
             Content = panel,
             Height = HeaderButtonHeight,
+        };
+        accountScroller = scrollViewer;
+        double restoreOffset = accountScrollOffset;
+        scrollViewer.Loaded += (_, _) => scrollViewer.ScrollToHorizontalOffset(restoreOffset);
+        scrollViewer.ScrollChanged += (_, _) => accountScrollOffset = scrollViewer.HorizontalOffset;
+        scrollViewer.PreviewMouseWheel += (_, args) =>
+        {
+            if (accountReordering || dragPending || isDragging) return;
+            // Wheel motion scrolls just the central viewport, including over
+            // quota text and avatars. Hidden means no scrollbar is reserved.
+            scrollViewer.ScrollToHorizontalOffset(scrollViewer.HorizontalOffset - args.Delta * 0.75);
+            args.Handled = true;
         };
         Grid.SetColumn(scrollViewer, 1);
 
@@ -1117,12 +1131,14 @@ internal sealed partial class OverlayWindow : Window
         }
 
         var captionButtons = GetCaptionButtonsBounds(ownerHwnd, clientBounds);
-        var placement = layoutService.CalculatePlacement(PositionPreset.Custom,
-            clientBounds.Width, clientBounds.Height, ActualWidth, ActualHeight,
+        var row = layoutService.ConstrainRow(PositionPreset.Custom,
+            clientBounds.Width, clientBounds.Height, (isBallMinimized ? 32 : LogicalWidth) * SanitizedScale, ActualHeight,
             screenDip.X - clientBounds.Left - dragOffset.X, screenDip.Y - clientBounds.Top - dragOffset.Y,
-            captionButtons);
-        if (OverlayLayoutService.OverlapsCaption(placement, ActualWidth, ActualHeight, captionButtons)) return;
-        var offset = new Point(placement.OffsetX, placement.OffsetY);
+            captionButtons, MinimumRowWidth * SanitizedScale);
+        if (!row.Fits) return;
+        availableClientWidth = row.AvailableWidth;
+        UpdateWidth();
+        var offset = new Point(row.OffsetX, row.OffsetY);
         if (isBallMinimized) ballOffset = offset;
         else { settings.OffsetX = offset.X; settings.OffsetY = offset.Y; }
         Left = clientBounds.Left + offset.X;
@@ -1257,6 +1273,14 @@ internal sealed partial class OverlayWindow : Window
     private double SanitizedScale => double.IsFinite(settings.Scale) ? Math.Clamp(settings.Scale, 0.8, 1.4) : 1;
 
     private double LogicalWidth => currentMode == OverlayDisplayMode.Compact ? (ShowQuota ? 350 : 286) : expandedLogicalWidth;
+    private double MinimumRowWidth => isBallMinimized ? 32 : currentMode == OverlayDisplayMode.Expanded ? expandedMinimumWidth : profiles.Count >= 2 ? 190 : 110;
+
+    private OverlayRowLayout CalculateRowLayout(Rect clientBounds, OverlayCaptionBounds? captionButtons, double? desiredWidth = null)
+        => layoutService.ConstrainRow(isBallMinimized ? PositionPreset.Custom : settings.PositionPreset,
+            clientBounds.Width, clientBounds.Height, (isBallMinimized ? 32 : desiredWidth ?? LogicalWidth) * SanitizedScale,
+            (isBallMinimized ? 32 : HeaderHeight) * SanitizedScale,
+            isBallMinimized ? ballOffset.X : settings.OffsetX, isBallMinimized ? ballOffset.Y : settings.OffsetY,
+            captionButtons, MinimumRowWidth * SanitizedScale);
 
     private void UpdateWidth()
     {

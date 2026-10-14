@@ -48,7 +48,8 @@ internal static partial class Program
     {
         var settings = new OverlaySettings { PositionPreset = PositionPreset.Custom, OffsetX = 324.5, OffsetY = 180, DisplayMode = OverlayDisplayMode.Expanded };
         var host = new Window { Width = 1800, Height = 700, Left = 20, Top = 20 };
-        var smallHost = new Window { Width = 400, Height = 100, Left = 50, Top = 50 };
+        // Retention below the title row is independent of the top menu boundary.
+        var smallHost = new Window { Width = 400, Height = 200, Left = 50, Top = 50 };
         var overlay = (Window)Activator.CreateInstance(OverlayType, settings, new SafeLogger(System.IO.Path.Combine(AppContext.BaseDirectory, "fixture-logs")))!;
         try
         {
@@ -61,7 +62,7 @@ internal static partial class Program
 
             for (int i = 0; i < 3; i++)
             {
-                host.Width = 400; host.Height = 100; Pump();
+                host.Width = 400; host.Height = 200; Pump();
                 Call(overlay, "UpdatePlacement", owner); Pump();
                 Require(settings.OffsetX == 324.5 && settings.OffsetY == 180, "Clamping to a smaller owner must preserve requested offsets.");
                 Require(overlay.Left < originalLeft && overlay.Top < originalTop, "Fixture must temporarily clamp both axes.");

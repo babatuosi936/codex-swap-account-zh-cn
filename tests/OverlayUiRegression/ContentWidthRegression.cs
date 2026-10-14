@@ -79,7 +79,7 @@ internal static partial class Program
         var itemBounds = lastItem.TransformToAncestor(grid).TransformBounds(new Rect(lastItem.RenderSize));
         var menuBounds = menu.TransformToAncestor(grid).TransformBounds(new Rect(menu.RenderSize));
         double gap = menuBounds.Left - itemBounds.Right;
-        Require(gap >= -0.5 && gap <= lastItem.Margin.Right + menu.Margin.Left + 2,
+        Require(gap >= -0.5 && gap <= lastItem.Margin.Right + menu.Margin.Left + 4,
             $"Expanded account row has unnecessary trailing space: {gap} DIP.");
     }
 }

@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--bounded-row-only") || args.Length == 0) RunBoundedAccountRowScenario();
+            if (args.Contains("--bounded-row-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} bounded account row scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--account-lifetime-only") || args.Length == 0) RunAccountWindowLifetimeScenario();
             if (args.Contains("--account-lifetime-only"))
             {
