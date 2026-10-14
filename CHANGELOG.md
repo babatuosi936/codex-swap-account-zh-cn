@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.7-local - 2026-10-14
+
+- Keep the account bar and floating ball clear of the owner's minimize, maximize and close buttons. Read native caption bounds where available, with a protected title-row area for custom desktop frames.
+- When the expanded After menu row does not fit, move it below the caption buttons temporarily. Auto mode measures the space between the menu anchor and caption controls before selecting a compact row. Restore the saved menu position when the owner grows.
+- Apply the same protection during dragging, quota refresh, window resizing and floating-ball restore without overwriting saved offsets or the position preset. Hide the surface if a tiny owner has no safe placement.
+- Validation: 259 core tests and 309 synthetic WPF checks passed, including six caption protection scenarios at scales 0.8, 1 and 1.4. The public release remains 1.3.1.
+
 ## 1.3.1 - 2026-10-13
 
 This public release includes the functionality and fixes tested in local builds through 1.3.6-local. Its public version is 1.3.1.

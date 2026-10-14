@@ -18,6 +18,7 @@ internal static class NativeMethods
     public const uint SwpShowWindow = 0x0040;
     public const int SwRestore = 9;
     public const int DwmwaCloaked = 14;
+    public const int DwmwaCaptionButtonBounds = 5;
     public const int DwmwaUseImmersiveDarkModeBefore20H1 = 19;
     public const int DwmwaUseImmersiveDarkMode = 20;
     public const uint GaRoot = 2;
@@ -105,6 +106,9 @@ internal static class NativeMethods
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+
+    [DllImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")]
+    public static extern int DwmGetCaptionButtonBounds(IntPtr hwnd, int dwAttribute, out NativeRect pvAttribute, int cbAttribute);
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);

@@ -5,6 +5,65 @@ namespace CodexProfileOverlay.Tests;
 
 public sealed class OverlayLayoutServiceTests
 {
+    [Theory]
+    [InlineData(1400, 340, 56)]
+    [InlineData(1800, 340, 0)]
+    public void MenuRow_PreservesAnchorAndMovesBelowButtonsOnlyWhenNecessary(double width, double x, double y)
+    {
+        var caption = new OverlayCaptionBounds(width - 160, 0, 160, 48);
+        var placement = new OverlayLayoutService().CalculatePlacement(PositionPreset.AfterMenu, width, 800, 950, 44, 340, 0, caption);
+        Assert.Equal(new OverlayPlacement(x, y), placement);
+        Assert.False(OverlayLayoutService.OverlapsCaption(placement, 950, 44, caption));
+    }
+
+    [Theory]
+    [InlineData(350, 1100, 0, 682, 0)]
+    [InlineData(32, 1180, 0, 1000, 0)]
+    [InlineData(1100, 100, 0, 100, 56)]
+    [InlineData(350, 1100, 80, 850, 80)]
+    public void CustomPlacement_ProtectsButtonsForBarsAndFloatingBalls(double width, double x, double y, double expectedX, double expectedY)
+    {
+        var caption = new OverlayCaptionBounds(1040, 0, 160, 48);
+        var placement = new OverlayLayoutService().CalculatePlacement(PositionPreset.Custom, 1200, 800, width, 44, x, y, caption);
+        Assert.Equal(new OverlayPlacement(expectedX, expectedY), placement);
+        Assert.False(OverlayLayoutService.OverlapsCaption(placement, width, 44, caption));
+    }
+
+    [Fact]
+    public void LeftHandCaption_MovesBarToItsRight()
+    {
+        var caption = new OverlayCaptionBounds(0, 0, 140, 48);
+        var placement = new OverlayLayoutService().CalculatePlacement(PositionPreset.Custom, 1200, 800, 350, 44, 0, 0, caption);
+        Assert.Equal(new OverlayPlacement(148, 0), placement);
+    }
+
+    [Fact]
+    public void AutoLayout_UsesTheSpaceBetweenMenuAndCaptionControls()
+    {
+        var service = new OverlayLayoutService();
+        double available = service.AvailableDisplayWidth(PositionPreset.AfterMenu, 1400, 800, 44, 340, 0, new(1240, 0, 160, 48));
+        Assert.Equal(892, available);
+        Assert.Equal(OverlayDisplayMode.Compact, service.ResolveDisplayMode(OverlayDisplayMode.Auto, available, OverlayDisplayMode.Expanded, 950));
+        Assert.Equal(1400, service.AvailableDisplayWidth(PositionPreset.TopCenter, 1400, 800, 44, 340, 0, new(1240, 0, 160, 48)));
+        Assert.Equal(1400, service.AvailableDisplayWidth(PositionPreset.AfterMenu, 1400, 800, 44, 340, 80, new(1240, 0, 160, 48)));
+    }
+
+    [Fact]
+    public void InvalidCaptionBounds_AreIgnored()
+    {
+        var service = new OverlayLayoutService();
+        Assert.Equal(new OverlayPlacement(850, 0), service.CalculatePlacement(PositionPreset.Custom, 1200, 800, 350, 44, 1100, 0, new(double.NaN, 0, 160, 48)));
+        Assert.Equal(new OverlayPlacement(850, 0), service.CalculatePlacement(PositionPreset.Custom, 1200, 800, 350, 44, 1100, 0, new(1040, 0, 0, 48)));
+    }
+
+    [Fact]
+    public void NoSafeSpace_RemainsDetectableSoTheWindowCanBeHidden()
+    {
+        var caption = new OverlayCaptionBounds(0, 0, 120, 40);
+        var placement = new OverlayLayoutService().CalculatePlacement(PositionPreset.AfterMenu, 120, 40, 120, 40, 340, 0, caption);
+        Assert.True(OverlayLayoutService.OverlapsCaption(placement, 120, 40, caption));
+    }
+
     [Fact]
     public void ResolveDisplayMode_RequiresTheCompleteScaledAccountRowToFit()
     {

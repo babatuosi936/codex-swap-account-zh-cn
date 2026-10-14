@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--caption-only") || args.Length == 0) RunCaptionProtectionScenario();
+            if (args.Contains("--caption-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} caption protection scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--account-placement-only") || args.Length == 0) RunAccountActionPlacementScenario();
             if (args.Contains("--account-placement-only"))
             {

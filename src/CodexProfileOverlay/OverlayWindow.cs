@@ -52,6 +52,8 @@ internal sealed partial class OverlayWindow : Window
     private double lastTargetLeft = double.NaN;
     private double lastTargetTop = double.NaN;
     private bool placementDirty = true;
+    private bool placementInProgress;
+    private double modeAvailableWidth = double.PositiveInfinity;
     private string indicatorSignature = string.Empty;
     private double expandedLogicalWidth = 620;
     private double availableClientWidth = double.PositiveInfinity;
@@ -162,6 +164,14 @@ internal sealed partial class OverlayWindow : Window
 
     public void UpdatePlacement(IntPtr codexHwnd)
     {
+        if (placementInProgress) return;
+        placementInProgress = true;
+        try { UpdatePlacementCore(codexHwnd); }
+        finally { placementInProgress = false; }
+    }
+
+    private void UpdatePlacementCore(IntPtr codexHwnd)
+    {
         if (!NativeMethods.IsWindowVisible(codexHwnd) || NativeMethods.IsIconic(codexHwnd))
         {
             Hide();
@@ -182,8 +192,15 @@ internal sealed partial class OverlayWindow : Window
             return;
         }
 
-        availableClientWidth = clientBounds.Width;
-        OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, clientBounds.Width, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
+        var captionButtons = GetCaptionButtonsBounds(codexHwnd, clientBounds);
+        modeAvailableWidth = layoutService.AvailableDisplayWidth(
+            isBallMinimized ? PositionPreset.Custom : settings.PositionPreset, clientBounds.Width, clientBounds.Height,
+            (isBallMinimized ? 32 : HeaderHeight) * SanitizedScale,
+            isBallMinimized ? ballOffset.X : settings.OffsetX, isBallMinimized ? ballOffset.Y : settings.OffsetY, captionButtons);
+        // A compact bar that cannot fit in the title row is placed below it.
+        availableClientWidth = settings.DisplayMode == OverlayDisplayMode.Auto && !isBallMinimized
+            && modeAvailableWidth >= (ShowQuota ? 350 : 286) * SanitizedScale ? modeAvailableWidth : clientBounds.Width;
+        OverlayDisplayMode nextMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
         if (settings.DisplayMode == OverlayDisplayMode.Auto)
         {
             resolvedAutoMode = nextMode;
@@ -210,7 +227,8 @@ internal sealed partial class OverlayWindow : Window
             ActualWidth,
             ActualHeight,
             isBallMinimized ? ballOffset.X : settings.OffsetX,
-            isBallMinimized ? ballOffset.Y : settings.OffsetY);
+            isBallMinimized ? ballOffset.Y : settings.OffsetY,
+            captionButtons);
 
         // Clamping is temporary: a smaller owner (or a transient restore/resize)
         // must not replace the position chosen by dragging or in settings.
@@ -218,6 +236,12 @@ internal sealed partial class OverlayWindow : Window
 
         if (!double.IsFinite(placement.OffsetX) || !double.IsFinite(placement.OffsetY))
         {
+            return;
+        }
+        if (OverlayLayoutService.OverlapsCaption(placement, ActualWidth, ActualHeight, captionButtons))
+        {
+            Hide();
+            compactPopup.IsOpen = false;
             return;
         }
 
@@ -346,9 +370,9 @@ internal sealed partial class OverlayWindow : Window
         UIElement expandedContent = BuildExpandedContent();
         expandedContent.Measure(new System.Windows.Size(double.PositiveInfinity, HeaderButtonHeight));
         expandedLogicalWidth = Math.Max(ShowQuota ? 620 : 560, Math.Ceiling(expandedContent.DesiredSize.Width + 12));
-        if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(availableClientWidth))
+        if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(modeAvailableWidth))
         {
-            currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, availableClientWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
+            currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);
             resolvedAutoMode = currentMode;
         }
         shell.Padding = new Thickness(currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1, currentMode == OverlayDisplayMode.Compact ? 6 : 5, 1);
@@ -366,6 +390,7 @@ internal sealed partial class OverlayWindow : Window
 
             compactPopup.IsOpen = IsVisible && currentMode == OverlayDisplayMode.Compact;
         }
+        if (ownerHwnd != IntPtr.Zero && !placementInProgress && !isDragging) UpdatePlacement(ownerHwnd);
     }
 
     private UIElement BuildCompactContent()
@@ -1091,9 +1116,13 @@ internal sealed partial class OverlayWindow : Window
             compactPopup.IsOpen = false;
         }
 
-        var offset = new Point(
-            OverlayLayoutService.Clamp(screenDip.X - clientBounds.Left - dragOffset.X, 0, Math.Max(0, clientBounds.Width - ActualWidth)),
-            OverlayLayoutService.Clamp(screenDip.Y - clientBounds.Top - dragOffset.Y, 0, Math.Max(0, clientBounds.Height - ActualHeight)));
+        var captionButtons = GetCaptionButtonsBounds(ownerHwnd, clientBounds);
+        var placement = layoutService.CalculatePlacement(PositionPreset.Custom,
+            clientBounds.Width, clientBounds.Height, ActualWidth, ActualHeight,
+            screenDip.X - clientBounds.Left - dragOffset.X, screenDip.Y - clientBounds.Top - dragOffset.Y,
+            captionButtons);
+        if (OverlayLayoutService.OverlapsCaption(placement, ActualWidth, ActualHeight, captionButtons)) return;
+        var offset = new Point(placement.OffsetX, placement.OffsetY);
         if (isBallMinimized) ballOffset = offset;
         else { settings.OffsetX = offset.X; settings.OffsetY = offset.Y; }
         Left = clientBounds.Left + offset.X;
@@ -1161,6 +1190,30 @@ internal sealed partial class OverlayWindow : Window
         {
             logger.Error("Failed to save overlay settings.", exception);
         }
+    }
+
+    private OverlayCaptionBounds? GetCaptionButtonsBounds(IntPtr hwnd, Rect clientBounds)
+    {
+        if (NativeMethods.GetWindowRect(hwnd, out NativeRect windowRect))
+        {
+            Point origin = DeviceToDip(new Point(windowRect.Left, windowRect.Top));
+            // DWM reports window-relative device pixels. Custom Electron frames
+            // may return a zero-width rectangle, so keep a conservative fallback.
+            if (NativeMethods.DwmGetCaptionButtonBounds(hwnd, NativeMethods.DwmwaCaptionButtonBounds,
+                out NativeRect nativeButtons, System.Runtime.InteropServices.Marshal.SizeOf<NativeRect>()) == 0
+                && nativeButtons.Width > 0 && nativeButtons.Height > 0)
+            {
+                Point start = DeviceToDip(new Point(windowRect.Left + nativeButtons.Left, windowRect.Top + nativeButtons.Top));
+                Point size = DeviceToDip(new Point(nativeButtons.Width, nativeButtons.Height), treatAsSize: true);
+                var rect = Rect.Intersect(clientBounds, new Rect(start.X, start.Y, size.X, size.Y));
+                if (rect.IsEmpty || rect.Width <= 0 || rect.Height <= 0) return null;
+                return new OverlayCaptionBounds(rect.Left - clientBounds.Left, rect.Top - clientBounds.Top, rect.Width, rect.Height);
+            }
+            // Ordinary native title bars lie outside the client area.
+            if (clientBounds.Top - origin.Y > 12) return null;
+        }
+        return new OverlayCaptionBounds(Math.Max(0, clientBounds.Width - 160), 0,
+            Math.Min(160, clientBounds.Width), Math.Min(48, clientBounds.Height));
     }
 
     private bool TryGetClientBounds(IntPtr hwnd, out Rect bounds)
