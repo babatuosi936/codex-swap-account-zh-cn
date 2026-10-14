@@ -78,7 +78,7 @@ internal static partial class Program
                     Pump();
                     overview.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = System.Windows.Input.Mouse.MouseEnterEvent });
                     WaitFor(() => popup.IsOpen);
-                    Require(popup.IsOpen && ReferenceEquals(popup.PlacementTarget, overlay.Content), "Overview must anchor to the whole floating bar.");
+                    Require(popup.IsOpen && ReferenceEquals(popup.PlacementTarget, overlay.Content), $"Overview must anchor to the whole floating bar: theme={theme}, mode={mode}, count={count}, open={popup.IsOpen}, anchorMatches={ReferenceEquals(popup.PlacementTarget, overlay.Content)}.");
                     var placements = popup.CustomPopupPlacementCallback!(new Size(1050, 300), new Size(720, 40), new Point(0, 4));
                     Require(Math.Abs(placements[0].Point.X + 525 - 360) < 0.01 && placements[0].Point.Y == 44,
                         "Overview and floating bar must share the horizontal center axis.");

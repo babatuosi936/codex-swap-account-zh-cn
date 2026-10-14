@@ -55,7 +55,7 @@ internal sealed partial class OverlayWindow : Window
     private bool placementInProgress;
     private double modeAvailableWidth = double.PositiveInfinity;
     private string indicatorSignature = string.Empty;
-    private double expandedLogicalWidth = 620;
+    private double expandedLogicalWidth = 1;
     private double availableClientWidth = double.PositiveInfinity;
 
     public OverlayWindow(OverlaySettings settings, SafeLogger logger)
@@ -369,7 +369,7 @@ internal sealed partial class OverlayWindow : Window
         // can decide whether all accounts will fit when the owner grows.
         UIElement expandedContent = BuildExpandedContent();
         expandedContent.Measure(new System.Windows.Size(double.PositiveInfinity, HeaderButtonHeight));
-        expandedLogicalWidth = Math.Max(ShowQuota ? 620 : 560, Math.Ceiling(expandedContent.DesiredSize.Width + 12));
+        expandedLogicalWidth = Math.Max(1, Math.Ceiling(expandedContent.DesiredSize.Width + 12));
         if (settings.DisplayMode == OverlayDisplayMode.Auto && double.IsFinite(modeAvailableWidth))
         {
             currentMode = layoutService.ResolveDisplayMode(settings.DisplayMode, modeAvailableWidth, resolvedAutoMode, expandedLogicalWidth * SanitizedScale);

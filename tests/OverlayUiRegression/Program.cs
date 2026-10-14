@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--content-width-only") || args.Length == 0) RunContentWidthScenario();
+            if (args.Contains("--content-width-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} account content width scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--caption-only") || args.Length == 0) RunCaptionProtectionScenario();
             if (args.Contains("--caption-only"))
             {

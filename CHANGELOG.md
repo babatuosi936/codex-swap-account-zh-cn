@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.8-local - 2026-10-14
+
+- Size the expanded account bar to its measured content instead of reserving a fixed 620/560-DIP minimum. Removing accounts or shortening quota summaries immediately shrinks the bar, while adding accounts or receiving longer summaries expands it.
+- Keep the menu button next to the final account, retaining scaled content measurement, narrow-window scrolling and caption-button protection.
+- Add six content-width scenarios covering 0/1/2/3 accounts, quota visibility, scales 0.8/1/1.4, and shorter/longer quota refreshes in the same window. The public release remains 1.3.1.
+
 ## 1.3.7-local - 2026-10-14
 
 - Keep the account bar and floating ball clear of the owner's minimize, maximize and close buttons. Read native caption bounds where available, with a protected title-row area for custom desktop frames.
