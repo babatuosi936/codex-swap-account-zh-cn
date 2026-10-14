@@ -32,11 +32,11 @@ internal static partial class Program
                 // Drive the same gesture methods used after the native mouse
                 // threshold, without moving the user's real pointer.
                 Call(overlay, "BeginHeaderDrag");
-                foreach (var offset in new[] { new System.Windows.Point(100, 0), new System.Windows.Point(900, 0), new System.Windows.Point(200, 120), new System.Windows.Point(100, 0) })
+                foreach (var offset in new[] { new System.Windows.Point(100, 0), new System.Windows.Point(900, 0), new System.Windows.Point(500, 0), new System.Windows.Point(100, 0) })
                 {
                     Call(overlay, "MoveHeaderDrag", client, offset, caption); Pump();
                     Require(Math.Abs(overlay.ActualWidth - width) < 1 && Math.Abs(overlay.ActualHeight - height) < 1,
-                        "Dragging the whole bar must never resize it, including crossing between the title row and ordinary positions.");
+                        "Dragging within the title row must never resize the whole bar.");
                     AssertCaptionClear(overlay, owner);
                     if (offset.Y == 0) Require(overlay.Left - client.Left >= 339.5, "Fixed-width dragging must retain the X=340 boundary.");
                 }

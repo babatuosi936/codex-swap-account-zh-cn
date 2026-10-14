@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.13-local - 2026-10-14
+
+- Dragging the bar below the title row restores the full expanded account row and resets horizontal scrolling to the beginning. Auto mode also leaves its compact button and displays all accounts there.
+- Returning to the top fits the protected title-row space again. Width changes only on a region transition; movement within either region stays at a fixed width. Keep window boundaries and retain scrolling if the full content exceeds the owner itself.
+- Pass four region-transition scenarios, including three overlay scales, scrolled content, repeated gestures and Auto mode; preserve six fixed-width title-row drag checks. Public release remains 1.3.1.
+
 ## 1.3.12-local - 2026-10-14
 
 - A wider undocked account bar can be dragged back to the protected title row. If its existing width cannot fit there, fit the row once on entry and retain that new width for subsequent movement and release.

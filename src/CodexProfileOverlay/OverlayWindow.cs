@@ -1163,6 +1163,23 @@ internal sealed partial class OverlayWindow : Window
     {
         var row = layoutService.ConstrainFixedRow(clientBounds.Width, clientBounds.Height,
             dragFixedWidth, ActualHeight, requestedOffset.X, requestedOffset.Y, captionButtons);
+        if (!isBallMinimized && IsRestrictedDragRow(Top - clientBounds.Top, ActualHeight, captionButtons)
+            && !IsRestrictedDragRow(row.OffsetY, ActualHeight, captionButtons))
+        {
+            // Leaving the title row removes its width restriction. Show all
+            // accounts again, then keep that width during ordinary movement.
+            accountScrollOffset = 0;
+            accountScroller?.ScrollToHorizontalOffset(0);
+            if (currentMode != OverlayDisplayMode.Expanded)
+            {
+                currentMode = OverlayDisplayMode.Expanded;
+                RebuildContent();
+            }
+            row = layoutService.ConstrainRow(PositionPreset.Custom, clientBounds.Width, clientBounds.Height,
+                expandedLogicalWidth * SanitizedScale, ActualHeight, requestedOffset.X, requestedOffset.Y,
+                captionButtons, expandedMinimumWidth * SanitizedScale);
+            if (row.Fits) ApplyDragRowWidth(row);
+        }
         if (!row.Fits && !isBallMinimized && Top - clientBounds.Top >= OverlayLayoutService.ProtectedTopRowHeight
             && row.OffsetY < OverlayLayoutService.ProtectedTopRowHeight)
         {
@@ -1173,11 +1190,7 @@ internal sealed partial class OverlayWindow : Window
                 MinimumRowWidth * SanitizedScale);
             if (row.Fits)
             {
-                dragFixedWidth = row.Width;
-                draggedLogicalWidth = row.Width / SanitizedScale;
-                availableClientWidth = row.AvailableWidth;
-                UpdateWidth();
-                UpdateLayout();
+                ApplyDragRowWidth(row);
             }
         }
         if (!row.Fits) return;
@@ -1188,6 +1201,21 @@ internal sealed partial class OverlayWindow : Window
         Top = clientBounds.Top + offset.Y;
         placementDirty = true;
     }
+
+    private void ApplyDragRowWidth(OverlayRowLayout row)
+    {
+        dragFixedWidth = row.Width;
+        draggedLogicalWidth = row.Width / SanitizedScale;
+        availableClientWidth = row.AvailableWidth;
+        UpdateWidth();
+        UpdateLayout();
+    }
+
+    private static bool IsRestrictedDragRow(double y, double height, OverlayCaptionBounds? captionButtons)
+        => y < OverlayLayoutService.ProtectedTopRowHeight
+            || (captionButtons is { IsValid: true }
+                && y < captionButtons.Top + captionButtons.Height + OverlayLayoutService.CaptionSafetyGap
+                && y + height > captionButtons.Top - OverlayLayoutService.CaptionSafetyGap);
 
     private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
