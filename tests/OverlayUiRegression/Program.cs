@@ -36,6 +36,13 @@ internal static partial class Program
         CodexProfileOverlay.App.ApplyTheme(AppTheme.Light);
         try
         {
+            if (args.Contains("--return-top-only") || args.Length == 0) RunReturnToTopScenario();
+            if (args.Contains("--return-top-only"))
+            {
+                Console.WriteLine($"PASS: {Evidence.Count} return-to-top scenarios.");
+                app.Shutdown();
+                return 0;
+            }
             if (args.Contains("--fixed-drag-only") || args.Length == 0) RunFixedDragWidthScenario();
             if (args.Contains("--fixed-drag-only"))
             {

@@ -1163,6 +1163,23 @@ internal sealed partial class OverlayWindow : Window
     {
         var row = layoutService.ConstrainFixedRow(clientBounds.Width, clientBounds.Height,
             dragFixedWidth, ActualHeight, requestedOffset.X, requestedOffset.Y, captionButtons);
+        if (!row.Fits && !isBallMinimized && Top - clientBounds.Top >= OverlayLayoutService.ProtectedTopRowHeight
+            && row.OffsetY < OverlayLayoutService.ProtectedTopRowHeight)
+        {
+            // A wider undocked bar must be able to return to the title row.
+            // Fit once on entry, then lock that width for subsequent movement.
+            row = layoutService.ConstrainRow(PositionPreset.Custom, clientBounds.Width, clientBounds.Height,
+                dragFixedWidth, ActualHeight, requestedOffset.X, requestedOffset.Y, captionButtons,
+                MinimumRowWidth * SanitizedScale);
+            if (row.Fits)
+            {
+                dragFixedWidth = row.Width;
+                draggedLogicalWidth = row.Width / SanitizedScale;
+                availableClientWidth = row.AvailableWidth;
+                UpdateWidth();
+                UpdateLayout();
+            }
+        }
         if (!row.Fits) return;
         var offset = new Point(row.OffsetX, row.OffsetY);
         if (isBallMinimized) ballOffset = offset;

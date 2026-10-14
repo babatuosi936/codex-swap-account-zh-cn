@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.12-local - 2026-10-14
+
+- A wider undocked account bar can be dragged back to the protected title row. If its existing width cannot fit there, fit the row once on entry and retain that new width for subsequent movement and release.
+- Keep horizontal dragging at a fixed width, X=340 menu protection, caption-button protection, fixed endpoints and wheel scrolling. Do not expand the bar merely because it is dragged down again.
+- Pass three return-to-top scenarios at scales 0.8/1/1.4, including a wider starting bar, release/save and repeated down/back gestures; retain the six fixed-width drag scenarios. Public release remains 1.3.1.
+
 ## 1.3.11-local - 2026-10-14
 
 - Dragging Overview or other whole-bar surfaces moves the overlay at its existing width. Clamp the position at menu/caption boundaries instead of enlarging or shrinking the row; reject movement into a region that cannot fit the full dragged width.
